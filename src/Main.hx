@@ -10,18 +10,40 @@ import h3d.Vector;
 class Main extends hxd.App 
 {
 	// --------------------------------------------------------------------------
+	// SINGLETON
+	// --------------------------------------------------------------------------
+	public static var instance(default, null) : Main;
+
+	// --------------------------------------------------------------------------
 	// STATES
 	// --------------------------------------------------------------------------
 
 	static var _allStates = new Map<String, GameState>();
 	static var _currentState : GameState;
+	static var _stateScene2D : h2d.Scene;
+	static var _stateScene3D : h3d.scene.Scene;
 
 	private function _gotoState(nextState : GameState)
 	{
 		if(_currentState != null)
+		{
 			_currentState.onExit(nextState);
-		nextState.onEnter(_currentState);
+			s2d.removeChild(_stateScene2D);
+			s3d.removeChild(_stateScene3D);
+		}
+
+		_stateScene2D = new h2d.Scene();
+		_stateScene3D = new h3d.scene.Scene();
+
+		nextState.onEnter(_stateScene2D, _stateScene3D, _currentState);
+		s2d.addChild(_stateScene2D);
+		s3d.addChild(_stateScene3D);
+
 		_currentState = nextState;
+
+		engine.render(s3d);
+
+		onResize();
 	}
 
 	public function gotoState(stateName : String)
@@ -32,8 +54,7 @@ class Main extends hxd.App
 		_gotoState(scene);
 	}
 
-	public static function pushEvent(stateName : String, 
-		?args : Dynamic)
+	public function pushEvent(stateName : String, ?args : Dynamic)
 	{
 		_currentState.onEvent(stateName, args);
 	}
@@ -44,18 +65,6 @@ class Main extends hxd.App
 
 	override function init() 
 	{
-		Global.s2d = s2d;
-		Global.s3d = s3d;
-		Global.engine = engine;
-
-		var yerp = new h3d.scene.Scene();
-
-		var derp = new h3d.scene.Object();
-
-		s3d.addChild(derp);
-
-
-
 		_allStates["Title"] = new TitleState();
 		_allStates["InGame"] = new InGameState();
 
@@ -69,13 +78,13 @@ class Main extends hxd.App
 
 	override function onResize() 
 	{
-		_currentState.onResize();
+		_currentState.onResize(s2d.width, s2d.height);
 	}
 
 	static function main() 
 	{
 		Res.initEmbed();
-		new Main();
+		instance = new Main();
 	}
 
 }

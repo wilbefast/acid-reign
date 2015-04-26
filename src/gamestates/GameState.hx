@@ -1,5 +1,10 @@
 class GameState
 {
+	public function new()
+	{
+
+	}
+
 	// ----------------------------------
 	// OPTIONAL INTERFACE
 	// ----------------------------------
@@ -9,7 +14,8 @@ class GameState
 		// override me
 	}
 
-	public function onEnter(source : GameState) : Void
+	public function onEnter(s2d : h2d.Scene, s3d : h3d.scene.Scene, 
+		source : GameState) : Void
 	{
 		// override me
 	}
@@ -19,7 +25,7 @@ class GameState
 		// override me
 	}
 
-	public function onResize() : Void
+	public function onResize(width : Int, height : Int) : Void
 	{
 		// override me
 	}

@@ -18,23 +18,21 @@ EReg.prototype = {
 	}
 	,__class__: EReg
 };
-var GameState = function() { };
+var GameState = function() {
+};
 $hxClasses["GameState"] = GameState;
 GameState.__name__ = ["GameState"];
 GameState.prototype = {
 	onUpdate: function(dt) {
 	}
-	,onEnter: function(source) {
+	,onEnter: function(s2d,s3d,source) {
 	}
 	,onExit: function(destination) {
 	}
-	,onResize: function() {
+	,onResize: function(width,height) {
 	}
 	,__class__: GameState
 };
-var Global = function() { };
-$hxClasses["Global"] = Global;
-Global.__name__ = ["Global"];
 var HxOverrides = function() { };
 $hxClasses["HxOverrides"] = HxOverrides;
 HxOverrides.__name__ = ["HxOverrides"];
@@ -101,13 +99,68 @@ HxOverrides.iter = function(a) {
 	}};
 };
 var InGameState = function() {
+	GameState.call(this);
 };
 $hxClasses["InGameState"] = InGameState;
 InGameState.__name__ = ["InGameState"];
 InGameState.__super__ = GameState;
 InGameState.prototype = $extend(GameState.prototype,{
-	onEnter: function(source) {
-		console.log("Entered InGame");
+	onEnter: function(s2d,s3d,source) {
+		var prim = new h3d_prim_Cube();
+		prim.translate(-0.5,-0.5,-0.5);
+		prim.addNormals();
+		var _g = 0;
+		while(_g < 10) {
+			var x = _g++;
+			var _g1 = 0;
+			while(_g1 < 10) {
+				var y = _g1++;
+				if(Math.random() > 0.5) {
+					var tile = new h3d_scene_Mesh(prim,null,s3d);
+					tile.set_x(x - 5);
+					tile.set_y(y - 5);
+					tile.scaleZ = 5;
+					tile.flags |= 1;
+					true;
+					5;
+					tile.set_z(hxd_Math.floor(Math.random() * 4));
+					tile.material.mshader.color__.setColor(16777088,null);
+					tile.material.passes.enableLights = true;
+				}
+			}
+		}
+		var acid = new h3d_scene_Mesh(prim,null,s3d);
+		acid.set_x(acid.set_y((function($this) {
+			var $r;
+			acid.z = 0;
+			{
+				acid.flags |= 1;
+				true;
+			}
+			$r = 0;
+			return $r;
+		}(this))));
+		acid.set_scaleX((function($this) {
+			var $r;
+			acid.scaleY = 15;
+			{
+				acid.flags |= 1;
+				true;
+			}
+			$r = 15;
+			return $r;
+		}(this)));
+		acid.material.mshader.color__.setColor(65280,null);
+		acid.material.passes.enableLights = true;
+		s3d.camera.zNear = 2;
+		s3d.camera.pos.set(0,-6,27,null);
+		s3d.camera.target.set(0,0,0,null);
+		s3d.lightSystem.ambientLight.set(0.2,0.2,0.2,null);
+		var sun = new h3d_scene_DirLight(new h3d_Vector(0,1,-2),s3d);
+		sun.get_color().set(0.5,0.5,0.5,null);
+	}
+	,onUpdate: function(dt) {
+		if(hxd_Key.isPressed(27)) Main.instance.gotoState("Title");
 	}
 	,__class__: InGameState
 });
@@ -225,14 +278,24 @@ Main.main = function() {
 		$r = new hxd_fs_EmbedFileSystem(haxe_Unserializer.run("oy14:customFont.fntty14:customFont.pngty10:hxlogo.pngty13:normalmap.pngty16:trueTypeFont.ttftg"));
 		return $r;
 	}(this)));
-	new Main();
+	Main.instance = new Main();
 };
 Main.__super__ = hxd_App;
 Main.prototype = $extend(hxd_App.prototype,{
 	_gotoState: function(nextState) {
-		if(Main._currentState != null) Main._currentState.onExit(nextState);
-		nextState.onEnter(Main._currentState);
+		if(Main._currentState != null) {
+			Main._currentState.onExit(nextState);
+			this.s2d.removeChild(Main._stateScene2D);
+			this.s3d.removeChild(Main._stateScene3D);
+		}
+		Main._stateScene2D = new h2d_Scene();
+		Main._stateScene3D = new h3d_scene_Scene();
+		nextState.onEnter(Main._stateScene2D,Main._stateScene3D,Main._currentState);
+		this.s2d.addChild(Main._stateScene2D);
+		this.s3d.addChild(Main._stateScene3D);
 		Main._currentState = nextState;
+		this.engine.render(this.s3d);
+		this.onResize();
 	}
 	,gotoState: function(stateName) {
 		var scene = Main._allStates.get(stateName);
@@ -240,12 +303,6 @@ Main.prototype = $extend(hxd_App.prototype,{
 		this._gotoState(scene);
 	}
 	,init: function() {
-		Global.s2d = this.s2d;
-		Global.s3d = this.s3d;
-		Global.engine = this.engine;
-		var yerp = new h3d_scene_Scene();
-		var derp = new h3d_scene_Object();
-		this.s3d.addChild(derp);
 		var v = new TitleState();
 		Main._allStates.set("Title",v);
 		v;
@@ -258,7 +315,7 @@ Main.prototype = $extend(hxd_App.prototype,{
 		Main._currentState.onUpdate(dt);
 	}
 	,onResize: function() {
-		Main._currentState.onResize();
+		Main._currentState.onResize(this.s2d.width,this.s2d.height);
 	}
 	,__class__: Main
 });
@@ -359,82 +416,29 @@ StringTools.fastCodeAt = function(s,index) {
 	return s.charCodeAt(index);
 };
 var TitleState = function() {
+	GameState.call(this);
 };
 $hxClasses["TitleState"] = TitleState;
 TitleState.__name__ = ["TitleState"];
 TitleState.__super__ = GameState;
 TitleState.prototype = $extend(GameState.prototype,{
-	onEnter: function(source) {
+	onEnter: function(s2d,s3d,source) {
 		var font = hxd_Res.loader.loadFont("trueTypeFont.ttf").build(64);
-		this.text = new h2d_Text(font,Global.s2d);
+		this.text = new h2d_Text(font,s2d);
 		this.text.set_textColor(16777215);
 		this.text.dropShadow = { dx : 3, dy : 3, color : 65280, alpha : 0.8};
 		this.text.set_text("Acid Reign");
-		var b = this.text.getBounds();
-		console.log(b);
-		this.text.set_x((Global.s2d.width - (b.xMax - b.xMin)) * 0.5);
-		this.text.set_y((Global.s2d.height - (b.yMax - b.yMin)) * 0.5);
-		var prim = new h3d_prim_Cube();
-		prim.translate(-0.5,-0.5,-0.5);
-		prim.addNormals();
-		var _g = 0;
-		while(_g < 10) {
-			var x = _g++;
-			var _g1 = 0;
-			while(_g1 < 10) {
-				var y = _g1++;
-				if(Math.random() > 0.5) {
-					var tile = new h3d_scene_Mesh(prim,null,Global.s3d);
-					tile.set_x(x - 5);
-					tile.set_y(y - 5);
-					tile.scaleZ = 5;
-					tile.flags |= 1;
-					true;
-					5;
-					tile.set_z(hxd_Math.floor(Math.random() * 4));
-					tile.material.mshader.color__.setColor(16777088,null);
-					tile.material.passes.enableLights = true;
-				}
-			}
-		}
-		var acid = new h3d_scene_Mesh(prim,null,Global.s3d);
-		acid.set_x(acid.set_y((function($this) {
-			var $r;
-			acid.z = 0;
-			{
-				acid.flags |= 1;
-				true;
-			}
-			$r = 0;
-			return $r;
-		}(this))));
-		acid.set_scaleX((function($this) {
-			var $r;
-			acid.scaleY = 15;
-			{
-				acid.flags |= 1;
-				true;
-			}
-			$r = 15;
-			return $r;
-		}(this)));
-		acid.material.mshader.color__.setColor(65280,null);
-		acid.material.passes.enableLights = true;
-		Global.s3d.camera.zNear = 2;
-		Global.s3d.camera.pos.set(0,-6,27,null);
-		Global.s3d.camera.target.set(0,0,0,null);
-		Global.s3d.lightSystem.ambientLight.set(0.2,0.2,0.2,null);
-		var sun = new h3d_scene_DirLight(new h3d_Vector(0,1,-2),Global.s3d);
-		sun.get_color().set(0.5,0.5,0.5,null);
-		Global.engine.render(Global.s3d);
 	}
-	,onResize: function() {
+	,onResize: function(width,height) {
 		if(this.text != null) {
 			var b = this.text.getBounds();
 			console.log(b);
-			this.text.set_x((Global.s2d.width - (b.xMax - b.xMin)) * 0.5);
-			this.text.set_y((Global.s2d.height - (b.yMax - b.yMin)) * 0.5);
+			this.text.set_x((width - (b.xMax - b.xMin)) * 0.5);
+			this.text.set_y((height - (b.yMax - b.yMin)) * 0.5);
 		}
+	}
+	,onUpdate: function(dt) {
+		if(hxd_Key.isPressed(13)) Main.instance.gotoState("InGame");
 	}
 	,__class__: TitleState
 });
@@ -13116,6 +13120,9 @@ hxd_Event.prototype = {
 var hxd_Key = function() { };
 $hxClasses["hxd.Key"] = hxd_Key;
 hxd_Key.__name__ = ["hxd","Key"];
+hxd_Key.isPressed = function(code) {
+	return hxd_Key.keyPressed[code] == h3d_Engine.CURRENT.frameCount + 1;
+};
 hxd_Key.initialize = function() {
 	if(hxd_Key.initDone) hxd_Key.dispose();
 	hxd_Key.initDone = true;
