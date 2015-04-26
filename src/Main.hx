@@ -1,5 +1,6 @@
 import hxd.Math;
 import hxd.Key in K;
+import hxd.Res;
 
 import h3d.scene.DirLight;
 import h3d.scene.Mesh;
@@ -12,6 +13,9 @@ class Main extends hxd.App
 
 	override function init() 
 	{
+		new TitleState();
+
+/*
 		// prepare the player primitive
 
 		// prepare the tile primitive
@@ -56,14 +60,14 @@ class Main extends hxd.App
 
 		// done
 		engine.render(s3d);
+*/
 	}
-
-	private var time : Float = 0.0;
 
 	override function update( dt : Float ) 
 	{
-		time += dt;
+		GameState.pushUpdate(dt);
 
+/*
 		var dir = new Vector(0.0, 0.0, 0.0);
 		if(K.isDown(K.UP))
 			dir.y ++;
@@ -74,13 +78,20 @@ class Main extends hxd.App
 		if(K.isDown(K.RIGHT))
 			dir.x++;
 
+		if(K.isPressed(K.ENTER))
+		{
+			s3d.removeChild();
+		}
 		dir.scale3(dt * CAMERA_SPEED);
 		dir = dir.add(s3d.camera.pos);
 		s3d.camera.pos.set(dir.x, dir.y, dir.z);
+
+*/
 	}
 
 	static function main() 
 	{
+		Res.initEmbed();
 		new Main();
 	}
 

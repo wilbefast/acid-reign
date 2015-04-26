@@ -6,9 +6,48 @@ function $extend(from, fields) {
 	if( fields.toString !== Object.prototype.toString ) proto.toString = fields.toString;
 	return proto;
 }
+var EReg = function(r,opt) {
+	opt = opt.split("u").join("");
+	this.r = new RegExp(r,opt);
+};
+$hxClasses["EReg"] = EReg;
+EReg.__name__ = ["EReg"];
+EReg.prototype = {
+	replace: function(s,by) {
+		return s.replace(this.r,by);
+	}
+	,__class__: EReg
+};
+var GameState = function(name) {
+	if(GameState._all.exists(name)) throw new js__$Boot_HaxeError("A GameState called '" + name + "' already exists");
+	{
+		GameState._all.set(name,this);
+		this;
+	}
+	if(GameState._current == null) this._goto(this);
+};
+$hxClasses["GameState"] = GameState;
+GameState.__name__ = ["GameState"];
+GameState.pushUpdate = function(dt) {
+	GameState._current.onUpdate(dt);
+};
+GameState.prototype = {
+	_goto: function(next) {
+		if(GameState._current != null) GameState._current.onExit(next);
+		next.onEnter(GameState._current);
+		GameState._current = next;
+	}
+	,onUpdate: function(dt) {
+	}
+	,onEnter: function(source) {
+	}
+	,onExit: function(destination) {
+	}
+	,__class__: GameState
+};
 var HxOverrides = function() { };
 $hxClasses["HxOverrides"] = HxOverrides;
-HxOverrides.__name__ = true;
+HxOverrides.__name__ = ["HxOverrides"];
 HxOverrides.strDate = function(s) {
 	var _g = s.length;
 	switch(_g) {
@@ -71,9 +110,29 @@ HxOverrides.iter = function(a) {
 		return this.arr[this.cur++];
 	}};
 };
+var InGameState = function() {
+	GameState.call(this,"InGame");
+};
+$hxClasses["InGameState"] = InGameState;
+InGameState.__name__ = ["InGameState"];
+InGameState.__super__ = GameState;
+InGameState.prototype = $extend(GameState.prototype,{
+	onEnter: function(source) {
+		console.log("Entered Title");
+	}
+	,__class__: InGameState
+});
 var Lambda = function() { };
 $hxClasses["Lambda"] = Lambda;
-Lambda.__name__ = true;
+Lambda.__name__ = ["Lambda"];
+Lambda.has = function(it,elt) {
+	var $it0 = $iterator(it)();
+	while( $it0.hasNext() ) {
+		var x = $it0.next();
+		if(x == elt) return true;
+	}
+	return false;
+};
 Lambda.indexOf = function(it,v) {
 	var i = 0;
 	var $it0 = $iterator(it)();
@@ -88,7 +147,7 @@ var List = function() {
 	this.length = 0;
 };
 $hxClasses["List"] = List;
-List.__name__ = true;
+List.__name__ = ["List"];
 List.prototype = {
 	add: function(item) {
 		var x = [item];
@@ -132,7 +191,7 @@ var hxd_App = function(engine) {
 	});
 };
 $hxClasses["hxd.App"] = hxd_App;
-hxd_App.__name__ = true;
+hxd_App.__name__ = ["hxd","App"];
 hxd_App.prototype = {
 	onResize: function() {
 	}
@@ -166,90 +225,33 @@ hxd_App.prototype = {
 	,__class__: hxd_App
 };
 var Main = function(engine) {
-	this.time = 0.0;
 	hxd_App.call(this,engine);
 };
 $hxClasses["Main"] = Main;
-Main.__name__ = true;
+Main.__name__ = ["Main"];
 Main.main = function() {
+	hxd_Res.loader = new hxd_res_Loader((function($this) {
+		var $r;
+		hxd__$res_R_$font_$ttf;
+		$r = new hxd_fs_EmbedFileSystem(haxe_Unserializer.run("oy8:font.ttftg"));
+		return $r;
+	}(this)));
 	new Main();
 };
 Main.__super__ = hxd_App;
 Main.prototype = $extend(hxd_App.prototype,{
 	init: function() {
-		var prim = new h3d_prim_Cube();
-		prim.translate(-0.5,-0.5,-0.5);
-		prim.addNormals();
-		var _g = 0;
-		while(_g < 10) {
-			var x = _g++;
-			var _g1 = 0;
-			while(_g1 < 10) {
-				var y = _g1++;
-				if(Math.random() > 0.5) {
-					var tile = new h3d_scene_Mesh(prim,null,this.s3d);
-					tile.set_x(x - 5);
-					tile.set_y(y - 5);
-					tile.scaleZ = 5;
-					tile.flags |= 1;
-					true;
-					5;
-					tile.set_z(hxd_Math.floor(Math.random() * 4));
-					tile.material.mshader.color__.setColor(16777088,null);
-					tile.material.passes.enableLights = true;
-				}
-			}
-		}
-		var acid = new h3d_scene_Mesh(prim,null,this.s3d);
-		acid.set_x(acid.set_y((function($this) {
-			var $r;
-			acid.z = 0;
-			{
-				acid.flags |= 1;
-				true;
-			}
-			$r = 0;
-			return $r;
-		}(this))));
-		acid.set_scaleX((function($this) {
-			var $r;
-			acid.scaleY = 15;
-			{
-				acid.flags |= 1;
-				true;
-			}
-			$r = 15;
-			return $r;
-		}(this)));
-		acid.material.mshader.color__.setColor(65280,null);
-		acid.material.passes.enableLights = true;
-		this.s3d.camera.zNear = 2;
-		this.s3d.camera.pos.set(0,-6,27,null);
-		this.s3d.camera.target.set(0,0,0,null);
-		this.s3d.lightSystem.ambientLight.set(0.2,0.2,0.2,null);
-		var sun = new h3d_scene_DirLight(new h3d_Vector(0,1,-2),this.s3d);
-		sun.get_color().set(0.5,0.5,0.5,null);
-		this.engine.render(this.s3d);
+		new InGameState();
 	}
 	,update: function(dt) {
-		this.time += dt;
-		var dir = new h3d_Vector(0.0,0.0,0.0);
-		if(hxd_Key.isDown(38)) dir.y++;
-		if(hxd_Key.isDown(40)) dir.y--;
-		if(hxd_Key.isDown(37)) dir.x--;
-		if(hxd_Key.isDown(39)) dir.x++;
-		dir.x *= dt;
-		dir.y *= dt;
-		dir.z *= dt;
-		dir = dir.add(this.s3d.camera.pos);
-		this.s3d.camera.pos.set(dir.x,dir.y,dir.z,null);
+		GameState.pushUpdate(dt);
 	}
 	,__class__: Main
 });
-Math.__name__ = true;
+Math.__name__ = ["Math"];
 var Reflect = function() { };
 $hxClasses["Reflect"] = Reflect;
-Reflect.__name__ = true;
+Reflect.__name__ = ["Reflect"];
 Reflect.field = function(o,field) {
 	try {
 		return o[field];
@@ -272,7 +274,7 @@ Reflect.isEnumValue = function(v) {
 };
 var Std = function() { };
 $hxClasses["Std"] = Std;
-Std.__name__ = true;
+Std.__name__ = ["Std"];
 Std.string = function(s) {
 	return js_Boot.__string_rec(s,"");
 };
@@ -292,7 +294,7 @@ var StringBuf = function() {
 	this.b = "";
 };
 $hxClasses["StringBuf"] = StringBuf;
-StringBuf.__name__ = true;
+StringBuf.__name__ = ["StringBuf"];
 StringBuf.prototype = {
 	add: function(x) {
 		this.b += Std.string(x);
@@ -301,7 +303,15 @@ StringBuf.prototype = {
 };
 var StringTools = function() { };
 $hxClasses["StringTools"] = StringTools;
-StringTools.__name__ = true;
+StringTools.__name__ = ["StringTools"];
+StringTools.startsWith = function(s,start) {
+	return s.length >= start.length && HxOverrides.substr(s,0,start.length) == start;
+};
+StringTools.endsWith = function(s,end) {
+	var elen = end.length;
+	var slen = s.length;
+	return slen >= elen && HxOverrides.substr(s,slen - elen,elen) == end;
+};
 StringTools.isSpace = function(s,pos) {
 	var c = HxOverrides.cca(s,pos);
 	return c > 8 && c < 14 || c == 32;
@@ -321,12 +331,27 @@ StringTools.rtrim = function(s) {
 StringTools.trim = function(s) {
 	return StringTools.ltrim(StringTools.rtrim(s));
 };
+StringTools.hex = function(n,digits) {
+	var s = "";
+	var hexChars = "0123456789ABCDEF";
+	do {
+		s = hexChars.charAt(n & 15) + s;
+		n >>>= 4;
+	} while(n > 0);
+	if(digits != null) while(s.length < digits) s = "0" + s;
+	return s;
+};
 StringTools.fastCodeAt = function(s,index) {
 	return s.charCodeAt(index);
 };
 var Type = function() { };
 $hxClasses["Type"] = Type;
-Type.__name__ = true;
+Type.__name__ = ["Type"];
+Type.getClassName = function(c) {
+	var a = c.__name__;
+	if(a == null) return null;
+	return a.join(".");
+};
 Type.resolveClass = function(name) {
 	var cl = $hxClasses[name];
 	if(cl == null || !cl.__name__) return null;
@@ -376,6 +401,1357 @@ Type.enumEq = function(a,b) {
 Type.allEnums = function(e) {
 	return e.__empty_constructs__;
 };
+var format_png_Color = $hxClasses["format.png.Color"] = { __ename__ : true, __constructs__ : ["ColGrey","ColTrue","ColIndexed"] };
+format_png_Color.ColGrey = function(alpha) { var $x = ["ColGrey",0,alpha]; $x.__enum__ = format_png_Color; $x.toString = $estr; return $x; };
+format_png_Color.ColTrue = function(alpha) { var $x = ["ColTrue",1,alpha]; $x.__enum__ = format_png_Color; $x.toString = $estr; return $x; };
+format_png_Color.ColIndexed = ["ColIndexed",2];
+format_png_Color.ColIndexed.toString = $estr;
+format_png_Color.ColIndexed.__enum__ = format_png_Color;
+format_png_Color.__empty_constructs__ = [format_png_Color.ColIndexed];
+var format_png_Chunk = $hxClasses["format.png.Chunk"] = { __ename__ : true, __constructs__ : ["CEnd","CHeader","CData","CPalette","CUnknown"] };
+format_png_Chunk.CEnd = ["CEnd",0];
+format_png_Chunk.CEnd.toString = $estr;
+format_png_Chunk.CEnd.__enum__ = format_png_Chunk;
+format_png_Chunk.CHeader = function(h) { var $x = ["CHeader",1,h]; $x.__enum__ = format_png_Chunk; $x.toString = $estr; return $x; };
+format_png_Chunk.CData = function(b) { var $x = ["CData",2,b]; $x.__enum__ = format_png_Chunk; $x.toString = $estr; return $x; };
+format_png_Chunk.CPalette = function(b) { var $x = ["CPalette",3,b]; $x.__enum__ = format_png_Chunk; $x.toString = $estr; return $x; };
+format_png_Chunk.CUnknown = function(id,data) { var $x = ["CUnknown",4,id,data]; $x.__enum__ = format_png_Chunk; $x.toString = $estr; return $x; };
+format_png_Chunk.__empty_constructs__ = [format_png_Chunk.CEnd];
+var format_png_Reader = function(i) {
+	this.i = i;
+	i.set_bigEndian(true);
+	this.checkCRC = true;
+};
+$hxClasses["format.png.Reader"] = format_png_Reader;
+format_png_Reader.__name__ = ["format","png","Reader"];
+format_png_Reader.prototype = {
+	read: function() {
+		var _g = 0;
+		var _g1 = [137,80,78,71,13,10,26,10];
+		while(_g < _g1.length) {
+			var b = _g1[_g];
+			++_g;
+			if(this.i.readByte() != b) throw new js__$Boot_HaxeError("Invalid header");
+		}
+		var l = new List();
+		while(true) {
+			var c = this.readChunk();
+			l.add(c);
+			if(c == format_png_Chunk.CEnd) break;
+		}
+		return l;
+	}
+	,readHeader: function(i) {
+		i.set_bigEndian(true);
+		var width = i.readInt32();
+		var height = i.readInt32();
+		var colbits = i.readByte();
+		var color = i.readByte();
+		var color1;
+		switch(color) {
+		case 0:
+			color1 = format_png_Color.ColGrey(false);
+			break;
+		case 2:
+			color1 = format_png_Color.ColTrue(false);
+			break;
+		case 3:
+			color1 = format_png_Color.ColIndexed;
+			break;
+		case 4:
+			color1 = format_png_Color.ColGrey(true);
+			break;
+		case 6:
+			color1 = format_png_Color.ColTrue(true);
+			break;
+		default:
+			throw new js__$Boot_HaxeError("Unknown color model " + color + ":" + colbits);
+		}
+		var compress = i.readByte();
+		var filter = i.readByte();
+		if(compress != 0 || filter != 0) throw new js__$Boot_HaxeError("Invalid header");
+		var interlace = i.readByte();
+		if(interlace != 0 && interlace != 1) throw new js__$Boot_HaxeError("Invalid header");
+		return { width : width, height : height, colbits : colbits, color : color1, interlaced : interlace == 1};
+	}
+	,readChunk: function() {
+		var dataLen = this.i.readInt32();
+		var id = this.i.readString(4);
+		var data = this.i.read(dataLen);
+		var crc = this.i.readInt32();
+		if(this.checkCRC) {
+			var c = new haxe_crypto_Crc32();
+			var _g = 0;
+			while(_g < 4) {
+				var i = _g++;
+				c["byte"](HxOverrides.cca(id,i));
+			}
+			c.update(data,0,data.length);
+			if(c.get() != crc) throw new js__$Boot_HaxeError("CRC check failure");
+		}
+		switch(id) {
+		case "IEND":
+			return format_png_Chunk.CEnd;
+		case "IHDR":
+			return format_png_Chunk.CHeader(this.readHeader(new haxe_io_BytesInput(data)));
+		case "IDAT":
+			return format_png_Chunk.CData(data);
+		case "PLTE":
+			return format_png_Chunk.CPalette(data);
+		default:
+			return format_png_Chunk.CUnknown(id,data);
+		}
+	}
+	,__class__: format_png_Reader
+};
+var format_png_Tools = function() { };
+$hxClasses["format.png.Tools"] = format_png_Tools;
+format_png_Tools.__name__ = ["format","png","Tools"];
+format_png_Tools.getHeader = function(d) {
+	var _g_head = d.h;
+	var _g_val = null;
+	while(_g_head != null) {
+		var c;
+		c = (function($this) {
+			var $r;
+			_g_val = _g_head[0];
+			_g_head = _g_head[1];
+			$r = _g_val;
+			return $r;
+		}(this));
+		switch(c[1]) {
+		case 1:
+			var h = c[2];
+			return h;
+		default:
+		}
+	}
+	throw new js__$Boot_HaxeError("Header not found");
+};
+format_png_Tools.getPalette = function(d) {
+	var _g_head = d.h;
+	var _g_val = null;
+	while(_g_head != null) {
+		var c;
+		c = (function($this) {
+			var $r;
+			_g_val = _g_head[0];
+			_g_head = _g_head[1];
+			$r = _g_val;
+			return $r;
+		}(this));
+		switch(c[1]) {
+		case 3:
+			var b = c[2];
+			return b;
+		default:
+		}
+	}
+	return null;
+};
+format_png_Tools.filter = function(data,x,y,stride,prev,p,numChannels) {
+	if(numChannels == null) numChannels = 4;
+	var b;
+	if(y == 0) b = 0; else b = data.b[p - stride];
+	var c;
+	if(x == 0 || y == 0) c = 0; else c = data.b[p - stride - numChannels];
+	var k = prev + b - c;
+	var pa = k - prev;
+	if(pa < 0) pa = -pa;
+	var pb = k - b;
+	if(pb < 0) pb = -pb;
+	var pc = k - c;
+	if(pc < 0) pc = -pc;
+	if(pa <= pb && pa <= pc) return prev; else if(pb <= pc) return b; else return c;
+};
+format_png_Tools.extract32 = function(d,bytes) {
+	var h = format_png_Tools.getHeader(d);
+	var bgra;
+	if(bytes == null) bgra = haxe_io_Bytes.alloc(h.width * h.height * 4); else bgra = bytes;
+	var data = null;
+	var fullData = null;
+	var _g_head = d.h;
+	var _g_val = null;
+	while(_g_head != null) {
+		var c;
+		c = (function($this) {
+			var $r;
+			_g_val = _g_head[0];
+			_g_head = _g_head[1];
+			$r = _g_val;
+			return $r;
+		}(this));
+		switch(c[1]) {
+		case 2:
+			var b = c[2];
+			if(fullData != null) fullData.add(b); else if(data == null) data = b; else {
+				fullData = new haxe_io_BytesBuffer();
+				fullData.add(data);
+				fullData.add(b);
+				data = null;
+			}
+			break;
+		default:
+		}
+	}
+	if(fullData != null) data = fullData.getBytes();
+	if(data == null) throw new js__$Boot_HaxeError("Data not found");
+	data = format_tools_Inflate.run(data);
+	var r = 0;
+	var w = 0;
+	{
+		var _g = h.color;
+		switch(_g[1]) {
+		case 2:
+			var pal = format_png_Tools.getPalette(d);
+			if(pal == null) throw new js__$Boot_HaxeError("PNG Palette is missing");
+			var alpha = null;
+			var _g1_head = d.h;
+			var _g1_val = null;
+			try {
+				while(_g1_head != null) {
+					var t;
+					t = (function($this) {
+						var $r;
+						_g1_val = _g1_head[0];
+						_g1_head = _g1_head[1];
+						$r = _g1_val;
+						return $r;
+					}(this));
+					switch(t[1]) {
+					case 4:
+						switch(t[2]) {
+						case "tRNS":
+							var data1 = t[3];
+							alpha = data1;
+							throw "__break__";
+							break;
+						default:
+						}
+						break;
+					default:
+					}
+				}
+			} catch( e ) { if( e != "__break__" ) throw e; }
+			if(alpha != null && alpha.length < 1 << h.colbits) {
+				var alpha2 = haxe_io_Bytes.alloc(1 << h.colbits);
+				alpha2.blit(0,alpha,0,alpha.length);
+				alpha2.fill(alpha.length,alpha2.length - alpha.length,255);
+				alpha = alpha2;
+			}
+			var width = h.width;
+			var stride = Math.ceil(width * h.colbits / 8) + 1;
+			if(data.length < h.height * stride) throw new js__$Boot_HaxeError("Not enough data");
+			var vr;
+			var vg;
+			var vb;
+			var va = 255;
+			if(h.colbits == 8) {
+				var _g2 = 0;
+				var _g1 = h.height;
+				while(_g2 < _g1) {
+					var y = _g2++;
+					var f = data.get(r++);
+					switch(f) {
+					case 0:
+						var _g11 = 0;
+						while(_g11 < width) {
+							var x = _g11++;
+							var c1 = data.get(r++);
+							vr = pal.b[c1 * 3];
+							vg = pal.b[c1 * 3 + 1];
+							vb = pal.b[c1 * 3 + 2];
+							if(alpha != null) va = alpha.b[c1];
+							bgra.set(w++,vb);
+							bgra.set(w++,vg);
+							bgra.set(w++,vr);
+							bgra.set(w++,va);
+						}
+						break;
+					case 1:
+						var cr = 0;
+						var cg = 0;
+						var cb = 0;
+						var ca = 0;
+						var _g12 = 0;
+						while(_g12 < width) {
+							var x1 = _g12++;
+							var c2 = data.get(r++);
+							vr = pal.b[c2 * 3];
+							vg = pal.b[c2 * 3 + 1];
+							vb = pal.b[c2 * 3 + 2];
+							if(alpha != null) va = alpha.b[c2];
+							cb += vb;
+							bgra.set(w++,cb);
+							cg += vg;
+							bgra.set(w++,cg);
+							cr += vr;
+							bgra.set(w++,cr);
+							ca += va;
+							bgra.set(w++,ca);
+							bgra.set(w++,va);
+						}
+						break;
+					case 2:
+						var stride1;
+						if(y == 0) stride1 = 0; else stride1 = width * 4;
+						var _g13 = 0;
+						while(_g13 < width) {
+							var x2 = _g13++;
+							var c3 = data.get(r++);
+							vr = pal.b[c3 * 3];
+							vg = pal.b[c3 * 3 + 1];
+							vb = pal.b[c3 * 3 + 2];
+							if(alpha != null) va = alpha.b[c3];
+							bgra.b[w] = vb + bgra.b[w - stride1] & 255;
+							w++;
+							bgra.b[w] = vg + bgra.b[w - stride1] & 255;
+							w++;
+							bgra.b[w] = vr + bgra.b[w - stride1] & 255;
+							w++;
+							bgra.b[w] = va + bgra.b[w - stride1] & 255;
+							w++;
+						}
+						break;
+					case 3:
+						var cr1 = 0;
+						var cg1 = 0;
+						var cb1 = 0;
+						var ca1 = 0;
+						var stride2;
+						if(y == 0) stride2 = 0; else stride2 = width * 4;
+						var _g14 = 0;
+						while(_g14 < width) {
+							var x3 = _g14++;
+							var c4 = data.get(r++);
+							vr = pal.b[c4 * 3];
+							vg = pal.b[c4 * 3 + 1];
+							vb = pal.b[c4 * 3 + 2];
+							if(alpha != null) va = alpha.b[c4];
+							cb1 = vb + (cb1 + bgra.b[w - stride2] >> 1) & 255;
+							bgra.set(w++,cb1);
+							cg1 = vg + (cg1 + bgra.b[w - stride2] >> 1) & 255;
+							bgra.set(w++,cg1);
+							cr1 = vr + (cr1 + bgra.b[w - stride2] >> 1) & 255;
+							bgra.set(w++,cr1);
+							cr1 = va + (ca1 + bgra.b[w - stride2] >> 1) & 255;
+							bgra.set(w++,ca1);
+						}
+						break;
+					case 4:
+						var stride3 = width * 4;
+						var cr2 = 0;
+						var cg2 = 0;
+						var cb2 = 0;
+						var ca2 = 0;
+						var _g15 = 0;
+						while(_g15 < width) {
+							var x4 = _g15++;
+							var c5 = data.get(r++);
+							vr = pal.b[c5 * 3];
+							vg = pal.b[c5 * 3 + 1];
+							vb = pal.b[c5 * 3 + 2];
+							if(alpha != null) va = alpha.b[c5];
+							cb2 = format_png_Tools.filter(bgra,x4,y,stride3,cb2,w,null) + vb & 255;
+							bgra.set(w++,cb2);
+							cg2 = format_png_Tools.filter(bgra,x4,y,stride3,cg2,w,null) + vg & 255;
+							bgra.set(w++,cg2);
+							cr2 = format_png_Tools.filter(bgra,x4,y,stride3,cr2,w,null) + vr & 255;
+							bgra.set(w++,cr2);
+							ca2 = format_png_Tools.filter(bgra,x4,y,stride3,ca2,w,null) + va & 255;
+							bgra.set(w++,ca2);
+						}
+						break;
+					default:
+						throw new js__$Boot_HaxeError("Invalid filter " + f);
+					}
+				}
+			} else if(h.colbits < 8) {
+				var req = h.colbits;
+				var mask = (1 << req) - 1;
+				var _g21 = 0;
+				var _g16 = h.height;
+				while(_g21 < _g16) {
+					var y1 = _g21++;
+					var f1 = data.get(r++);
+					var bits = 0;
+					var nbits = 0;
+					var v;
+					switch(f1) {
+					case 0:
+						var _g17 = 0;
+						while(_g17 < width) {
+							var x5 = _g17++;
+							var c6;
+							if(nbits < req) {
+								bits = bits << 8 | data.get(r++);
+								nbits += 8;
+							}
+							v = bits >>> nbits - req & mask;
+							nbits -= req;
+							c6 = v;
+							vr = pal.b[c6 * 3];
+							vg = pal.b[c6 * 3 + 1];
+							vb = pal.b[c6 * 3 + 2];
+							if(alpha != null) va = alpha.b[c6];
+							bgra.set(w++,vb);
+							bgra.set(w++,vg);
+							bgra.set(w++,vr);
+							bgra.set(w++,va);
+						}
+						break;
+					case 1:
+						var cr3 = 0;
+						var cg3 = 0;
+						var cb3 = 0;
+						var ca3 = 0;
+						var _g18 = 0;
+						while(_g18 < width) {
+							var x6 = _g18++;
+							var c7;
+							if(nbits < req) {
+								bits = bits << 8 | data.get(r++);
+								nbits += 8;
+							}
+							v = bits >>> nbits - req & mask;
+							nbits -= req;
+							c7 = v;
+							vr = pal.b[c7 * 3];
+							vg = pal.b[c7 * 3 + 1];
+							vb = pal.b[c7 * 3 + 2];
+							if(alpha != null) va = alpha.b[c7];
+							cb3 += vb;
+							bgra.set(w++,cb3);
+							cg3 += vg;
+							bgra.set(w++,cg3);
+							cr3 += vr;
+							bgra.set(w++,cr3);
+							ca3 += va;
+							bgra.set(w++,ca3);
+							bgra.set(w++,va);
+						}
+						break;
+					case 2:
+						var stride4;
+						if(y1 == 0) stride4 = 0; else stride4 = width * 4;
+						var _g19 = 0;
+						while(_g19 < width) {
+							var x7 = _g19++;
+							var c8;
+							if(nbits < req) {
+								bits = bits << 8 | data.get(r++);
+								nbits += 8;
+							}
+							v = bits >>> nbits - req & mask;
+							nbits -= req;
+							c8 = v;
+							vr = pal.b[c8 * 3];
+							vg = pal.b[c8 * 3 + 1];
+							vb = pal.b[c8 * 3 + 2];
+							if(alpha != null) va = alpha.b[c8];
+							bgra.b[w] = vb + bgra.b[w - stride4] & 255;
+							w++;
+							bgra.b[w] = vg + bgra.b[w - stride4] & 255;
+							w++;
+							bgra.b[w] = vr + bgra.b[w - stride4] & 255;
+							w++;
+							bgra.b[w] = va + bgra.b[w - stride4] & 255;
+							w++;
+						}
+						break;
+					case 3:
+						var cr4 = 0;
+						var cg4 = 0;
+						var cb4 = 0;
+						var ca4 = 0;
+						var stride5;
+						if(y1 == 0) stride5 = 0; else stride5 = width * 4;
+						var _g110 = 0;
+						while(_g110 < width) {
+							var x8 = _g110++;
+							var c9;
+							if(nbits < req) {
+								bits = bits << 8 | data.get(r++);
+								nbits += 8;
+							}
+							v = bits >>> nbits - req & mask;
+							nbits -= req;
+							c9 = v;
+							vr = pal.b[c9 * 3];
+							vg = pal.b[c9 * 3 + 1];
+							vb = pal.b[c9 * 3 + 2];
+							if(alpha != null) va = alpha.b[c9];
+							cb4 = vb + (cb4 + bgra.b[w - stride5] >> 1) & 255;
+							bgra.set(w++,cb4);
+							cg4 = vg + (cg4 + bgra.b[w - stride5] >> 1) & 255;
+							bgra.set(w++,cg4);
+							cr4 = vr + (cr4 + bgra.b[w - stride5] >> 1) & 255;
+							bgra.set(w++,cr4);
+							cr4 = va + (ca4 + bgra.b[w - stride5] >> 1) & 255;
+							bgra.set(w++,ca4);
+						}
+						break;
+					case 4:
+						var stride6 = width * 4;
+						var cr5 = 0;
+						var cg5 = 0;
+						var cb5 = 0;
+						var ca5 = 0;
+						var _g111 = 0;
+						while(_g111 < width) {
+							var x9 = _g111++;
+							var c10;
+							if(nbits < req) {
+								bits = bits << 8 | data.get(r++);
+								nbits += 8;
+							}
+							v = bits >>> nbits - req & mask;
+							nbits -= req;
+							c10 = v;
+							vr = pal.b[c10 * 3];
+							vg = pal.b[c10 * 3 + 1];
+							vb = pal.b[c10 * 3 + 2];
+							if(alpha != null) va = alpha.b[c10];
+							cb5 = format_png_Tools.filter(bgra,x9,y1,stride6,cb5,w,null) + vb & 255;
+							bgra.set(w++,cb5);
+							cg5 = format_png_Tools.filter(bgra,x9,y1,stride6,cg5,w,null) + vg & 255;
+							bgra.set(w++,cg5);
+							cr5 = format_png_Tools.filter(bgra,x9,y1,stride6,cr5,w,null) + vr & 255;
+							bgra.set(w++,cr5);
+							ca5 = format_png_Tools.filter(bgra,x9,y1,stride6,ca5,w,null) + va & 255;
+							bgra.set(w++,ca5);
+						}
+						break;
+					default:
+						throw new js__$Boot_HaxeError("Invalid filter " + f1);
+					}
+				}
+			} else throw new js__$Boot_HaxeError(h.colbits + " indexed bits per pixel not supported");
+			break;
+		case 0:
+			var alpha1 = _g[2];
+			if(h.colbits != 8) throw new js__$Boot_HaxeError("Unsupported color mode");
+			var width1 = h.width;
+			var stride7;
+			stride7 = (alpha1?2:1) * width1 + 1;
+			if(data.length < h.height * stride7) throw new js__$Boot_HaxeError("Not enough data");
+			var _g22 = 0;
+			var _g112 = h.height;
+			while(_g22 < _g112) {
+				var y2 = _g22++;
+				var f2 = data.get(r++);
+				switch(f2) {
+				case 0:
+					if(alpha1) {
+						var _g3 = 0;
+						while(_g3 < width1) {
+							var x10 = _g3++;
+							var v1 = data.get(r++);
+							bgra.set(w++,v1);
+							bgra.set(w++,v1);
+							bgra.set(w++,v1);
+							bgra.set(w++,data.get(r++));
+						}
+					} else {
+						var _g31 = 0;
+						while(_g31 < width1) {
+							var x11 = _g31++;
+							var v2 = data.get(r++);
+							bgra.set(w++,v2);
+							bgra.set(w++,v2);
+							bgra.set(w++,v2);
+							bgra.set(w++,255);
+						}
+					}
+					break;
+				case 1:
+					var cv = 0;
+					var ca6 = 0;
+					if(alpha1) {
+						var _g32 = 0;
+						while(_g32 < width1) {
+							var x12 = _g32++;
+							cv += data.get(r++);
+							bgra.set(w++,cv);
+							bgra.set(w++,cv);
+							bgra.set(w++,cv);
+							ca6 += data.get(r++);
+							bgra.set(w++,ca6);
+						}
+					} else {
+						var _g33 = 0;
+						while(_g33 < width1) {
+							var x13 = _g33++;
+							cv += data.get(r++);
+							bgra.set(w++,cv);
+							bgra.set(w++,cv);
+							bgra.set(w++,cv);
+							bgra.set(w++,255);
+						}
+					}
+					break;
+				case 2:
+					var stride8;
+					if(y2 == 0) stride8 = 0; else stride8 = width1 * 4;
+					if(alpha1) {
+						var _g34 = 0;
+						while(_g34 < width1) {
+							var x14 = _g34++;
+							var v3 = data.get(r++) + bgra.b[w - stride8];
+							bgra.set(w++,v3);
+							bgra.set(w++,v3);
+							bgra.set(w++,v3);
+							bgra.set(w++,data.get(r++) + bgra.b[w - stride8]);
+						}
+					} else {
+						var _g35 = 0;
+						while(_g35 < width1) {
+							var x15 = _g35++;
+							var v4 = data.get(r++) + bgra.b[w - stride8];
+							bgra.set(w++,v4);
+							bgra.set(w++,v4);
+							bgra.set(w++,v4);
+							bgra.set(w++,255);
+						}
+					}
+					break;
+				case 3:
+					var cv1 = 0;
+					var ca7 = 0;
+					var stride9;
+					if(y2 == 0) stride9 = 0; else stride9 = width1 * 4;
+					if(alpha1) {
+						var _g36 = 0;
+						while(_g36 < width1) {
+							var x16 = _g36++;
+							cv1 = data.get(r++) + (cv1 + bgra.b[w - stride9] >> 1) & 255;
+							bgra.set(w++,cv1);
+							bgra.set(w++,cv1);
+							bgra.set(w++,cv1);
+							ca7 = data.get(r++) + (ca7 + bgra.b[w - stride9] >> 1) & 255;
+							bgra.set(w++,ca7);
+						}
+					} else {
+						var _g37 = 0;
+						while(_g37 < width1) {
+							var x17 = _g37++;
+							cv1 = data.get(r++) + (cv1 + bgra.b[w - stride9] >> 1) & 255;
+							bgra.set(w++,cv1);
+							bgra.set(w++,cv1);
+							bgra.set(w++,cv1);
+							bgra.set(w++,255);
+						}
+					}
+					break;
+				case 4:
+					var stride10 = width1 * 4;
+					var cv2 = 0;
+					var ca8 = 0;
+					if(alpha1) {
+						var _g38 = 0;
+						while(_g38 < width1) {
+							var x18 = _g38++;
+							cv2 = format_png_Tools.filter(bgra,x18,y2,stride10,cv2,w,null) + data.get(r++) & 255;
+							bgra.set(w++,cv2);
+							bgra.set(w++,cv2);
+							bgra.set(w++,cv2);
+							ca8 = format_png_Tools.filter(bgra,x18,y2,stride10,ca8,w,null) + data.get(r++) & 255;
+							bgra.set(w++,ca8);
+						}
+					} else {
+						var _g39 = 0;
+						while(_g39 < width1) {
+							var x19 = _g39++;
+							cv2 = format_png_Tools.filter(bgra,x19,y2,stride10,cv2,w,null) + data.get(r++) & 255;
+							bgra.set(w++,cv2);
+							bgra.set(w++,cv2);
+							bgra.set(w++,cv2);
+							bgra.set(w++,255);
+						}
+					}
+					break;
+				default:
+					throw new js__$Boot_HaxeError("Invalid filter " + f2);
+				}
+			}
+			break;
+		case 1:
+			var alpha3 = _g[2];
+			if(h.colbits != 8) throw new js__$Boot_HaxeError("Unsupported color mode");
+			var width2 = h.width;
+			var stride11;
+			stride11 = (alpha3?4:3) * width2 + 1;
+			if(data.length < h.height * stride11) throw new js__$Boot_HaxeError("Not enough data");
+			var _g23 = 0;
+			var _g113 = h.height;
+			while(_g23 < _g113) {
+				var y3 = _g23++;
+				var f3 = data.get(r++);
+				switch(f3) {
+				case 0:
+					if(alpha3) {
+						var _g310 = 0;
+						while(_g310 < width2) {
+							var x20 = _g310++;
+							bgra.set(w++,data.b[r + 2]);
+							bgra.set(w++,data.b[r + 1]);
+							bgra.set(w++,data.b[r]);
+							bgra.set(w++,data.b[r + 3]);
+							r += 4;
+						}
+					} else {
+						var _g311 = 0;
+						while(_g311 < width2) {
+							var x21 = _g311++;
+							bgra.set(w++,data.b[r + 2]);
+							bgra.set(w++,data.b[r + 1]);
+							bgra.set(w++,data.b[r]);
+							bgra.set(w++,255);
+							r += 3;
+						}
+					}
+					break;
+				case 1:
+					var cr6 = 0;
+					var cg6 = 0;
+					var cb6 = 0;
+					var ca9 = 0;
+					if(alpha3) {
+						var _g312 = 0;
+						while(_g312 < width2) {
+							var x22 = _g312++;
+							cb6 += data.b[r + 2];
+							bgra.set(w++,cb6);
+							cg6 += data.b[r + 1];
+							bgra.set(w++,cg6);
+							cr6 += data.b[r];
+							bgra.set(w++,cr6);
+							ca9 += data.b[r + 3];
+							bgra.set(w++,ca9);
+							r += 4;
+						}
+					} else {
+						var _g313 = 0;
+						while(_g313 < width2) {
+							var x23 = _g313++;
+							cb6 += data.b[r + 2];
+							bgra.set(w++,cb6);
+							cg6 += data.b[r + 1];
+							bgra.set(w++,cg6);
+							cr6 += data.b[r];
+							bgra.set(w++,cr6);
+							bgra.set(w++,255);
+							r += 3;
+						}
+					}
+					break;
+				case 2:
+					var stride12;
+					if(y3 == 0) stride12 = 0; else stride12 = width2 * 4;
+					if(alpha3) {
+						var _g314 = 0;
+						while(_g314 < width2) {
+							var x24 = _g314++;
+							bgra.b[w] = data.b[r + 2] + bgra.b[w - stride12] & 255;
+							w++;
+							bgra.b[w] = data.b[r + 1] + bgra.b[w - stride12] & 255;
+							w++;
+							bgra.b[w] = data.b[r] + bgra.b[w - stride12] & 255;
+							w++;
+							bgra.b[w] = data.b[r + 3] + bgra.b[w - stride12] & 255;
+							w++;
+							r += 4;
+						}
+					} else {
+						var _g315 = 0;
+						while(_g315 < width2) {
+							var x25 = _g315++;
+							bgra.b[w] = data.b[r + 2] + bgra.b[w - stride12] & 255;
+							w++;
+							bgra.b[w] = data.b[r + 1] + bgra.b[w - stride12] & 255;
+							w++;
+							bgra.b[w] = data.b[r] + bgra.b[w - stride12] & 255;
+							w++;
+							bgra.set(w++,255);
+							r += 3;
+						}
+					}
+					break;
+				case 3:
+					var cr7 = 0;
+					var cg7 = 0;
+					var cb7 = 0;
+					var ca10 = 0;
+					var stride13;
+					if(y3 == 0) stride13 = 0; else stride13 = width2 * 4;
+					if(alpha3) {
+						var _g316 = 0;
+						while(_g316 < width2) {
+							var x26 = _g316++;
+							cb7 = data.b[r + 2] + (cb7 + bgra.b[w - stride13] >> 1) & 255;
+							bgra.set(w++,cb7);
+							cg7 = data.b[r + 1] + (cg7 + bgra.b[w - stride13] >> 1) & 255;
+							bgra.set(w++,cg7);
+							cr7 = data.b[r] + (cr7 + bgra.b[w - stride13] >> 1) & 255;
+							bgra.set(w++,cr7);
+							ca10 = data.b[r + 3] + (ca10 + bgra.b[w - stride13] >> 1) & 255;
+							bgra.set(w++,ca10);
+							r += 4;
+						}
+					} else {
+						var _g317 = 0;
+						while(_g317 < width2) {
+							var x27 = _g317++;
+							cb7 = data.b[r + 2] + (cb7 + bgra.b[w - stride13] >> 1) & 255;
+							bgra.set(w++,cb7);
+							cg7 = data.b[r + 1] + (cg7 + bgra.b[w - stride13] >> 1) & 255;
+							bgra.set(w++,cg7);
+							cr7 = data.b[r] + (cr7 + bgra.b[w - stride13] >> 1) & 255;
+							bgra.set(w++,cr7);
+							bgra.set(w++,255);
+							r += 3;
+						}
+					}
+					break;
+				case 4:
+					var stride14 = width2 * 4;
+					var cr8 = 0;
+					var cg8 = 0;
+					var cb8 = 0;
+					var ca11 = 0;
+					if(alpha3) {
+						var _g318 = 0;
+						while(_g318 < width2) {
+							var x28 = _g318++;
+							cb8 = format_png_Tools.filter(bgra,x28,y3,stride14,cb8,w,null) + data.b[r + 2] & 255;
+							bgra.set(w++,cb8);
+							cg8 = format_png_Tools.filter(bgra,x28,y3,stride14,cg8,w,null) + data.b[r + 1] & 255;
+							bgra.set(w++,cg8);
+							cr8 = format_png_Tools.filter(bgra,x28,y3,stride14,cr8,w,null) + data.b[r] & 255;
+							bgra.set(w++,cr8);
+							ca11 = format_png_Tools.filter(bgra,x28,y3,stride14,ca11,w,null) + data.b[r + 3] & 255;
+							bgra.set(w++,ca11);
+							r += 4;
+						}
+					} else {
+						var _g319 = 0;
+						while(_g319 < width2) {
+							var x29 = _g319++;
+							cb8 = format_png_Tools.filter(bgra,x29,y3,stride14,cb8,w,null) + data.b[r + 2] & 255;
+							bgra.set(w++,cb8);
+							cg8 = format_png_Tools.filter(bgra,x29,y3,stride14,cg8,w,null) + data.b[r + 1] & 255;
+							bgra.set(w++,cg8);
+							cr8 = format_png_Tools.filter(bgra,x29,y3,stride14,cr8,w,null) + data.b[r] & 255;
+							bgra.set(w++,cr8);
+							bgra.set(w++,255);
+							r += 3;
+						}
+					}
+					break;
+				default:
+					throw new js__$Boot_HaxeError("Invalid filter " + f3);
+				}
+			}
+			break;
+		}
+	}
+	return bgra;
+};
+var format_tools_Adler32 = function() {
+	this.a1 = 1;
+	this.a2 = 0;
+};
+$hxClasses["format.tools.Adler32"] = format_tools_Adler32;
+format_tools_Adler32.__name__ = ["format","tools","Adler32"];
+format_tools_Adler32.read = function(i) {
+	var a = new format_tools_Adler32();
+	var a2a = i.readByte();
+	var a2b = i.readByte();
+	var a1a = i.readByte();
+	var a1b = i.readByte();
+	a.a1 = a1a << 8 | a1b;
+	a.a2 = a2a << 8 | a2b;
+	return a;
+};
+format_tools_Adler32.prototype = {
+	update: function(b,pos,len) {
+		var a1 = this.a1;
+		var a2 = this.a2;
+		var _g1 = pos;
+		var _g = pos + len;
+		while(_g1 < _g) {
+			var p = _g1++;
+			var c = b.b[p];
+			a1 = (a1 + c) % 65521;
+			a2 = (a2 + a1) % 65521;
+		}
+		this.a1 = a1;
+		this.a2 = a2;
+	}
+	,equals: function(a) {
+		return a.a1 == this.a1 && a.a2 == this.a2;
+	}
+	,__class__: format_tools_Adler32
+};
+var format_tools_Huffman = $hxClasses["format.tools.Huffman"] = { __ename__ : true, __constructs__ : ["Found","NeedBit","NeedBits"] };
+format_tools_Huffman.Found = function(i) { var $x = ["Found",0,i]; $x.__enum__ = format_tools_Huffman; $x.toString = $estr; return $x; };
+format_tools_Huffman.NeedBit = function(left,right) { var $x = ["NeedBit",1,left,right]; $x.__enum__ = format_tools_Huffman; $x.toString = $estr; return $x; };
+format_tools_Huffman.NeedBits = function(n,table) { var $x = ["NeedBits",2,n,table]; $x.__enum__ = format_tools_Huffman; $x.toString = $estr; return $x; };
+format_tools_Huffman.__empty_constructs__ = [];
+var format_tools_HuffTools = function() {
+};
+$hxClasses["format.tools.HuffTools"] = format_tools_HuffTools;
+format_tools_HuffTools.__name__ = ["format","tools","HuffTools"];
+format_tools_HuffTools.prototype = {
+	treeDepth: function(t) {
+		switch(t[1]) {
+		case 0:
+			return 0;
+		case 2:
+			throw new js__$Boot_HaxeError("assert");
+			break;
+		case 1:
+			var b = t[3];
+			var a = t[2];
+			var da = this.treeDepth(a);
+			var db = this.treeDepth(b);
+			return 1 + (da < db?da:db);
+		}
+	}
+	,treeCompress: function(t) {
+		var d = this.treeDepth(t);
+		if(d == 0) return t;
+		if(d == 1) switch(t[1]) {
+		case 1:
+			var b = t[3];
+			var a = t[2];
+			return format_tools_Huffman.NeedBit(this.treeCompress(a),this.treeCompress(b));
+		default:
+			throw new js__$Boot_HaxeError("assert");
+		}
+		var size = 1 << d;
+		var table = [];
+		var _g = 0;
+		while(_g < size) {
+			var i = _g++;
+			table.push(format_tools_Huffman.Found(-1));
+		}
+		this.treeWalk(table,0,0,d,t);
+		return format_tools_Huffman.NeedBits(d,table);
+	}
+	,treeWalk: function(table,p,cd,d,t) {
+		switch(t[1]) {
+		case 1:
+			var b = t[3];
+			var a = t[2];
+			if(d > 0) {
+				this.treeWalk(table,p,cd + 1,d - 1,a);
+				this.treeWalk(table,p | 1 << cd,cd + 1,d - 1,b);
+			} else table[p] = this.treeCompress(t);
+			break;
+		default:
+			table[p] = this.treeCompress(t);
+		}
+	}
+	,treeMake: function(bits,maxbits,v,len) {
+		if(len > maxbits) throw new js__$Boot_HaxeError("Invalid huffman");
+		var idx = v << 5 | len;
+		if(bits.h.hasOwnProperty(idx)) return format_tools_Huffman.Found(bits.h[idx]);
+		v <<= 1;
+		len += 1;
+		return format_tools_Huffman.NeedBit(this.treeMake(bits,maxbits,v,len),this.treeMake(bits,maxbits,v | 1,len));
+	}
+	,make: function(lengths,pos,nlengths,maxbits) {
+		var counts = [];
+		var tmp = [];
+		if(maxbits > 32) throw new js__$Boot_HaxeError("Invalid huffman");
+		var _g = 0;
+		while(_g < maxbits) {
+			var i = _g++;
+			counts.push(0);
+			tmp.push(0);
+		}
+		var _g1 = 0;
+		while(_g1 < nlengths) {
+			var i1 = _g1++;
+			var p = lengths[i1 + pos];
+			if(p >= maxbits) throw new js__$Boot_HaxeError("Invalid huffman");
+			counts[p]++;
+		}
+		var code = 0;
+		var _g11 = 1;
+		var _g2 = maxbits - 1;
+		while(_g11 < _g2) {
+			var i2 = _g11++;
+			code = code + counts[i2] << 1;
+			tmp[i2] = code;
+		}
+		var bits = new haxe_ds_IntMap();
+		var _g3 = 0;
+		while(_g3 < nlengths) {
+			var i3 = _g3++;
+			var l = lengths[i3 + pos];
+			if(l != 0) {
+				var n = tmp[l - 1];
+				tmp[l - 1] = n + 1;
+				bits.h[n << 5 | l] = i3;
+			}
+		}
+		return this.treeCompress(format_tools_Huffman.NeedBit(this.treeMake(bits,maxbits,0,1),this.treeMake(bits,maxbits,1,1)));
+	}
+	,__class__: format_tools_HuffTools
+};
+var format_tools_Inflate = function() { };
+$hxClasses["format.tools.Inflate"] = format_tools_Inflate;
+format_tools_Inflate.__name__ = ["format","tools","Inflate"];
+format_tools_Inflate.run = function(bytes) {
+	return format_tools_InflateImpl.run(new haxe_io_BytesInput(bytes));
+};
+var format_tools__$InflateImpl_Window = function(hasCrc) {
+	this.buffer = haxe_io_Bytes.alloc(65536);
+	this.pos = 0;
+	if(hasCrc) this.crc = new format_tools_Adler32();
+};
+$hxClasses["format.tools._InflateImpl.Window"] = format_tools__$InflateImpl_Window;
+format_tools__$InflateImpl_Window.__name__ = ["format","tools","_InflateImpl","Window"];
+format_tools__$InflateImpl_Window.prototype = {
+	slide: function() {
+		if(this.crc != null) this.crc.update(this.buffer,0,32768);
+		var b = haxe_io_Bytes.alloc(65536);
+		this.pos -= 32768;
+		b.blit(0,this.buffer,32768,this.pos);
+		this.buffer = b;
+	}
+	,addBytes: function(b,p,len) {
+		if(this.pos + len > 65536) this.slide();
+		this.buffer.blit(this.pos,b,p,len);
+		this.pos += len;
+	}
+	,addByte: function(c) {
+		if(this.pos == 65536) this.slide();
+		this.buffer.b[this.pos] = c & 255;
+		this.pos++;
+	}
+	,getLastChar: function() {
+		return this.buffer.b[this.pos - 1];
+	}
+	,available: function() {
+		return this.pos;
+	}
+	,checksum: function() {
+		if(this.crc != null) this.crc.update(this.buffer,0,this.pos);
+		return this.crc;
+	}
+	,__class__: format_tools__$InflateImpl_Window
+};
+var format_tools__$InflateImpl_State = $hxClasses["format.tools._InflateImpl.State"] = { __ename__ : true, __constructs__ : ["Head","Block","CData","Flat","Crc","Dist","DistOne","Done"] };
+format_tools__$InflateImpl_State.Head = ["Head",0];
+format_tools__$InflateImpl_State.Head.toString = $estr;
+format_tools__$InflateImpl_State.Head.__enum__ = format_tools__$InflateImpl_State;
+format_tools__$InflateImpl_State.Block = ["Block",1];
+format_tools__$InflateImpl_State.Block.toString = $estr;
+format_tools__$InflateImpl_State.Block.__enum__ = format_tools__$InflateImpl_State;
+format_tools__$InflateImpl_State.CData = ["CData",2];
+format_tools__$InflateImpl_State.CData.toString = $estr;
+format_tools__$InflateImpl_State.CData.__enum__ = format_tools__$InflateImpl_State;
+format_tools__$InflateImpl_State.Flat = ["Flat",3];
+format_tools__$InflateImpl_State.Flat.toString = $estr;
+format_tools__$InflateImpl_State.Flat.__enum__ = format_tools__$InflateImpl_State;
+format_tools__$InflateImpl_State.Crc = ["Crc",4];
+format_tools__$InflateImpl_State.Crc.toString = $estr;
+format_tools__$InflateImpl_State.Crc.__enum__ = format_tools__$InflateImpl_State;
+format_tools__$InflateImpl_State.Dist = ["Dist",5];
+format_tools__$InflateImpl_State.Dist.toString = $estr;
+format_tools__$InflateImpl_State.Dist.__enum__ = format_tools__$InflateImpl_State;
+format_tools__$InflateImpl_State.DistOne = ["DistOne",6];
+format_tools__$InflateImpl_State.DistOne.toString = $estr;
+format_tools__$InflateImpl_State.DistOne.__enum__ = format_tools__$InflateImpl_State;
+format_tools__$InflateImpl_State.Done = ["Done",7];
+format_tools__$InflateImpl_State.Done.toString = $estr;
+format_tools__$InflateImpl_State.Done.__enum__ = format_tools__$InflateImpl_State;
+format_tools__$InflateImpl_State.__empty_constructs__ = [format_tools__$InflateImpl_State.Head,format_tools__$InflateImpl_State.Block,format_tools__$InflateImpl_State.CData,format_tools__$InflateImpl_State.Flat,format_tools__$InflateImpl_State.Crc,format_tools__$InflateImpl_State.Dist,format_tools__$InflateImpl_State.DistOne,format_tools__$InflateImpl_State.Done];
+var format_tools_InflateImpl = function(i,header,crc) {
+	if(crc == null) crc = true;
+	if(header == null) header = true;
+	this["final"] = false;
+	this.htools = new format_tools_HuffTools();
+	this.huffman = this.buildFixedHuffman();
+	this.huffdist = null;
+	this.len = 0;
+	this.dist = 0;
+	if(header) this.state = format_tools__$InflateImpl_State.Head; else this.state = format_tools__$InflateImpl_State.Block;
+	this.input = i;
+	this.bits = 0;
+	this.nbits = 0;
+	this.needed = 0;
+	this.output = null;
+	this.outpos = 0;
+	this.lengths = [];
+	var _g = 0;
+	while(_g < 19) {
+		var i1 = _g++;
+		this.lengths.push(-1);
+	}
+	this.window = new format_tools__$InflateImpl_Window(crc);
+};
+$hxClasses["format.tools.InflateImpl"] = format_tools_InflateImpl;
+format_tools_InflateImpl.__name__ = ["format","tools","InflateImpl"];
+format_tools_InflateImpl.run = function(i,bufsize) {
+	if(bufsize == null) bufsize = 65536;
+	var buf = haxe_io_Bytes.alloc(bufsize);
+	var output = new haxe_io_BytesBuffer();
+	var inflate = new format_tools_InflateImpl(i);
+	while(true) {
+		var len = inflate.readBytes(buf,0,bufsize);
+		output.addBytes(buf,0,len);
+		if(len < bufsize) break;
+	}
+	return output.getBytes();
+};
+format_tools_InflateImpl.prototype = {
+	buildFixedHuffman: function() {
+		if(format_tools_InflateImpl.FIXED_HUFFMAN != null) return format_tools_InflateImpl.FIXED_HUFFMAN;
+		var a = [];
+		var _g = 0;
+		while(_g < 288) {
+			var n = _g++;
+			a.push(n <= 143?8:n <= 255?9:n <= 279?7:8);
+		}
+		format_tools_InflateImpl.FIXED_HUFFMAN = this.htools.make(a,0,288,10);
+		return format_tools_InflateImpl.FIXED_HUFFMAN;
+	}
+	,readBytes: function(b,pos,len) {
+		this.needed = len;
+		this.outpos = pos;
+		this.output = b;
+		if(len > 0) while(this.inflateLoop()) {
+		}
+		return len - this.needed;
+	}
+	,getBits: function(n) {
+		while(this.nbits < n) {
+			this.bits |= this.input.readByte() << this.nbits;
+			this.nbits += 8;
+		}
+		var b = this.bits & (1 << n) - 1;
+		this.nbits -= n;
+		this.bits >>= n;
+		return b;
+	}
+	,getBit: function() {
+		if(this.nbits == 0) {
+			this.nbits = 8;
+			this.bits = this.input.readByte();
+		}
+		var b = (this.bits & 1) == 1;
+		this.nbits--;
+		this.bits >>= 1;
+		return b;
+	}
+	,getRevBits: function(n) {
+		if(n == 0) return 0; else if(this.getBit()) return 1 << n - 1 | this.getRevBits(n - 1); else return this.getRevBits(n - 1);
+	}
+	,resetBits: function() {
+		this.bits = 0;
+		this.nbits = 0;
+	}
+	,addBytes: function(b,p,len) {
+		this.window.addBytes(b,p,len);
+		this.output.blit(this.outpos,b,p,len);
+		this.needed -= len;
+		this.outpos += len;
+	}
+	,addByte: function(b) {
+		this.window.addByte(b);
+		this.output.b[this.outpos] = b & 255;
+		this.needed--;
+		this.outpos++;
+	}
+	,addDistOne: function(n) {
+		var c = this.window.getLastChar();
+		var _g = 0;
+		while(_g < n) {
+			var i = _g++;
+			this.addByte(c);
+		}
+	}
+	,addDist: function(d,len) {
+		this.addBytes(this.window.buffer,this.window.pos - d,len);
+	}
+	,applyHuffman: function(h) {
+		switch(h[1]) {
+		case 0:
+			var n = h[2];
+			return n;
+		case 1:
+			var b = h[3];
+			var a = h[2];
+			return this.applyHuffman(this.getBit()?b:a);
+		case 2:
+			var tbl = h[3];
+			var n1 = h[2];
+			return this.applyHuffman(tbl[this.getBits(n1)]);
+		}
+	}
+	,inflateLengths: function(a,max) {
+		var i = 0;
+		var prev = 0;
+		while(i < max) {
+			var n = this.applyHuffman(this.huffman);
+			switch(n) {
+			case 0:case 1:case 2:case 3:case 4:case 5:case 6:case 7:case 8:case 9:case 10:case 11:case 12:case 13:case 14:case 15:
+				prev = n;
+				a[i] = n;
+				i++;
+				break;
+			case 16:
+				var end = i + 3 + this.getBits(2);
+				if(end > max) throw new js__$Boot_HaxeError("Invalid data");
+				while(i < end) {
+					a[i] = prev;
+					i++;
+				}
+				break;
+			case 17:
+				i += 3 + this.getBits(3);
+				if(i > max) throw new js__$Boot_HaxeError("Invalid data");
+				break;
+			case 18:
+				i += 11 + this.getBits(7);
+				if(i > max) throw new js__$Boot_HaxeError("Invalid data");
+				break;
+			default:
+				throw new js__$Boot_HaxeError("Invalid data");
+			}
+		}
+	}
+	,inflateLoop: function() {
+		var _g = this.state;
+		switch(_g[1]) {
+		case 0:
+			var cmf = this.input.readByte();
+			var cm = cmf & 15;
+			var cinfo = cmf >> 4;
+			if(cm != 8) throw new js__$Boot_HaxeError("Invalid data");
+			var flg = this.input.readByte();
+			var fdict = (flg & 32) != 0;
+			if(((cmf << 8) + flg) % 31 != 0) throw new js__$Boot_HaxeError("Invalid data");
+			if(fdict) throw new js__$Boot_HaxeError("Unsupported dictionary");
+			this.state = format_tools__$InflateImpl_State.Block;
+			return true;
+		case 4:
+			var calc = this.window.checksum();
+			if(calc == null) {
+				this.state = format_tools__$InflateImpl_State.Done;
+				return true;
+			}
+			var crc = format_tools_Adler32.read(this.input);
+			if(!calc.equals(crc)) throw new js__$Boot_HaxeError("Invalid CRC");
+			this.state = format_tools__$InflateImpl_State.Done;
+			return true;
+		case 7:
+			return false;
+		case 1:
+			this["final"] = this.getBit();
+			var _g1 = this.getBits(2);
+			switch(_g1) {
+			case 0:
+				this.len = this.input.readUInt16();
+				var nlen = this.input.readUInt16();
+				if(nlen != 65535 - this.len) throw new js__$Boot_HaxeError("Invalid data");
+				this.state = format_tools__$InflateImpl_State.Flat;
+				var r = this.inflateLoop();
+				this.resetBits();
+				return r;
+			case 1:
+				this.huffman = this.buildFixedHuffman();
+				this.huffdist = null;
+				this.state = format_tools__$InflateImpl_State.CData;
+				return true;
+			case 2:
+				var hlit = this.getBits(5) + 257;
+				var hdist = this.getBits(5) + 1;
+				var hclen = this.getBits(4) + 4;
+				var _g2 = 0;
+				while(_g2 < hclen) {
+					var i = _g2++;
+					this.lengths[format_tools_InflateImpl.CODE_LENGTHS_POS[i]] = this.getBits(3);
+				}
+				var _g21 = hclen;
+				while(_g21 < 19) {
+					var i1 = _g21++;
+					this.lengths[format_tools_InflateImpl.CODE_LENGTHS_POS[i1]] = 0;
+				}
+				this.huffman = this.htools.make(this.lengths,0,19,8);
+				var lengths = [];
+				var _g3 = 0;
+				var _g22 = hlit + hdist;
+				while(_g3 < _g22) {
+					var i2 = _g3++;
+					lengths.push(0);
+				}
+				this.inflateLengths(lengths,hlit + hdist);
+				this.huffdist = this.htools.make(lengths,hlit,hdist,16);
+				this.huffman = this.htools.make(lengths,0,hlit,16);
+				this.state = format_tools__$InflateImpl_State.CData;
+				return true;
+			default:
+				throw new js__$Boot_HaxeError("Invalid data");
+			}
+			break;
+		case 3:
+			var rlen;
+			if(this.len < this.needed) rlen = this.len; else rlen = this.needed;
+			var bytes = this.input.read(rlen);
+			this.len -= rlen;
+			this.addBytes(bytes,0,rlen);
+			if(this.len == 0) if(this["final"]) this.state = format_tools__$InflateImpl_State.Crc; else this.state = format_tools__$InflateImpl_State.Block;
+			return this.needed > 0;
+		case 6:
+			var rlen1;
+			if(this.len < this.needed) rlen1 = this.len; else rlen1 = this.needed;
+			this.addDistOne(rlen1);
+			this.len -= rlen1;
+			if(this.len == 0) this.state = format_tools__$InflateImpl_State.CData;
+			return this.needed > 0;
+		case 5:
+			while(this.len > 0 && this.needed > 0) {
+				var rdist;
+				if(this.len < this.dist) rdist = this.len; else rdist = this.dist;
+				var rlen2;
+				if(this.needed < rdist) rlen2 = this.needed; else rlen2 = rdist;
+				this.addDist(this.dist,rlen2);
+				this.len -= rlen2;
+			}
+			if(this.len == 0) this.state = format_tools__$InflateImpl_State.CData;
+			return this.needed > 0;
+		case 2:
+			var n = this.applyHuffman(this.huffman);
+			if(n < 256) {
+				this.addByte(n);
+				return this.needed > 0;
+			} else if(n == 256) {
+				if(this["final"]) this.state = format_tools__$InflateImpl_State.Crc; else this.state = format_tools__$InflateImpl_State.Block;
+				return true;
+			} else {
+				n -= 257;
+				var extra_bits = format_tools_InflateImpl.LEN_EXTRA_BITS_TBL[n];
+				if(extra_bits == -1) throw new js__$Boot_HaxeError("Invalid data");
+				this.len = format_tools_InflateImpl.LEN_BASE_VAL_TBL[n] + this.getBits(extra_bits);
+				var dist_code;
+				if(this.huffdist == null) dist_code = this.getRevBits(5); else dist_code = this.applyHuffman(this.huffdist);
+				extra_bits = format_tools_InflateImpl.DIST_EXTRA_BITS_TBL[dist_code];
+				if(extra_bits == -1) throw new js__$Boot_HaxeError("Invalid data");
+				this.dist = format_tools_InflateImpl.DIST_BASE_VAL_TBL[dist_code] + this.getBits(extra_bits);
+				if(this.dist > this.window.available()) throw new js__$Boot_HaxeError("Invalid data");
+				if(this.dist == 1) this.state = format_tools__$InflateImpl_State.DistOne; else this.state = format_tools__$InflateImpl_State.Dist;
+				return true;
+			}
+			break;
+		}
+	}
+	,__class__: format_tools_InflateImpl
+};
 var h2d_Sprite = function(parent) {
 	this.matA = 1;
 	this.matB = 0;
@@ -400,7 +1776,7 @@ var h2d_Sprite = function(parent) {
 	if(parent != null) parent.addChild(this);
 };
 $hxClasses["h2d.Sprite"] = h2d_Sprite;
-h2d_Sprite.__name__ = true;
+h2d_Sprite.__name__ = ["h2d","Sprite"];
 h2d_Sprite.prototype = {
 	getBounds: function(relativeTo,out) {
 		if(out == null) out = new h2d_col_Bounds();
@@ -505,6 +1881,15 @@ h2d_Sprite.prototype = {
 		y = (dx + width) * this.matB + (dy + height) * this.matD + rY;
 		out.addPos(x * rA + y * rC,x * rB + y * rD);
 	}
+	,localToGlobal: function(pt) {
+		this.syncPos();
+		if(pt == null) pt = new h2d_col_Point();
+		var px = pt.x * this.matA + pt.y * this.matC + this.absX;
+		var py = pt.x * this.matB + pt.y * this.matD + this.absY;
+		pt.x = px;
+		pt.y = py;
+		return pt;
+	}
 	,getScene: function() {
 		var p = this;
 		while(p.parent != null) p = p.parent;
@@ -562,6 +1947,9 @@ h2d_Sprite.prototype = {
 			if(s.allocated) s.onDelete();
 			s.parent = null;
 		}
+	}
+	,remove: function() {
+		if(this.parent != null) this.parent.removeChild(this);
 	}
 	,draw: function(ctx) {
 	}
@@ -906,6 +2294,18 @@ h2d_Sprite.prototype = {
 			}
 		}
 	}
+	,set_x: function(v) {
+		this.posChanged = true;
+		return this.x = v;
+	}
+	,set_y: function(v) {
+		this.posChanged = true;
+		return this.y = v;
+	}
+	,toString: function() {
+		var c = Type.getClassName(js_Boot.getClass(this));
+		if(this.name == null) return c; else return this.name + "(" + c + ")";
+	}
 	,__class__: h2d_Sprite
 };
 var h2d_Drawable = function(parent) {
@@ -914,10 +2314,47 @@ var h2d_Drawable = function(parent) {
 	this.color = new h3d_Vector(1,1,1,1);
 };
 $hxClasses["h2d.Drawable"] = h2d_Drawable;
-h2d_Drawable.__name__ = true;
+h2d_Drawable.__name__ = ["h2d","Drawable"];
 h2d_Drawable.__super__ = h2d_Sprite;
 h2d_Drawable.prototype = $extend(h2d_Sprite.prototype,{
-	emitTile: function(ctx,tile) {
+	set_colorKey: function(v) {
+		var s = this.getShader(h3d_shader_ColorKey);
+		if(s == null) {
+			if(v != null) s = this.addShader(new h3d_shader_ColorKey(-16777216 | v));
+		} else if(v == null) this.removeShader(s); else s.colorKey__.setColor(-16777216 | v,null);
+		return this.colorKey = v;
+	}
+	,getShader: function(stype) {
+		if(this.shaders != null) {
+			var _g = new hxsl__$ShaderList_ShaderIterator(this.shaders);
+			while(_g.l != null) {
+				var s = _g.next();
+				var s1;
+				s1 = (s instanceof stype)?s:null;
+				if(s1 != null) return s1;
+			}
+		}
+		return null;
+	}
+	,addShader: function(s) {
+		if(s == null) throw new js__$Boot_HaxeError("Can't add null shader");
+		this.shaders = new hxsl_ShaderList(s,this.shaders);
+		return s;
+	}
+	,removeShader: function(s) {
+		var prev = null;
+		var cur = this.shaders;
+		while(cur != null) {
+			if(cur.s == s) {
+				if(prev == null) this.shaders = cur.next; else prev.next = cur.next;
+				return true;
+			}
+			prev = cur;
+			cur = cur.next;
+		}
+		return false;
+	}
+	,emitTile: function(ctx,tile) {
 		if(tile == null) tile = new h2d_Tile(null,0,0,5,5);
 		ctx.drawTile(this,tile);
 		return;
@@ -1001,6 +2438,23 @@ h2d_Drawable.prototype = $extend(h2d_Sprite.prototype,{
 	}
 	,__class__: h2d_Drawable
 });
+var h2d_Bitmap = function(tile,parent) {
+	h2d_Drawable.call(this,parent);
+	this.tile = tile;
+};
+$hxClasses["h2d.Bitmap"] = h2d_Bitmap;
+h2d_Bitmap.__name__ = ["h2d","Bitmap"];
+h2d_Bitmap.__super__ = h2d_Drawable;
+h2d_Bitmap.prototype = $extend(h2d_Drawable.prototype,{
+	getBoundsRec: function(relativeTo,out) {
+		h2d_Drawable.prototype.getBoundsRec.call(this,relativeTo,out);
+		if(this.tile != null) this.addBounds(relativeTo,out,this.tile.dx,this.tile.dy,this.tile.width,this.tile.height);
+	}
+	,draw: function(ctx) {
+		this.emitTile(ctx,this.tile);
+	}
+	,__class__: h2d_Bitmap
+});
 var h2d_BlendMode = $hxClasses["h2d.BlendMode"] = { __ename__ : true, __constructs__ : ["None","Alpha","Add","SoftAdd","Multiply","Erase","Screen"] };
 h2d_BlendMode.None = ["None",0];
 h2d_BlendMode.None.toString = $estr;
@@ -1024,12 +2478,256 @@ h2d_BlendMode.Screen = ["Screen",6];
 h2d_BlendMode.Screen.toString = $estr;
 h2d_BlendMode.Screen.__enum__ = h2d_BlendMode;
 h2d_BlendMode.__empty_constructs__ = [h2d_BlendMode.None,h2d_BlendMode.Alpha,h2d_BlendMode.Add,h2d_BlendMode.SoftAdd,h2d_BlendMode.Multiply,h2d_BlendMode.Erase,h2d_BlendMode.Screen];
-var h2d_Interactive = function() {
+var h2d_Kerning = function() { };
+$hxClasses["h2d.Kerning"] = h2d_Kerning;
+h2d_Kerning.__name__ = ["h2d","Kerning"];
+h2d_Kerning.prototype = {
+	__class__: h2d_Kerning
+};
+var h2d_FontChar = function(t,w) {
+	this.t = t;
+	this.width = w;
+};
+$hxClasses["h2d.FontChar"] = h2d_FontChar;
+h2d_FontChar.__name__ = ["h2d","FontChar"];
+h2d_FontChar.prototype = {
+	getKerningOffset: function(prevChar) {
+		var k = this.kerning;
+		while(k != null) {
+			if(k.prevChar == prevChar) return k.offset;
+			k = k.next;
+		}
+		return 0;
+	}
+	,__class__: h2d_FontChar
+};
+var h2d_Font = function(name,size) {
+	this.name = name;
+	this.size = size;
+	this.glyphs = new haxe_ds_IntMap();
+	this.defaultChar = new h2d_FontChar(new h2d_Tile(null,0,0,0,0),0);
+	this.charset = hxd_Charset.getDefault();
+};
+$hxClasses["h2d.Font"] = h2d_Font;
+h2d_Font.__name__ = ["h2d","Font"];
+h2d_Font.prototype = {
+	getChar: function(code) {
+		var c = this.glyphs.h[code];
+		if(c == null) {
+			c = this.charset.resolveChar(code,this.glyphs);
+			if(c == null) c = this.defaultChar;
+		}
+		return c;
+	}
+	,__class__: h2d_Font
+};
+var h3d_prim_Primitive = function() { };
+$hxClasses["h3d.prim.Primitive"] = h3d_prim_Primitive;
+h3d_prim_Primitive.__name__ = ["h3d","prim","Primitive"];
+h3d_prim_Primitive.prototype = {
+	alloc: function(engine) {
+		throw new js__$Boot_HaxeError("not implemented");
+	}
+	,render: function(engine) {
+		if(this.buffer == null || this.buffer.isDisposed()) this.alloc(engine);
+		if(this.indexes == null) {
+			if((this.buffer.flags & 1 << h3d_BufferFlag.Quads[1]) != 0) engine.renderBuffer(this.buffer,engine.mem.quadIndexes,2,0,-1); else engine.renderBuffer(this.buffer,engine.mem.triIndexes,3,0,-1);
+		} else engine.renderIndexed(this.buffer,this.indexes);
+	}
+	,dispose: function() {
+		if(this.buffer != null) {
+			this.buffer.dispose();
+			this.buffer = null;
+		}
+		if(this.indexes != null) {
+			this.indexes.dispose();
+			this.indexes = null;
+		}
+	}
+	,__class__: h3d_prim_Primitive
+};
+var h2d_Text = function(font,parent) {
+	h2d_Drawable.call(this,parent);
+	this.set_font(font);
+	this.set_textAlign(h2d_Align.Left);
+	this.set_letterSpacing(1);
+	this.set_lineSpacing(0);
+	this.set_text("");
+	this.set_textColor(16777215);
+};
+$hxClasses["h2d.Text"] = h2d_Text;
+h2d_Text.__name__ = ["h2d","Text"];
+h2d_Text.__super__ = h2d_Drawable;
+h2d_Text.prototype = $extend(h2d_Drawable.prototype,{
+	set_font: function(font) {
+		this.font = font;
+		if(this.glyphs != null) this.glyphs.remove();
+		this.glyphs = new h2d_TileGroup(font == null?null:font.tile,this);
+		this.glyphs.visible = false;
+		this.rebuild();
+		return font;
+	}
+	,set_textAlign: function(a) {
+		this.textAlign = a;
+		this.rebuild();
+		return a;
+	}
+	,set_letterSpacing: function(s) {
+		this.letterSpacing = s;
+		this.rebuild();
+		return s;
+	}
+	,set_lineSpacing: function(s) {
+		this.lineSpacing = s;
+		this.rebuild();
+		return s;
+	}
+	,onAlloc: function() {
+		h2d_Drawable.prototype.onAlloc.call(this);
+		this.rebuild();
+	}
+	,draw: function(ctx) {
+		if(this.dropShadow != null) {
+			var oldX = this.absX;
+			var oldY = this.absY;
+			this.absX += this.dropShadow.dx * this.matA + this.dropShadow.dy * this.matC;
+			this.absY += this.dropShadow.dx * this.matB + this.dropShadow.dy * this.matD;
+			var oldR = this.color.x;
+			var oldG = this.color.y;
+			var oldB = this.color.z;
+			var oldA = this.color.w;
+			this.color.setColor(this.dropShadow.color,null);
+			this.color.w = this.dropShadow.alpha * oldA;
+			this.glyphs.drawWith(ctx,this);
+			this.absX = oldX;
+			this.absY = oldY;
+			this.color.set(oldR,oldG,oldB,oldA);
+			this.calcAbsPos();
+		}
+		this.glyphs.drawWith(ctx,this);
+	}
+	,set_text: function(t) {
+		var t1;
+		if(t == null) t1 = "null"; else t1 = t;
+		if(t1 == this.text) return t1;
+		this.text = t1;
+		this.rebuild();
+		return t1;
+	}
+	,rebuild: function() {
+		if(this.allocated && this.text != null && this.font != null) this.initGlyphs(this.text);
+	}
+	,calcTextWidth: function(text) {
+		return this.initGlyphs(text,false).width;
+	}
+	,initGlyphs: function(text,rebuild,lines) {
+		if(rebuild == null) rebuild = true;
+		if(rebuild) this.glyphs.reset();
+		var x = 0;
+		var y = 0;
+		var xMax = 0;
+		var prevChar = -1;
+		var align;
+		if(rebuild) align = this.textAlign; else align = h2d_Align.Left;
+		switch(align[1]) {
+		case 2:case 1:
+			lines = [];
+			var inf = this.initGlyphs(text,false,lines);
+			var max;
+			if(this.maxWidth == null) max = inf.width; else max = this.maxWidth | 0;
+			var k;
+			if(align == h2d_Align.Center) k = 1; else k = 0;
+			var _g1 = 0;
+			var _g = lines.length;
+			while(_g1 < _g) {
+				var i = _g1++;
+				lines[i] = max - lines[i] >> k;
+			}
+			x = lines.shift();
+			break;
+		default:
+		}
+		var dl = this.font.lineHeight + this.lineSpacing;
+		var calcLines = !rebuild && lines != null;
+		var _g11 = 0;
+		var _g2 = text.length;
+		while(_g11 < _g2) {
+			var i1 = _g11++;
+			var cc = HxOverrides.cca(text,i1);
+			var e = this.font.getChar(cc);
+			var newline = cc == 10;
+			var esize = e.width + e.getKerningOffset(prevChar);
+			if(this.font.charset.isBreakChar(cc) && this.maxWidth != null) {
+				var size = x + esize + this.letterSpacing;
+				var k1 = i1 + 1;
+				var max1 = text.length;
+				var prevChar1 = prevChar;
+				while(size <= this.maxWidth && k1 < text.length) {
+					var cc1;
+					var index = k1++;
+					cc1 = HxOverrides.cca(text,index);
+					if(this.font.charset.isSpace(cc1) || cc1 == 10) break;
+					var e1 = this.font.getChar(cc1);
+					size += e1.width + this.letterSpacing + e1.getKerningOffset(prevChar1);
+					prevChar1 = cc1;
+				}
+				if(size > this.maxWidth) {
+					newline = true;
+					if(this.font.charset.isSpace(cc)) e = null;
+				}
+			}
+			if(e != null) {
+				if(rebuild) this.glyphs.add(x,y,e.t);
+				x += esize + this.letterSpacing;
+			}
+			if(newline) {
+				if(x > xMax) xMax = x;
+				if(calcLines) lines.push(x);
+				if(rebuild) switch(align[1]) {
+				case 0:
+					x = 0;
+					break;
+				case 1:case 2:
+					x = lines.shift();
+					break;
+				} else x = 0;
+				y += dl;
+				prevChar = -1;
+			} else prevChar = cc;
+		}
+		if(calcLines) lines.push(x);
+		return { width : x > xMax?x:xMax, height : x > 0?y + dl:y > 0?y:dl};
+	}
+	,get_textHeight: function() {
+		return this.initGlyphs(this.text,false).height;
+	}
+	,get_textWidth: function() {
+		return this.initGlyphs(this.text,false).width;
+	}
+	,set_textColor: function(c) {
+		this.textColor = c;
+		var a = this.color.w;
+		this.color.setColor(c,null);
+		this.color.w = a;
+		return c;
+	}
+	,getBoundsRec: function(relativeTo,out) {
+		this.glyphs.visible = true;
+		h2d_Drawable.prototype.getBoundsRec.call(this,relativeTo,out);
+		this.glyphs.visible = false;
+	}
+	,__class__: h2d_Text
+});
+var h2d_Interactive = function(width,height,parent) {
 	this.propagateEvents = false;
 	this.cancelEvents = false;
+	h2d_Drawable.call(this,parent);
+	this.width = width;
+	this.height = height;
+	this.set_cursor(hxd_Cursor.Button);
 };
 $hxClasses["h2d.Interactive"] = h2d_Interactive;
-h2d_Interactive.__name__ = true;
+h2d_Interactive.__name__ = ["h2d","Interactive"];
 h2d_Interactive.__super__ = h2d_Drawable;
 h2d_Interactive.prototype = $extend(h2d_Drawable.prototype,{
 	onAlloc: function() {
@@ -1137,6 +2835,23 @@ h2d_Interactive.prototype = $extend(h2d_Drawable.prototype,{
 			break;
 		}
 	}
+	,set_cursor: function(c) {
+		this.cursor = c;
+		if(this.scene != null && this.scene.currentOver == this) hxd_System.setCursor(this.cursor);
+		return c;
+	}
+	,focus: function() {
+		if(this.scene == null) return;
+		var ev = new hxd_Event(null);
+		if(this.scene.currentFocus != null) {
+			if(this.scene.currentFocus == this) return;
+			ev.kind = hxd_EventKind.EFocusLost;
+			this.scene.currentFocus.handleEvent(ev);
+			if(ev.cancel) return;
+		}
+		ev.kind = hxd_EventKind.EFocus;
+		this.handleEvent(ev);
+	}
 	,onOver: function(e) {
 	}
 	,onOut: function(e) {
@@ -1167,7 +2882,7 @@ var h2d_Layers = function(parent) {
 	this.layerCount = 0;
 };
 $hxClasses["h2d.Layers"] = h2d_Layers;
-h2d_Layers.__name__ = true;
+h2d_Layers.__name__ = ["h2d","Layers"];
 h2d_Layers.__super__ = h2d_Sprite;
 h2d_Layers.prototype = $extend(h2d_Sprite.prototype,{
 	addChild: function(s) {
@@ -1216,7 +2931,7 @@ var h3d_impl_RenderContext = function() {
 	this.elapsedTime = 1. / hxd_Stage.getInstance().getFrameRate();
 };
 $hxClasses["h3d.impl.RenderContext"] = h3d_impl_RenderContext;
-h3d_impl_RenderContext.__name__ = true;
+h3d_impl_RenderContext.__name__ = ["h3d","impl","RenderContext"];
 h3d_impl_RenderContext.prototype = {
 	__class__: h3d_impl_RenderContext
 };
@@ -1237,7 +2952,7 @@ var h2d_RenderContext = function(s2d) {
 	this.textures = new h3d_impl_TextureCache();
 };
 $hxClasses["h2d.RenderContext"] = h2d_RenderContext;
-h2d_RenderContext.__name__ = true;
+h2d_RenderContext.__name__ = ["h2d","RenderContext"];
 h2d_RenderContext.__super__ = h3d_impl_RenderContext;
 h2d_RenderContext.prototype = $extend(h3d_impl_RenderContext.prototype,{
 	begin: function() {
@@ -1312,6 +3027,13 @@ h2d_RenderContext.prototype = $extend(h3d_impl_RenderContext.prototype,{
 		this.engine.uploadShaderBuffers(this.buffers,1);
 		this.engine.uploadShaderBuffers(this.buffers,2);
 	}
+	,beginDrawObject: function(obj,texture) {
+		this.beginDraw(obj,texture,true);
+		this.baseShader.color__.set(obj.color.x,obj.color.y,obj.color.z,obj.color.w);
+		this.baseShader.absoluteMatrixA__.set(obj.matA,obj.matC,obj.absX,null);
+		this.baseShader.absoluteMatrixB__.set(obj.matB,obj.matD,obj.absY,null);
+		this.beforeDraw();
+	}
 	,beginDrawBatch: function(obj,texture) {
 		this.beginDraw(obj,texture,false);
 	}
@@ -1373,9 +3095,47 @@ h2d_RenderContext.prototype = $extend(h3d_impl_RenderContext.prototype,{
 	}
 	,__class__: h2d_RenderContext
 });
+var h2d_TileGroup = function(t,parent) {
+	h2d_Drawable.call(this,parent);
+	this.tile = t;
+	this.rangeMin = this.rangeMax = -1;
+	this.curColor = new h3d_Vector(1,1,1,1);
+	this.content = new h2d__$TileGroup_TileLayerContent();
+};
+$hxClasses["h2d.TileGroup"] = h2d_TileGroup;
+h2d_TileGroup.__name__ = ["h2d","TileGroup"];
+h2d_TileGroup.__super__ = h2d_Drawable;
+h2d_TileGroup.prototype = $extend(h2d_Drawable.prototype,{
+	getBoundsRec: function(relativeTo,out) {
+		h2d_Drawable.prototype.getBoundsRec.call(this,relativeTo,out);
+		this.addBounds(relativeTo,out,this.content.xMin,this.content.yMin,this.content.xMax - this.content.xMin,this.content.yMax - this.content.yMin);
+	}
+	,reset: function() {
+		this.content.reset();
+	}
+	,onDelete: function() {
+		this.content.dispose();
+		h2d_Drawable.prototype.onDelete.call(this);
+	}
+	,add: function(x,y,t) {
+		this.content.add(x,y,this.curColor.x,this.curColor.y,this.curColor.z,this.curColor.w,t);
+	}
+	,draw: function(ctx) {
+		this.drawWith(ctx,this);
+	}
+	,drawWith: function(ctx,obj) {
+		ctx.beginDrawObject(obj,this.tile.innerTex);
+		var min;
+		if(this.rangeMin < 0) min = 0; else min = this.rangeMin * 2;
+		var max = this.content.triCount();
+		if(this.rangeMax > 0 && this.rangeMax < max * 2) max = this.rangeMax * 2;
+		this.content.doRender(ctx.engine,min,max - min);
+	}
+	,__class__: h2d_TileGroup
+});
 var h3d_IDrawable = function() { };
 $hxClasses["h3d.IDrawable"] = h3d_IDrawable;
-h3d_IDrawable.__name__ = true;
+h3d_IDrawable.__name__ = ["h3d","IDrawable"];
 h3d_IDrawable.prototype = {
 	__class__: h3d_IDrawable
 };
@@ -1392,7 +3152,7 @@ var h2d_Scene = function() {
 	this.posChanged = true;
 };
 $hxClasses["h2d.Scene"] = h2d_Scene;
-h2d_Scene.__name__ = true;
+h2d_Scene.__name__ = ["h2d","Scene"];
 h2d_Scene.__interfaces__ = [h3d_IDrawable];
 h2d_Scene.__super__ = h2d_Layers;
 h2d_Scene.prototype = $extend(h2d_Layers.prototype,{
@@ -1588,6 +3348,13 @@ h2d_Scene.prototype = $extend(h2d_Layers.prototype,{
 		}
 		if(this.hasEvents()) this.pendingEvents = [];
 	}
+	,startDrag: function(f,onCancel,refEvent) {
+		if(this.currentDrag != null && this.currentDrag.onCancel != null) this.currentDrag.onCancel();
+		this.currentDrag = { f : f, ref : refEvent == null?null:refEvent.touchId, onCancel : onCancel};
+	}
+	,stopDrag: function() {
+		this.currentDrag = null;
+	}
 	,addEventTarget: function(i) {
 		var level;
 		var i1 = i;
@@ -1704,6 +3471,17 @@ h2d_Scene.prototype = $extend(h2d_Layers.prototype,{
 	}
 	,__class__: h2d_Scene
 });
+var h2d_Align = $hxClasses["h2d.Align"] = { __ename__ : true, __constructs__ : ["Left","Right","Center"] };
+h2d_Align.Left = ["Left",0];
+h2d_Align.Left.toString = $estr;
+h2d_Align.Left.__enum__ = h2d_Align;
+h2d_Align.Right = ["Right",1];
+h2d_Align.Right.toString = $estr;
+h2d_Align.Right.__enum__ = h2d_Align;
+h2d_Align.Center = ["Center",2];
+h2d_Align.Center.toString = $estr;
+h2d_Align.Center.__enum__ = h2d_Align;
+h2d_Align.__empty_constructs__ = [h2d_Align.Left,h2d_Align.Right,h2d_Align.Center];
 var h2d_Tile = function(tex,x,y,w,h,dx,dy) {
 	if(dy == null) dy = 0;
 	if(dx == null) dx = 0;
@@ -1717,7 +3495,7 @@ var h2d_Tile = function(tex,x,y,w,h,dx,dy) {
 	if(tex != null) this.setTexture(tex);
 };
 $hxClasses["h2d.Tile"] = h2d_Tile;
-h2d_Tile.__name__ = true;
+h2d_Tile.__name__ = ["h2d","Tile"];
 h2d_Tile.fromColor = function(color,width,height,alpha,allocPos) {
 	if(alpha == null) alpha = 1.;
 	if(height == null) height = 1;
@@ -1730,8 +3508,17 @@ h2d_Tile.fromColor = function(color,width,height,alpha,allocPos) {
 h2d_Tile.fromTexture = function(t) {
 	return new h2d_Tile(t,0,0,t.width,t.height);
 };
+h2d_Tile.fromPixels = function(pixels,allocPos) {
+	var pix2 = pixels.makeSquare(true);
+	var t = h3d_mat_Texture.fromPixels(pix2);
+	if(pix2 != pixels) pix2.dispose();
+	return new h2d_Tile(t,0,0,pixels.width,pixels.height);
+};
 h2d_Tile.prototype = {
-	setTexture: function(tex) {
+	isDisposed: function() {
+		return this.innerTex == null || this.innerTex.isDisposed();
+	}
+	,setTexture: function(tex) {
 		this.innerTex = tex;
 		if(tex != null) {
 			this.u = this.x / tex.width;
@@ -1742,6 +3529,253 @@ h2d_Tile.prototype = {
 	}
 	,__class__: h2d_Tile
 };
+var h2d__$TileGroup_TileLayerContent = function() {
+	this.reset();
+};
+$hxClasses["h2d._TileGroup.TileLayerContent"] = h2d__$TileGroup_TileLayerContent;
+h2d__$TileGroup_TileLayerContent.__name__ = ["h2d","_TileGroup","TileLayerContent"];
+h2d__$TileGroup_TileLayerContent.__super__ = h3d_prim_Primitive;
+h2d__$TileGroup_TileLayerContent.prototype = $extend(h3d_prim_Primitive.prototype,{
+	reset: function() {
+		var this1;
+		this1 = new Array(0);
+		this.tmp = this1;
+		if(this.buffer != null) this.buffer.dispose();
+		this.buffer = null;
+		this.xMin = Infinity;
+		this.yMin = Infinity;
+		this.xMax = -Infinity;
+		this.yMax = -Infinity;
+	}
+	,triCount: function() {
+		if(this.buffer == null) return this.tmp.length >> 4; else return this.buffer.totalVertices() >> 1;
+	}
+	,add: function(x,y,r,g,b,a,t) {
+		var sx = x + t.dx;
+		var sy = y + t.dy;
+		this.tmp.push(sx);
+		this.tmp.push(sy);
+		this.tmp.push(t.u);
+		this.tmp.push(t.v);
+		this.tmp.push(r);
+		this.tmp.push(g);
+		this.tmp.push(b);
+		this.tmp.push(a);
+		this.tmp.push(sx + t.width);
+		this.tmp.push(sy);
+		this.tmp.push(t.u2);
+		this.tmp.push(t.v);
+		this.tmp.push(r);
+		this.tmp.push(g);
+		this.tmp.push(b);
+		this.tmp.push(a);
+		this.tmp.push(sx);
+		this.tmp.push(sy + t.height);
+		this.tmp.push(t.u);
+		this.tmp.push(t.v2);
+		this.tmp.push(r);
+		this.tmp.push(g);
+		this.tmp.push(b);
+		this.tmp.push(a);
+		this.tmp.push(sx + t.width);
+		this.tmp.push(sy + t.height);
+		this.tmp.push(t.u2);
+		this.tmp.push(t.v2);
+		this.tmp.push(r);
+		this.tmp.push(g);
+		this.tmp.push(b);
+		this.tmp.push(a);
+		var x1 = x + t.dx;
+		var y1 = y + t.dy;
+		if(x1 < this.xMin) this.xMin = x1;
+		if(y1 < this.yMin) this.yMin = y1;
+		x1 += t.width;
+		y1 += t.height;
+		if(x1 > this.xMax) this.xMax = x1;
+		if(y1 > this.yMax) this.yMax = y1;
+	}
+	,addPoint: function(x,y,color) {
+		this.tmp.push(x);
+		this.tmp.push(y);
+		this.tmp.push(0);
+		this.tmp.push(0);
+		this.tmp.push((color >> 16 & 255) / 255.);
+		this.tmp.push((color >> 8 & 255) / 255.);
+		this.tmp.push((color & 255) / 255.);
+		this.tmp.push((color >>> 24) / 255.);
+		if(x < this.xMin) this.xMin = x;
+		if(y < this.yMin) this.yMin = y;
+		if(x > this.xMax) this.xMax = x;
+		if(y > this.yMax) this.yMax = y;
+	}
+	,rectColor: function(x,y,w,h,color) {
+		this.tmp.push(x);
+		this.tmp.push(y);
+		this.tmp.push(0);
+		this.tmp.push(0);
+		this.tmp.push((color >> 16 & 255) / 255.);
+		this.tmp.push((color >> 8 & 255) / 255.);
+		this.tmp.push((color & 255) / 255.);
+		this.tmp.push((color >>> 24) / 255.);
+		this.tmp.push(x + w);
+		this.tmp.push(y);
+		this.tmp.push(1);
+		this.tmp.push(0);
+		this.tmp.push((color >> 16 & 255) / 255.);
+		this.tmp.push((color >> 8 & 255) / 255.);
+		this.tmp.push((color & 255) / 255.);
+		this.tmp.push((color >>> 24) / 255.);
+		this.tmp.push(x);
+		this.tmp.push(y + h);
+		this.tmp.push(0);
+		this.tmp.push(1);
+		this.tmp.push((color >> 16 & 255) / 255.);
+		this.tmp.push((color >> 8 & 255) / 255.);
+		this.tmp.push((color & 255) / 255.);
+		this.tmp.push((color >>> 24) / 255.);
+		this.tmp.push(x + w);
+		this.tmp.push(y + h);
+		this.tmp.push(1);
+		this.tmp.push(1);
+		this.tmp.push((color >> 16 & 255) / 255.);
+		this.tmp.push((color >> 8 & 255) / 255.);
+		this.tmp.push((color & 255) / 255.);
+		this.tmp.push((color >>> 24) / 255.);
+		if(x < this.xMin) this.xMin = x;
+		if(y < this.yMin) this.yMin = y;
+		x += w;
+		y += h;
+		if(x > this.xMax) this.xMax = x;
+		if(y > this.yMax) this.yMax = y;
+	}
+	,rectGradient: function(x,y,w,h,ctl,ctr,cbl,cbr) {
+		this.tmp.push(x);
+		this.tmp.push(y);
+		this.tmp.push(0);
+		this.tmp.push(0);
+		this.tmp.push((ctl >> 16 & 255) / 255.);
+		this.tmp.push((ctl >> 8 & 255) / 255.);
+		this.tmp.push((ctl & 255) / 255.);
+		this.tmp.push((ctl >>> 24) / 255.);
+		this.tmp.push(x + w);
+		this.tmp.push(y);
+		this.tmp.push(1);
+		this.tmp.push(0);
+		this.tmp.push((ctr >> 16 & 255) / 255.);
+		this.tmp.push((ctr >> 8 & 255) / 255.);
+		this.tmp.push((ctr & 255) / 255.);
+		this.tmp.push((ctr >>> 24) / 255.);
+		this.tmp.push(x);
+		this.tmp.push(y + h);
+		this.tmp.push(0);
+		this.tmp.push(1);
+		this.tmp.push((cbl >> 16 & 255) / 255.);
+		this.tmp.push((cbl >> 8 & 255) / 255.);
+		this.tmp.push((cbl & 255) / 255.);
+		this.tmp.push((cbl >>> 24) / 255.);
+		this.tmp.push(x + w);
+		this.tmp.push(y + h);
+		this.tmp.push(1);
+		this.tmp.push(0);
+		this.tmp.push((cbr >> 16 & 255) / 255.);
+		this.tmp.push((cbr >> 8 & 255) / 255.);
+		this.tmp.push((cbr & 255) / 255.);
+		this.tmp.push((cbr >>> 24) / 255.);
+		if(x < this.xMin) this.xMin = x;
+		if(y < this.yMin) this.yMin = y;
+		x += w;
+		y += h;
+		if(x > this.xMax) this.xMax = x;
+		if(y > this.yMax) this.yMax = y;
+	}
+	,fillArc: function(x,y,ray,c,start,end) {
+		if(end <= start) return;
+		var arcLength = end - start;
+		var nsegments = Math.ceil(ray * 3.14 * 2 / 4);
+		if(nsegments < 4) nsegments = 4;
+		var angle = arcLength / nsegments;
+		var prevX = -Infinity;
+		var prevY = -Infinity;
+		var _x = 0.;
+		var _y = 0.;
+		var i = 0;
+		while(i < nsegments) {
+			var a1 = start + i * angle;
+			_x = x + Math.cos(a1) * ray;
+			_y = y + Math.sin(a1) * ray;
+			if(prevX != -Infinity) {
+				this.addPoint(x,y,c);
+				this.addPoint(_x,_y,c);
+				this.addPoint(prevX,prevY,c);
+				this.addPoint(prevX,prevY,c);
+			}
+			prevX = _x;
+			prevY = _y;
+			i += 1;
+		}
+		var a = end;
+		_x = x + Math.cos(a) * ray;
+		_y = y + Math.sin(a) * ray;
+		this.addPoint(x,y,c);
+		this.addPoint(_x,_y,c);
+		this.addPoint(prevX,prevY,c);
+		this.addPoint(prevX,prevY,c);
+	}
+	,arc: function(x,y,ray,size,start,end,c) {
+		if(size > ray) return;
+		if(end <= start) return;
+		var arcLength = end - start;
+		var nsegments = Math.ceil(ray * 3.14 * 2 / 4);
+		if(nsegments < 3) nsegments = 3;
+		var ray1 = ray - size;
+		var angle = arcLength / nsegments;
+		var prevX = -Infinity;
+		var prevY = -Infinity;
+		var prevX1 = -Infinity;
+		var prevY1 = -Infinity;
+		var _x = 0.;
+		var _y = 0.;
+		var _x1 = 0.;
+		var _y1 = 0.;
+		var _g = 0;
+		while(_g < nsegments) {
+			var i = _g++;
+			var a1 = start + i * angle;
+			_x = x + Math.cos(a1) * ray;
+			_y = y + Math.sin(a1) * ray;
+			_x1 = x + Math.cos(a1) * ray1;
+			_y1 = y + Math.sin(a1) * ray1;
+			if(prevX != -Infinity) {
+				this.addPoint(_x,_y,c);
+				this.addPoint(prevX,prevY,c);
+				this.addPoint(_x1,_y1,c);
+				this.addPoint(prevX1,prevY1,c);
+			}
+			prevX = _x;
+			prevY = _y;
+			prevX1 = _x1;
+			prevY1 = _y1;
+		}
+		var a = end;
+		_x = x + Math.cos(a) * ray;
+		_y = y + Math.sin(a) * ray;
+		_x1 = x + Math.cos(a) * ray1;
+		_y1 = y + Math.sin(a) * ray1;
+		this.addPoint(_x,_y,c);
+		this.addPoint(prevX,prevY,c);
+		this.addPoint(_x1,_y1,c);
+		this.addPoint(prevX1,prevY1,c);
+	}
+	,alloc: function(engine) {
+		if(this.tmp == null) this.reset();
+		this.buffer = h3d_Buffer.ofFloats(this.tmp,8,[h3d_BufferFlag.Quads,h3d_BufferFlag.RawFormat]);
+	}
+	,doRender: function(engine,min,len) {
+		if(this.buffer == null || this.buffer.isDisposed()) this.alloc(engine);
+		engine.renderBuffer(this.buffer,engine.mem.quadIndexes,2,min,len);
+	}
+	,__class__: h2d__$TileGroup_TileLayerContent
+});
 var h2d_col_Bounds = function() {
 	this.xMin = 1e20;
 	this.yMin = 1e20;
@@ -1749,7 +3783,7 @@ var h2d_col_Bounds = function() {
 	this.yMax = -1e20;
 };
 $hxClasses["h2d.col.Bounds"] = h2d_col_Bounds;
-h2d_col_Bounds.__name__ = true;
+h2d_col_Bounds.__name__ = ["h2d","col","Bounds"];
 h2d_col_Bounds.prototype = {
 	addPos: function(x,y) {
 		if(x < this.xMin) this.xMin = x;
@@ -1759,12 +3793,2978 @@ h2d_col_Bounds.prototype = {
 	}
 	,__class__: h2d_col_Bounds
 };
+var h2d_col_Point = function(x,y) {
+	if(y == null) y = 0.;
+	if(x == null) x = 0.;
+	this.x = x;
+	this.y = y;
+};
+$hxClasses["h2d.col.Point"] = h2d_col_Point;
+h2d_col_Point.__name__ = ["h2d","col","Point"];
+h2d_col_Point.prototype = {
+	__class__: h2d_col_Point
+};
+var h2d_comp_Component = function(name,parent) {
+	this.contentHeight = 0.;
+	this.contentWidth = 0.;
+	h2d_Sprite.call(this,parent);
+	this.name = name;
+	this.classes = [];
+	this.components = [];
+	if(this.parentComponent == null) while(parent != null) {
+		var p;
+		p = (parent instanceof h2d_comp_Component)?parent:null;
+		if(p != null) {
+			this.parentComponent = p;
+			p.components.push(this);
+			break;
+		}
+		parent = parent.parent;
+	}
+	this.bg = new h2d_css_Fill(this);
+	this.set_needRebuild(true);
+};
+$hxClasses["h2d.comp.Component"] = h2d_comp_Component;
+h2d_comp_Component.__name__ = ["h2d","comp","Component"];
+h2d_comp_Component.__super__ = h2d_Sprite;
+h2d_comp_Component.prototype = $extend(h2d_Sprite.prototype,{
+	set_needRebuild: function(v) {
+		this.needRebuild = v;
+		if(v && this.parentComponent != null && !this.parentComponent.needRebuild) this.parentComponent.set_needRebuild(true);
+		return v;
+	}
+	,onDelete: function() {
+		if(this.parentComponent != null) {
+			HxOverrides.remove(this.parentComponent.components,this);
+			this.parentComponent = null;
+		}
+		h2d_Sprite.prototype.onDelete.call(this);
+	}
+	,onAlloc: function() {
+		var old = this.parentComponent;
+		var p = this.parent;
+		while(p != null) {
+			var c;
+			c = (p instanceof h2d_comp_Component)?p:null;
+			if(c != null) {
+				this.parentComponent = c;
+				if(old != c) {
+					if(old != null) HxOverrides.remove(old.components,this);
+					c.components.push(this);
+				}
+				this.set_needRebuild(true);
+				h2d_Sprite.prototype.onAlloc.call(this);
+				return;
+			}
+			p = p.parent;
+		}
+		if(old != null) HxOverrides.remove(old.components,this);
+		this.parentComponent = null;
+		h2d_Sprite.prototype.onAlloc.call(this);
+	}
+	,setStyle: function(s) {
+		this.customStyle = s;
+		this.set_needRebuild(true);
+		return this;
+	}
+	,getStyle: function(willWrite) {
+		if(this.customStyle == null) this.customStyle = new h2d_css_Style();
+		if(willWrite) this.set_needRebuild(true);
+		return this.customStyle;
+	}
+	,addStyle: function(s) {
+		if(this.customStyle == null) this.customStyle = new h2d_css_Style();
+		this.customStyle.apply(s);
+		this.set_needRebuild(true);
+		return this;
+	}
+	,hasClass: function(name) {
+		return Lambda.has(this.classes,name);
+	}
+	,addClass: function(name) {
+		if(!Lambda.has(this.classes,name)) {
+			this.classes.push(name);
+			this.set_needRebuild(true);
+		}
+		return this;
+	}
+	,toggleClass: function(name,flag) {
+		if(flag != null) {
+			if(flag) this.addClass(name); else this.removeClass(name);
+		} else {
+			if(!HxOverrides.remove(this.classes,name)) this.classes.push(name);
+			this.set_needRebuild(true);
+		}
+		return this;
+	}
+	,removeClass: function(name) {
+		if(HxOverrides.remove(this.classes,name)) this.set_needRebuild(true);
+		return this;
+	}
+	,getFont: function() {
+		return h2d_comp_Context.getFont(this.style.fontName,this.style.fontSize | 0);
+	}
+	,evalStyle: function() {
+		if(this.parentComponent == null) {
+			if(this.styleSheet == null) this.styleSheet = h2d_comp_Context.getDefaultCss();
+		} else {
+			this.styleSheet = this.parentComponent.styleSheet;
+			if(this.styleSheet == null) {
+				this.parentComponent.evalStyle();
+				this.styleSheet = this.parentComponent.styleSheet;
+			}
+		}
+		this.styleSheet.applyClasses(this);
+	}
+	,resize: function(c) {
+		if(c.measure) {
+			if(this.style.width != null) this.contentWidth = this.style.width;
+			if(this.style.height != null) this.contentHeight = this.style.height;
+			this.width = this.contentWidth + (this.style.paddingLeft + this.style.marginLeft + this.style.borderSize) + (this.style.paddingRight + this.style.marginRight + this.style.borderSize);
+			this.height = this.contentHeight + (this.style.paddingTop + this.style.marginTop + this.style.borderSize) + (this.style.paddingBottom + this.style.marginBottom + this.style.borderSize);
+		} else {
+			if(this.style.positionAbsolute) {
+				var p;
+				if(this.parent == null) p = new h2d_col_Point(); else p = this.parent.localToGlobal();
+				this.posChanged = true;
+				this.x = this.style.offsetX + (this.style.paddingLeft + this.style.marginLeft + this.style.borderSize) - p.x;
+				this.posChanged = true;
+				this.y = this.style.offsetY + (this.style.paddingTop + this.style.marginTop + this.style.borderSize) - p.y;
+			} else {
+				if(c.xPos != null) {
+					this.posChanged = true;
+					this.x = c.xPos + this.style.offsetX + (this.style.paddingLeft + this.style.marginLeft + this.style.borderSize);
+				}
+				if(c.yPos != null) {
+					this.posChanged = true;
+					this.y = c.yPos + this.style.offsetY + (this.style.paddingTop + this.style.marginTop + this.style.borderSize);
+				}
+			}
+			this.bg.reset();
+			this.bg.set_x(this.style.marginLeft - (this.style.paddingLeft + this.style.marginLeft + this.style.borderSize));
+			this.bg.set_y(this.style.marginTop - (this.style.paddingTop + this.style.marginTop + this.style.borderSize));
+			if(this.style.borderRadius != null && this.style.borderRadius > 0) {
+				var radius = this.style.borderRadius;
+				var _w = this.contentWidth + this.style.paddingLeft + this.style.paddingRight;
+				var _h = this.contentHeight + this.style.paddingTop + this.style.paddingBottom;
+				this.bg.lineRoundRect(this.style.borderColor,0,0,this.width - (this.style.marginLeft + this.style.marginRight),this.height - (this.style.marginTop + this.style.marginBottom),this.style.borderSize,radius);
+				this.bg.arc(this.style.borderColor,this.style.borderSize + radius,this.style.borderSize + radius,this.style.borderSize + radius,this.style.borderSize,Math.PI,Math.PI + Math.PI / 2);
+				this.bg.arc(this.style.borderColor,this.style.borderSize - radius + _w,this.style.borderSize + radius,this.style.borderSize + radius,this.style.borderSize,Math.PI + Math.PI / 2,Math.PI * 2);
+				this.bg.arc(this.style.borderColor,this.style.borderSize - radius + _w,this.style.borderSize - radius + _h,this.style.borderSize + radius,this.style.borderSize,0,Math.PI / 2);
+				this.bg.arc(this.style.borderColor,this.style.borderSize + radius,this.style.borderSize - radius + _h,this.style.borderSize + radius,this.style.borderSize,Math.PI / 2,Math.PI);
+				this.bg.fillArc(this.style.backgroundColor,this.style.borderSize + radius,this.style.borderSize + radius,radius,Math.PI,Math.PI + Math.PI / 2);
+				this.bg.fillArc(this.style.backgroundColor,this.style.borderSize - radius + _w,this.style.borderSize + radius,radius,Math.PI + Math.PI / 2,Math.PI * 2);
+				this.bg.fillArc(this.style.backgroundColor,this.style.borderSize - radius + _w,this.style.borderSize - radius + _h,radius,0,Math.PI / 2);
+				this.bg.fillArc(this.style.backgroundColor,this.style.borderSize + radius,this.style.borderSize - radius + _h,radius,Math.PI / 2,Math.PI);
+				this.bg.fillRect(this.style.backgroundColor,this.style.borderSize + radius,this.style.borderSize,_w - radius * 2,radius);
+				this.bg.fillRect(this.style.backgroundColor,this.style.borderSize + radius,this.style.borderSize + _h - radius,_w - radius * 2,radius);
+				this.bg.fillRect(this.style.backgroundColor,this.style.borderSize,this.style.borderSize + radius,radius,_h - radius * 2);
+				this.bg.fillRect(this.style.backgroundColor,this.style.borderSize + _w - radius,this.style.borderSize + radius,radius,_h - radius * 2);
+				this.bg.fillRect(this.style.backgroundColor,this.style.borderSize + radius,this.style.borderSize + radius,_w - radius * 2,_h - radius * 2);
+			} else {
+				this.bg.lineRect(this.style.borderColor,0,0,this.width - (this.style.marginLeft + this.style.marginRight),this.height - (this.style.marginTop + this.style.marginBottom),this.style.borderSize);
+				this.bg.fillRect(this.style.backgroundColor,this.style.borderSize,this.style.borderSize,this.contentWidth + this.style.paddingLeft + this.style.paddingRight,this.contentHeight + this.style.paddingTop + this.style.paddingBottom);
+			}
+			if(this.style.icon != null) {
+				if(this.iconBmp == null) this.iconBmp = new h2d_Bitmap(null);
+				this.bg.addChildAt(this.iconBmp,0);
+				this.iconBmp.set_x(this.style.paddingLeft + this.style.marginLeft + this.style.borderSize - this.style.paddingLeft + this.style.iconLeft);
+				this.iconBmp.set_y(this.style.paddingTop + this.style.marginTop + this.style.borderSize - this.style.paddingTop + this.style.iconTop);
+				this.iconBmp.tile = h2d_comp_Context.makeTileIcon(this.style.icon);
+				this.iconBmp.set_colorKey(-65281);
+				this.iconBmp.color.setColor(this.style.iconColor != null?this.style.iconColor:-1,null);
+			} else if(this.iconBmp != null) {
+				this.iconBmp.remove();
+				this.iconBmp = null;
+			}
+		}
+	}
+	,resizeRec: function(ctx) {
+		this.resize(ctx);
+		if(ctx.measure) {
+			var _g = 0;
+			var _g1 = this.components;
+			while(_g < _g1.length) {
+				var c = _g1[_g];
+				++_g;
+				c.resizeRec(ctx);
+			}
+		} else {
+			var oldx = ctx.xPos;
+			var oldy = ctx.yPos;
+			if(this.style.layout == h2d_css_Layout.Absolute) {
+				ctx.xPos = null;
+				ctx.yPos = null;
+			} else {
+				ctx.xPos = 0;
+				ctx.yPos = 0;
+			}
+			var _g2 = 0;
+			var _g11 = this.components;
+			while(_g2 < _g11.length) {
+				var c1 = _g11[_g2];
+				++_g2;
+				c1.resizeRec(ctx);
+			}
+			ctx.xPos = oldx;
+			ctx.yPos = oldy;
+		}
+	}
+	,drawRec: function(ctx) {
+		if(this.style.overflowHidden) {
+			var px = (this.absX + 1) / this.matA + 1e-10;
+			var py = (this.absY - 1) / this.matD + 1e-10;
+			ctx.engine.setRenderZone(px + this.style.marginLeft - (this.style.paddingLeft + this.style.marginLeft + this.style.borderSize) | 0,py + this.style.marginTop - (this.style.paddingTop + this.style.marginTop + this.style.borderSize) | 0,this.width - (this.style.marginLeft + this.style.marginRight) | 0,this.height - (this.style.marginTop + this.style.marginBottom) | 0);
+		}
+		h2d_Sprite.prototype.drawRec.call(this,ctx);
+		if(this.style.overflowHidden) ctx.engine.setRenderZone();
+	}
+	,evalStyleRec: function() {
+		this.set_needRebuild(false);
+		this.evalStyle();
+		if(this.style.display != null) this.visible = this.style.display;
+		var _g = 0;
+		var _g1 = this.components;
+		while(_g < _g1.length) {
+			var c = _g1[_g];
+			++_g;
+			c.evalStyleRec();
+		}
+	}
+	,textAlign: function(tf) {
+		if(this.style.width == null) {
+			tf.posChanged = true;
+			tf.x = 0;
+			return;
+		}
+		var _g = this.style.textAlign;
+		if(_g != null) switch(_g[1]) {
+		case 0:
+			tf.posChanged = true;
+			tf.x = 0;
+			break;
+		case 1:
+			tf.set_x(this.style.width - tf.get_textWidth());
+			break;
+		case 2:
+			tf.set_x(Std["int"]((this.style.width - tf.get_textWidth()) * 0.5));
+			break;
+		}
+	}
+	,sync: function(ctx) {
+		if(this.needRebuild) {
+			this.evalStyleRec();
+			var ctx1 = new h2d_comp_Context(ctx.engine.width,ctx.engine.height);
+			this.resizeRec(ctx1);
+			ctx1.measure = false;
+			this.resizeRec(ctx1);
+		}
+		h2d_Sprite.prototype.sync.call(this,ctx);
+	}
+	,__class__: h2d_comp_Component
+});
+var h2d_comp_Box = function(layout,parent) {
+	this.scrollY = 0.;
+	this.scrollX = 0.;
+	h2d_comp_Component.call(this,"box",parent);
+	if(layout == null) layout = h2d_css_Layout.Inline;
+	this.addClass(":" + layout[0].toLowerCase());
+};
+$hxClasses["h2d.comp.Box"] = h2d_comp_Box;
+h2d_comp_Box.__name__ = ["h2d","comp","Box"];
+h2d_comp_Box.__super__ = h2d_comp_Component;
+h2d_comp_Box.prototype = $extend(h2d_comp_Component.prototype,{
+	resizeRec: function(ctx) {
+		var extX = this.style.paddingLeft + this.style.marginLeft + this.style.borderSize;
+		var extY = this.style.paddingTop + this.style.marginTop + this.style.borderSize;
+		var ctx2 = new h2d_comp_Context(0,0);
+		ctx2.measure = ctx.measure;
+		if(ctx.measure) {
+			this.width = ctx.maxWidth;
+			this.height = ctx.maxHeight;
+			this.contentWidth = this.width - (extX + (this.style.paddingRight + this.style.marginRight + this.style.borderSize));
+			this.contentHeight = this.height - (extY + (this.style.paddingBottom + this.style.marginBottom + this.style.borderSize));
+			if(this.style.width != null) this.contentWidth = this.style.width;
+			if(this.style.height != null) this.contentHeight = this.style.height;
+		} else {
+			ctx2.xPos = ctx.xPos;
+			ctx2.yPos = ctx.yPos;
+			if(ctx2.xPos == null) ctx2.xPos = 0;
+			if(ctx2.yPos == null) ctx2.yPos = 0;
+			this.resize(ctx2);
+		}
+		var _g = this.style.layout;
+		if(_g != null) switch(_g[1]) {
+		case 4:
+			var lineHeight = 0.;
+			var xPos = 0.;
+			var yPos = 0.;
+			var maxPos = 0.;
+			var prev = null;
+			var _g1 = 0;
+			var _g2 = this.components;
+			while(_g1 < _g2.length) {
+				var c = _g2[_g1];
+				++_g1;
+				if(!c.visible) continue;
+				if(ctx.measure) {
+					ctx2.maxWidth = this.contentWidth;
+					ctx2.maxHeight = this.contentHeight - (yPos + lineHeight + this.style.verticalSpacing);
+					c.resizeRec(ctx2);
+					var next = xPos + c.width;
+					if(prev != null) next += this.style.horizontalSpacing;
+					if(xPos > 0 && next > this.contentWidth) {
+						yPos += lineHeight + this.style.verticalSpacing;
+						xPos = c.width;
+						lineHeight = c.height;
+					} else {
+						xPos = next;
+						if(c.height > lineHeight) lineHeight = c.height;
+					}
+					if(xPos > maxPos) maxPos = xPos;
+				} else {
+					var next1 = xPos + c.width;
+					if(xPos > 0 && next1 > this.contentWidth) {
+						yPos += lineHeight + this.style.verticalSpacing;
+						xPos = 0;
+						lineHeight = c.height;
+					} else if(c.height > lineHeight) lineHeight = c.height;
+					ctx2.xPos = xPos + this.scrollX;
+					ctx2.yPos = yPos + this.scrollY;
+					c.resizeRec(ctx2);
+					xPos += c.width + this.style.horizontalSpacing;
+				}
+				prev = c;
+			}
+			if(ctx.measure && this.style.dock == null) {
+				if(maxPos < this.contentWidth && this.style.width == null) this.contentWidth = maxPos;
+				if(yPos + lineHeight < this.contentHeight && this.style.height == null) this.contentHeight = yPos + lineHeight;
+			}
+			break;
+		case 0:
+			var lineHeight1 = 0.;
+			var xPos1 = 0.;
+			var prev1 = null;
+			var _g11 = 0;
+			var _g21 = this.components;
+			while(_g11 < _g21.length) {
+				var c1 = _g21[_g11];
+				++_g11;
+				if(!c1.visible) continue;
+				if(ctx.measure) {
+					if(prev1 != null) xPos1 += this.style.horizontalSpacing;
+					ctx2.maxWidth = this.contentWidth - xPos1;
+					if(ctx2.maxWidth < 0) ctx2.maxWidth = 0;
+					ctx2.maxHeight = this.contentHeight;
+					c1.resizeRec(ctx2);
+					xPos1 += c1.width;
+					if(c1.height > lineHeight1) lineHeight1 = c1.height;
+				} else {
+					ctx2.xPos = xPos1 + this.scrollX;
+					ctx2.yPos = this.scrollY;
+					c1.resizeRec(ctx2);
+					xPos1 += c1.width + this.style.horizontalSpacing;
+				}
+				prev1 = c1;
+			}
+			if(ctx.measure && this.style.dock == null) {
+				if(xPos1 < this.contentWidth && this.style.width == null) this.contentWidth = xPos1;
+				if(lineHeight1 < this.contentHeight && this.style.height == null) this.contentHeight = lineHeight1;
+			}
+			break;
+		case 1:
+			var colWidth = 0.;
+			var yPos1 = 0.;
+			var prev2 = null;
+			var _g12 = 0;
+			var _g22 = this.components;
+			while(_g12 < _g22.length) {
+				var c2 = _g22[_g12];
+				++_g12;
+				if(!c2.visible) continue;
+				if(ctx.measure) {
+					if(prev2 != null) yPos1 += this.style.verticalSpacing;
+					ctx2.maxWidth = this.contentWidth;
+					ctx2.maxHeight = this.contentHeight - yPos1;
+					if(ctx2.maxHeight < 0) ctx2.maxHeight = 0;
+					c2.resizeRec(ctx2);
+					yPos1 += c2.height;
+					if(c2.width > colWidth) colWidth = c2.width;
+				} else {
+					ctx2.xPos = this.scrollX;
+					ctx2.yPos = yPos1 + this.scrollY;
+					c2.resizeRec(ctx2);
+					yPos1 += c2.height + this.style.verticalSpacing;
+				}
+				prev2 = c2;
+			}
+			if(ctx.measure && this.style.dock == null) {
+				if(colWidth < this.contentWidth && this.style.width == null) this.contentWidth = colWidth;
+				if(yPos1 < this.contentHeight && this.style.height == null) this.contentHeight = yPos1;
+			}
+			break;
+		case 2:
+			ctx2.xPos = null;
+			ctx2.yPos = null;
+			if(ctx.measure) {
+				ctx2.maxWidth = this.contentWidth;
+				ctx2.maxHeight = this.contentHeight;
+			}
+			var _g13 = 0;
+			var _g23 = this.components;
+			while(_g13 < _g23.length) {
+				var c3 = _g23[_g13];
+				++_g13;
+				c3.resizeRec(ctx2);
+			}
+			break;
+		case 3:
+			ctx2.xPos = 0;
+			ctx2.yPos = 0;
+			var xPos2 = 0.;
+			var yPos2 = 0.;
+			var w = this.contentWidth;
+			var h = this.contentHeight;
+			if(ctx.measure) {
+				var _g14 = 0;
+				var _g24 = this.components;
+				while(_g14 < _g24.length) {
+					var c4 = _g24[_g14];
+					++_g14;
+					ctx2.maxWidth = w;
+					ctx2.maxHeight = h;
+					c4.resizeRec(ctx2);
+					var d = c4.style.dock;
+					if(d == null) d = h2d_css_DockStyle.Full;
+					switch(d[1]) {
+					case 1:case 2:
+						w -= c4.width;
+						break;
+					case 0:case 3:
+						h -= c4.height;
+						break;
+					case 4:
+						break;
+					}
+					if(w < 0) w = 0;
+					if(h < 0) h = 0;
+				}
+			} else {
+				var _g15 = 0;
+				var _g25 = this.components;
+				while(_g15 < _g25.length) {
+					var c5 = _g25[_g15];
+					++_g15;
+					ctx2.maxWidth = w;
+					ctx2.maxHeight = h;
+					var d1 = c5.style.dock;
+					if(d1 == null) d1 = h2d_css_DockStyle.Full;
+					ctx2.xPos = xPos2 + this.scrollX;
+					ctx2.yPos = yPos2 + this.scrollY;
+					switch(d1[1]) {
+					case 1:case 0:
+						break;
+					case 2:
+						ctx2.xPos += w - c5.width;
+						break;
+					case 3:
+						ctx2.yPos += h - c5.height;
+						break;
+					case 4:
+						ctx2.xPos += (w - c5.width) * 0.5 | 0;
+						ctx2.yPos += (h - c5.height) * 0.5 | 0;
+						break;
+					}
+					c5.resizeRec(ctx2);
+					switch(d1[1]) {
+					case 1:
+						w -= c5.width;
+						xPos2 += c5.width;
+						break;
+					case 2:
+						w -= c5.width;
+						break;
+					case 0:
+						h -= c5.height;
+						yPos2 += c5.height;
+						break;
+					case 3:
+						h -= c5.height;
+						break;
+					case 4:
+						break;
+					}
+					if(w < 0) w = 0;
+					if(h < 0) h = 0;
+				}
+			}
+			break;
+		}
+		if(ctx.measure) {
+			this.width = this.contentWidth + extX + (this.style.paddingRight + this.style.marginRight + this.style.borderSize);
+			this.height = this.contentHeight + extY + (this.style.paddingBottom + this.style.marginBottom + this.style.borderSize);
+		} else if(this.style.backgroundColor != h2d_css_FillStyle.Transparent) {
+			if(this.input == null) {
+				this.input = new h2d_Interactive(0,0);
+				this.input.set_cursor(hxd_Cursor.Default);
+				this.bg.addChildAt(this.input,0);
+			}
+			this.input.width = this.width - (this.style.marginLeft + this.style.marginRight);
+			this.input.height = this.height - (this.style.marginTop + this.style.marginBottom);
+		} else if(this.input != null) {
+			this.input.remove();
+			this.input = null;
+		}
+	}
+	,__class__: h2d_comp_Box
+});
+var h2d_comp_Interactive = function() { };
+$hxClasses["h2d.comp.Interactive"] = h2d_comp_Interactive;
+h2d_comp_Interactive.__name__ = ["h2d","comp","Interactive"];
+h2d_comp_Interactive.__super__ = h2d_comp_Component;
+h2d_comp_Interactive.prototype = $extend(h2d_comp_Component.prototype,{
+	resize: function(ctx) {
+		h2d_comp_Component.prototype.resize.call(this,ctx);
+		if(!ctx.measure) {
+			this.input.width = this.width - (this.style.marginLeft + this.style.marginRight);
+			this.input.height = this.height - (this.style.marginTop + this.style.marginBottom);
+			this.input.visible = !this.hasClass(":disabled");
+		}
+	}
+	,onClick: function() {
+	}
+	,__class__: h2d_comp_Interactive
+});
+var h2d_comp_Button = function() { };
+$hxClasses["h2d.comp.Button"] = h2d_comp_Button;
+h2d_comp_Button.__name__ = ["h2d","comp","Button"];
+h2d_comp_Button.__super__ = h2d_comp_Interactive;
+h2d_comp_Button.prototype = $extend(h2d_comp_Interactive.prototype,{
+	set_text: function(t) {
+		this.set_needRebuild(true);
+		return this.text = t;
+	}
+	,resize: function(ctx) {
+		if(ctx.measure) {
+			this.tf.set_font(this.getFont());
+			this.tf.set_textColor(this.style.color);
+			this.tf.set_text(this.text);
+			this.tf.filter = true;
+			this.contentWidth = this.tf.get_textWidth();
+			this.contentHeight = this.tf.get_textHeight();
+		}
+		h2d_comp_Interactive.prototype.resize.call(this,ctx);
+	}
+	,__class__: h2d_comp_Button
+});
+var h2d_comp_Checkbox = function() { };
+$hxClasses["h2d.comp.Checkbox"] = h2d_comp_Checkbox;
+h2d_comp_Checkbox.__name__ = ["h2d","comp","Checkbox"];
+h2d_comp_Checkbox.__super__ = h2d_comp_Interactive;
+h2d_comp_Checkbox.prototype = $extend(h2d_comp_Interactive.prototype,{
+	set_checked: function(b) {
+		this.toggleClass(":checked",b);
+		return this.checked = b;
+	}
+	,resize: function(ctx) {
+		h2d_comp_Interactive.prototype.resize.call(this,ctx);
+		if(!ctx.measure) {
+			this.input.width = this.width - (this.style.marginLeft + this.style.marginRight);
+			this.input.height = this.height - (this.style.marginTop + this.style.marginBottom);
+			if(this.checked) {
+				var m = this.style.borderSize + this.style.tickSpacing;
+				this.bg.fillRect(this.style.tickColor,m,m,this.input.width - m * 2,this.input.height - m * 2);
+			}
+		}
+	}
+	,onClick: function() {
+		this.set_checked(!this.checked);
+		this.onChange(this.checked);
+	}
+	,onChange: function(checked) {
+	}
+	,__class__: h2d_comp_Checkbox
+});
+var h2d_comp_Color = function() { };
+$hxClasses["h2d.comp.Color"] = h2d_comp_Color;
+h2d_comp_Color.__name__ = ["h2d","comp","Color"];
+h2d_comp_Color.__super__ = h2d_comp_Component;
+h2d_comp_Color.prototype = $extend(h2d_comp_Component.prototype,{
+	set_value: function(v) {
+		this.set_needRebuild(true);
+		return this.value = v;
+	}
+	,resize: function(ctx) {
+		h2d_comp_Component.prototype.resize.call(this,ctx);
+		if(!ctx.measure) {
+			this.input.width = this.width - (this.style.marginLeft + this.style.marginRight);
+			this.input.height = this.height - (this.style.marginTop + this.style.marginBottom);
+			this.bg.content.rectColor(this.style.paddingLeft + this.style.marginLeft + this.style.borderSize - this.style.marginLeft,this.style.paddingTop + this.style.marginTop + this.style.borderSize - this.style.marginTop,this.contentWidth,this.contentHeight,-16777216 | this.value);
+		}
+	}
+	,__class__: h2d_comp_Color
+});
+var h2d_css_Fill = function(parent) {
+	h2d_TileGroup.call(this,h2d_Tile.fromColor(16777215),parent);
+};
+$hxClasses["h2d.css.Fill"] = h2d_css_Fill;
+h2d_css_Fill.__name__ = ["h2d","css","Fill"];
+h2d_css_Fill.__super__ = h2d_TileGroup;
+h2d_css_Fill.prototype = $extend(h2d_TileGroup.prototype,{
+	fillRectGradient: function(x,y,w,h,ctl,ctr,cbl,cbr) {
+		this.content.rectGradient(x,y,w,h,ctl,ctr,cbl,cbr);
+	}
+	,fillArc: function(fill,x,y,ray,start,end) {
+		switch(fill[1]) {
+		case 0:
+			break;
+		case 1:
+			var c = fill[2];
+			this.content.fillArc(x,y,ray,c,start,end);
+			break;
+		case 2:
+			var d = fill[5];
+			var c1 = fill[4];
+			var b = fill[3];
+			var a = fill[2];
+			break;
+		}
+	}
+	,fillRect: function(fill,x,y,w,h) {
+		switch(fill[1]) {
+		case 0:
+			break;
+		case 1:
+			var c = fill[2];
+			this.content.rectColor(x,y,w,h,c);
+			break;
+		case 2:
+			var d = fill[5];
+			var c1 = fill[4];
+			var b = fill[3];
+			var a = fill[2];
+			this.content.rectGradient(x,y,w,h,a,b,c1,d);
+			break;
+		}
+	}
+	,clerp: function(c1,c2,v) {
+		var a = (c1 >>> 24) * (1 - v) + (c2 >>> 24) * v | 0;
+		var r = (c1 >> 16 & 255) * (1 - v) + (c2 >> 16 & 255) * v | 0;
+		var g = (c1 >> 8 & 255) * (1 - v) + (c2 >> 8 & 255) * v | 0;
+		var b = (c1 & 255) * (1 - v) + (c2 & 255) * v | 0;
+		return a << 24 | r << 16 | g << 8 | b;
+	}
+	,arc: function(fill,x,y,ray,size,start,end) {
+		switch(fill[1]) {
+		case 0:
+			break;
+		case 1:
+			var c = fill[2];
+			this.content.arc(x,y,ray,size,start,end,c);
+			break;
+		case 2:
+			var d = fill[5];
+			var c1 = fill[4];
+			var b = fill[3];
+			var a = fill[2];
+			break;
+		}
+	}
+	,lineRoundRect: function(fill,x,y,w,h,size,ellipse) {
+		if(size <= 0) return;
+		switch(fill[1]) {
+		case 0:
+			break;
+		case 1:
+			var c = fill[2];
+			this.content.rectColor(x + ellipse,y,w - ellipse * 2,size,c);
+			this.content.rectColor(x + ellipse,y + h - size,w - ellipse * 2,size,c);
+			this.content.rectColor(x,y + size + ellipse,size,h - size * 2 - ellipse * 2,c);
+			this.content.rectColor(x + w - size,y + size + ellipse,size,h - size * 2 - ellipse * 2,c);
+			break;
+		case 2:
+			var d = fill[5];
+			var c1 = fill[4];
+			var b = fill[3];
+			var a = fill[2];
+			break;
+		}
+	}
+	,lineRect: function(fill,x,y,w,h,size) {
+		if(size <= 0) return;
+		switch(fill[1]) {
+		case 0:
+			break;
+		case 1:
+			var c = fill[2];
+			this.content.rectColor(x,y,w,size,c);
+			this.content.rectColor(x,y + h - size,w,size,c);
+			this.content.rectColor(x,y + size,size,h - size * 2,c);
+			this.content.rectColor(x + w - size,y + size,size,h - size * 2,c);
+			break;
+		case 2:
+			var d = fill[5];
+			var c1 = fill[4];
+			var b = fill[3];
+			var a = fill[2];
+			var px = size / w;
+			var py = size / h;
+			var a2 = this.clerp(a,c1,py);
+			var b2 = this.clerp(b,d,py);
+			var c2 = this.clerp(a,c1,1 - py);
+			var d2 = this.clerp(b,d,1 - py);
+			this.content.rectGradient(x,y,w,size,a,b,a2,b2);
+			this.content.rectGradient(x,y + h - size,w,size,c2,d2,c1,d);
+			this.fillRectGradient(x,y + size,size,h - size * 2,a2,this.clerp(a2,b2,px),c2,this.clerp(c2,d2,px));
+			this.fillRectGradient(x + w - size,y + size,size,h - size * 2,this.clerp(a2,b2,1 - px),b2,this.clerp(c2,d2,1 - px),d2);
+			break;
+		}
+	}
+	,__class__: h2d_css_Fill
+});
+var h2d_comp_Context = function(w,h) {
+	this.maxWidth = w;
+	this.maxHeight = h;
+	this.measure = true;
+};
+$hxClasses["h2d.comp.Context"] = h2d_comp_Context;
+h2d_comp_Context.__name__ = ["h2d","comp","Context"];
+h2d_comp_Context.getFont = function(name,size) {
+	return hxd_res_FontBuilder.getFont(name,size);
+};
+h2d_comp_Context.makeTileIcon = function(pixels) {
+	var t = h2d_comp_Context.cachedIcons.h[pixels.__id__];
+	if(t != null && !t.isDisposed()) return t;
+	t = h2d_Tile.fromPixels(pixels);
+	h2d_comp_Context.cachedIcons.set(pixels,t);
+	return t;
+};
+h2d_comp_Context.getDefaultCss = function() {
+	if(h2d_comp_Context.DEF != null) return h2d_comp_Context.DEF;
+	var e = new h2d_css_Engine();
+	e.addRules(h2d_comp_Context.DEFAULT_CSS);
+	return e;
+};
+h2d_comp_Context.prototype = {
+	__class__: h2d_comp_Context
+};
+var h2d_comp_Input = function() { };
+$hxClasses["h2d.comp.Input"] = h2d_comp_Input;
+h2d_comp_Input.__name__ = ["h2d","comp","Input"];
+h2d_comp_Input.__super__ = h2d_comp_Interactive;
+h2d_comp_Input.prototype = $extend(h2d_comp_Interactive.prototype,{
+	set_cursorPos: function(v) {
+		this.textAlign(this.tf);
+		this.cursor.set_x(this.tf.x + this.tf.calcTextWidth(HxOverrides.substr(this.value,0,v)) + (this.style.paddingLeft + this.style.marginLeft + this.style.borderSize));
+		if(this.cursor.x > this.width - 4) {
+			var dx = this.cursor.x - (this.width - 4);
+			var _g = this.tf;
+			_g.posChanged = true;
+			_g.x = _g.x - dx;
+			var _g1 = this.cursor;
+			_g1.posChanged = true;
+			_g1.x = _g1.x - dx;
+		}
+		return this.cursorPos = v;
+	}
+	,focus: function() {
+		this.input.focus();
+		this.set_cursorPos(this.value.length);
+	}
+	,set_value: function(t) {
+		this.set_needRebuild(true);
+		return this.value = t;
+	}
+	,resize: function(ctx) {
+		if(ctx.measure) {
+			this.tf.set_font(this.getFont());
+			this.tf.set_textColor(this.style.color);
+			this.tf.set_text(this.value);
+			this.tf.filter = true;
+			this.textAlign(this.tf);
+			this.contentWidth = this.tf.get_textWidth();
+			this.contentHeight = this.tf.get_textHeight();
+			if(this.cursorPos < 0) this.set_cursorPos(0);
+			if(this.cursorPos > this.value.length) this.set_cursorPos(this.value.length);
+			this.set_cursorPos(this.cursorPos);
+		}
+		h2d_comp_Interactive.prototype.resize.call(this,ctx);
+		if(!ctx.measure) {
+			this.cursor.set_y(this.style.paddingTop + this.style.marginTop + this.style.borderSize - 1);
+			this.cursor.tile = h2d_Tile.fromColor(this.style.cursorColor,1,this.height - (this.style.paddingTop + this.style.marginTop + this.style.borderSize) - (this.style.paddingBottom + this.style.marginBottom + this.style.borderSize) + 2 | 0);
+		}
+	}
+	,onClick: function() {
+		this.focus();
+	}
+	,__class__: h2d_comp_Input
+});
+var h2d_comp_ItemList = function(parent) {
+	this.selected = -1;
+	h2d_comp_Box.call(this,h2d_css_Layout.Vertical,parent);
+	this.name = "itemlist";
+	this.inputs = [];
+};
+$hxClasses["h2d.comp.ItemList"] = h2d_comp_ItemList;
+h2d_comp_ItemList.__name__ = ["h2d","comp","ItemList"];
+h2d_comp_ItemList.__super__ = h2d_comp_Box;
+h2d_comp_ItemList.prototype = $extend(h2d_comp_Box.prototype,{
+	set_selected: function(v) {
+		this.set_needRebuild(true);
+		return this.selected = v;
+	}
+	,onWheel: function(e) {
+		this.scrollY -= e.wheelDelta * (this.components.length == 0?0:this.components[0].height + this.style.verticalSpacing);
+		if(this.scrollY > 0) this.scrollY = 0;
+		e.propagate = false;
+		this.set_needRebuild(true);
+	}
+	,resizeRec: function(ctx) {
+		var _g2 = this;
+		h2d_comp_Box.prototype.resizeRec.call(this,ctx);
+		if(!ctx.measure) {
+			while(this.inputs.length < this.components.length) this.inputs.push(new h2d_Interactive(0,0,this));
+			while(this.inputs.length > this.components.length) this.inputs.pop().remove();
+			var _g1 = 0;
+			var _g = this.components.length;
+			while(_g1 < _g) {
+				var i = [_g1++];
+				var c = this.components[i[0]];
+				var $int = [this.inputs[i[0]]];
+				var selected = this.selected == i[0];
+				var cursor = [null];
+				$int[0].posChanged = true;
+				$int[0].x = -this.style.paddingLeft;
+				$int[0].posChanged = true;
+				$int[0].y = c.y - this.style.verticalSpacing * 0.5;
+				$int[0].width = this.contentWidth + this.style.paddingLeft + this.style.paddingRight;
+				$int[0].height = c.height + this.style.verticalSpacing;
+				var oldCursor = $int[0].childs[0];
+				if(oldCursor != null) {
+					cursor[0] = (oldCursor instanceof h2d_Bitmap)?oldCursor:null;
+					if(cursor[0] == null) {
+						if(oldCursor != null && oldCursor.parent != null) oldCursor.parent.removeChild(oldCursor);
+					}
+				}
+				if(selected) {
+					if(cursor[0] != null) {
+						if(cursor[0] != null && cursor[0].parent != null) cursor[0].parent.removeChild(cursor[0]);
+					}
+					cursor[0] = new h2d_Bitmap(h2d_Tile.fromColor(this.style.selectionColor,$int[0].width | 0,$int[0].height | 0,(this.style.selectionColor >>> 24) / 255),$int[0]);
+					$int[0].onOver = (function(i) {
+						return function(_) {
+							_g2.onItemOver(i[0]);
+						};
+					})(i);
+					$int[0].onOut = (function() {
+						return function(_1) {
+							_g2.onItemOver(-1);
+						};
+					})();
+					$int[0].onPush = (function() {
+						return function(_2) {
+						};
+					})();
+				} else {
+					$int[0].onOver = (function(cursor,$int,i) {
+						return function(_3) {
+							if(cursor[0] != null) {
+								if(cursor[0] != null && cursor[0].parent != null) cursor[0].parent.removeChild(cursor[0]);
+							}
+							cursor[0] = new h2d_Bitmap(h2d_Tile.fromColor(_g2.style.cursorColor,$int[0].width | 0,$int[0].height | 0,(_g2.style.cursorColor >>> 24) / 255),$int[0]);
+							_g2.onItemOver(i[0]);
+						};
+					})(cursor,$int,i);
+					$int[0].onOut = (function(cursor) {
+						return function(_4) {
+							if(cursor[0] != null) {
+								if(cursor[0] != null && cursor[0].parent != null) cursor[0].parent.removeChild(cursor[0]);
+							}
+							cursor[0] = null;
+							_g2.onItemOver(-1);
+						};
+					})(cursor);
+					$int[0].onPush = (function(i) {
+						return function(_5) {
+							if(_g2.selected != i[0]) {
+								_g2.set_selected(i[0]);
+								_g2.onChange(i[0]);
+							}
+						};
+					})(i);
+				}
+				$int[0].onWheel = $bind(this,this.onWheel);
+				if(Lambda.indexOf(this.childs,$int[0]) != 1 + i[0]) {
+					HxOverrides.remove(this.childs,$int[0]);
+					this.childs.splice(1 + i[0],0,$int[0]);
+					$int[0].onParentChanged();
+				}
+			}
+		}
+	}
+	,onItemOver: function(current) {
+	}
+	,onChange: function(selected) {
+	}
+	,__class__: h2d_comp_ItemList
+});
+var h2d_comp_JQuery = function(root,query) {
+	while(root.parentComponent != null) root = root.parentComponent;
+	this.root = root;
+	this.select = this.getSet(query);
+};
+$hxClasses["h2d.comp.JQuery"] = h2d_comp_JQuery;
+h2d_comp_JQuery.__name__ = ["h2d","comp","JQuery"];
+h2d_comp_JQuery.prototype = {
+	getComponents: function() {
+		return this.select;
+	}
+	,toggleClass: function(cl,flag) {
+		var _g = 0;
+		var _g1 = this.select;
+		while(_g < _g1.length) {
+			var s = _g1[_g];
+			++_g;
+			s.toggleClass(cl,flag);
+		}
+		return this;
+	}
+	,find: function(q) {
+		if(js_Boot.__instanceof(q,h2d_comp_Component)) return new h2d_comp_JQuery(this.root,Lambda.has(this.select,q)?null:q);
+		if(typeof(q) == "string") {
+			var q1 = this.parseQuery(q);
+			var out = [];
+			var _g = 0;
+			var _g1 = this.select;
+			while(_g < _g1.length) {
+				var s = _g1[_g];
+				++_g;
+				this.lookupRec(s,q1,out);
+			}
+			return new h2d_comp_JQuery(this.root,out);
+		}
+		throw new js__$Boot_HaxeError("Invalid JQuery " + Std.string(q));
+		return null;
+	}
+	,filter: function(q) {
+		if(js_Boot.__instanceof(q,h2d_comp_Component)) return new h2d_comp_JQuery(this.root,Lambda.has(this.select,q)?null:q);
+		if(typeof(q) == "string") {
+			var q1 = this.parseQuery(q);
+			return new h2d_comp_JQuery(this.root,(function($this) {
+				var $r;
+				var _g = [];
+				{
+					var _g1 = 0;
+					var _g2 = $this.select;
+					while(_g1 < _g2.length) {
+						var s = _g2[_g1];
+						++_g1;
+						if($this.matchQuery(q1,s)) _g.push(s);
+					}
+				}
+				$r = _g;
+				return $r;
+			}(this)));
+		}
+		if(js_Boot.__instanceof(q,h2d_comp_JQuery)) {
+			var q2 = q;
+			return new h2d_comp_JQuery(this.root,(function($this) {
+				var $r;
+				var _g3 = [];
+				{
+					var _g11 = 0;
+					var _g21 = $this.select;
+					while(_g11 < _g21.length) {
+						var s1 = _g21[_g11];
+						++_g11;
+						if(Lambda.has(q2.select,s1)) _g3.push(s1);
+					}
+				}
+				$r = _g3;
+				return $r;
+			}(this)));
+		}
+		throw new js__$Boot_HaxeError("Invalid JQuery " + Std.string(q));
+		return null;
+	}
+	,not: function(q) {
+		if(js_Boot.__instanceof(q,h2d_comp_Component)) return new h2d_comp_JQuery(this.root,(function($this) {
+			var $r;
+			var _g = [];
+			{
+				var _g1 = 0;
+				var _g2 = $this.select;
+				while(_g1 < _g2.length) {
+					var s = _g2[_g1];
+					++_g1;
+					if(s != q) _g.push(s);
+				}
+			}
+			$r = _g;
+			return $r;
+		}(this)));
+		if(typeof(q) == "string") {
+			var q1 = this.parseQuery(q);
+			return new h2d_comp_JQuery(this.root,(function($this) {
+				var $r;
+				var _g11 = [];
+				{
+					var _g21 = 0;
+					var _g3 = $this.select;
+					while(_g21 < _g3.length) {
+						var s1 = _g3[_g21];
+						++_g21;
+						if(!$this.matchQuery(q1,s1)) _g11.push(s1);
+					}
+				}
+				$r = _g11;
+				return $r;
+			}(this)));
+		}
+		if(js_Boot.__instanceof(q,h2d_comp_JQuery)) {
+			var q2 = q;
+			return new h2d_comp_JQuery(this.root,(function($this) {
+				var $r;
+				var _g12 = [];
+				{
+					var _g22 = 0;
+					var _g31 = $this.select;
+					while(_g22 < _g31.length) {
+						var s2 = _g31[_g22];
+						++_g22;
+						if(!Lambda.has(q2.select,s2)) _g12.push(s2);
+					}
+				}
+				$r = _g12;
+				return $r;
+			}(this)));
+		}
+		throw new js__$Boot_HaxeError("Invalid JQuery " + Std.string(q));
+		return null;
+	}
+	,click: function(f) {
+		var _g2 = this;
+		var _g = 0;
+		var _g1 = this.select;
+		while(_g < _g1.length) {
+			var c = [_g1[_g]];
+			++_g;
+			var $int;
+			$int = (c[0] instanceof h2d_comp_Interactive)?c[0]:null;
+			if($int == null) throw new js__$Boot_HaxeError(Std.string(c[0]) + " is not interactive");
+			$int.onClick = (function(c) {
+				return function() {
+					f(new h2d_comp_JQuery(_g2.root,c[0]));
+				};
+			})(c);
+		}
+		return this;
+	}
+	,show: function() {
+		var _g = 0;
+		var _g1 = this.select;
+		while(_g < _g1.length) {
+			var s = _g1[_g];
+			++_g;
+			s.getStyle(true).display = true;
+		}
+		return this;
+	}
+	,hide: function() {
+		var _g = 0;
+		var _g1 = this.select;
+		while(_g < _g1.length) {
+			var s = _g1[_g];
+			++_g;
+			s.getStyle(true).display = false;
+		}
+		return this;
+	}
+	,toggle: function() {
+		var _g = 0;
+		var _g1 = this.select;
+		while(_g < _g1.length) {
+			var s = _g1[_g];
+			++_g;
+			var s1 = s.getStyle(true);
+			s1.display = !s1.display;
+		}
+		return this;
+	}
+	,iterator: function() {
+		var _g = this;
+		var it = HxOverrides.iter(this.select);
+		return { hasNext : $bind(it,it.hasNext), next : function() {
+			return new h2d_comp_JQuery(_g.root,it.next());
+		}};
+	}
+	,_get_val: function() {
+		var c = this.select[0];
+		if(c == null) return null;
+		var _g = c.name;
+		switch(_g) {
+		case "slider":
+			return (js_Boot.__cast(c , h2d_comp_Slider)).value;
+		case "checkbox":
+			return (js_Boot.__cast(c , h2d_comp_Checkbox)).checked;
+		case "input":
+			return (js_Boot.__cast(c , h2d_comp_Input)).value;
+		case "color":
+			return (js_Boot.__cast(c , h2d_comp_Color)).value;
+		case "itemlist":
+			return (js_Boot.__cast(c , h2d_comp_ItemList)).selected;
+		case "select":
+			return (js_Boot.__cast(c , h2d_comp_Select)).value;
+		default:
+			return null;
+		}
+	}
+	,_set_val: function(v) {
+		var _g = 0;
+		var _g1 = this.select;
+		while(_g < _g1.length) {
+			var c = _g1[_g];
+			++_g;
+			var _g2 = c.name;
+			switch(_g2) {
+			case "slider":
+				(js_Boot.__cast(c , h2d_comp_Slider)).set_value(v);
+				break;
+			case "checkbox":
+				(js_Boot.__cast(c , h2d_comp_Checkbox)).set_checked(v != null && v != false);
+				break;
+			case "input":
+				(js_Boot.__cast(c , h2d_comp_Input)).set_value(Std.string(v));
+				break;
+			case "color":
+				(js_Boot.__cast(c , h2d_comp_Color)).set_value(v);
+				break;
+			case "itemlist":
+				(js_Boot.__cast(c , h2d_comp_ItemList)).set_selected(v);
+				break;
+			case "select":
+				(js_Boot.__cast(c , h2d_comp_Select)).setValue(v);
+				break;
+			default:
+				null;
+			}
+		}
+		return this;
+	}
+	,_get_text: function() {
+		var c = this.select[0];
+		if(c == null) return "";
+		var _g = c.name;
+		switch(_g) {
+		case "button":
+			return (js_Boot.__cast(c , h2d_comp_Button)).text;
+		case "label":
+			return (js_Boot.__cast(c , h2d_comp_Label)).text;
+		default:
+			return "";
+		}
+	}
+	,_set_text: function(v) {
+		var _g = 0;
+		var _g1 = this.select;
+		while(_g < _g1.length) {
+			var c = _g1[_g];
+			++_g;
+			var _g2 = c.name;
+			switch(_g2) {
+			case "button":
+				(js_Boot.__cast(c , h2d_comp_Button)).set_text(v);
+				break;
+			case "label":
+				(js_Boot.__cast(c , h2d_comp_Label)).set_text(v);
+				break;
+			default:
+			}
+		}
+		return this;
+	}
+	,_set_style: function(v) {
+		var s = new h2d_css_Style();
+		new h2d_css_Parser().parse(v,s);
+		var _g = 0;
+		var _g1 = this.select;
+		while(_g < _g1.length) {
+			var c = _g1[_g];
+			++_g;
+			c.addStyle(s);
+		}
+		return this;
+	}
+	,getSet: function(query) {
+		var set;
+		if(query == null) set = []; else if(js_Boot.__instanceof(query,h2d_comp_Component)) set = [query]; else if((query instanceof Array) && query.__enum__ == null) {
+			var a = query;
+			var _g = 0;
+			while(_g < a.length) {
+				var v = a[_g];
+				++_g;
+				if(!js_Boot.__instanceof(v,h2d_comp_Component)) throw new js__$Boot_HaxeError("Invalid JQuery " + Std.string(query));
+			}
+			set = a;
+		} else if(typeof(query) == "string") set = this.lookup(this.root,query); else throw new js__$Boot_HaxeError("Invalid JQuery " + Std.string(query));
+		return set;
+	}
+	,lookup: function(root,query) {
+		var set = [];
+		this.lookupRec(root,this.parseQuery(query),set);
+		return set;
+	}
+	,parseQuery: function(q) {
+		return new h2d_css_Parser().parseClasses(q);
+	}
+	,matchQuery: function(q,comp) {
+		var _g = 0;
+		while(_g < q.length) {
+			var r = q[_g];
+			++_g;
+			if(h2d_css_Engine.ruleMatch(r,comp)) return true;
+		}
+		return false;
+	}
+	,lookupRec: function(comp,q,set) {
+		if(this.matchQuery(q,comp)) set.push(comp);
+		var _g = 0;
+		var _g1 = comp.components;
+		while(_g < _g1.length) {
+			var s = _g1[_g];
+			++_g;
+			this.lookupRec(s,q,set);
+		}
+	}
+	,__class__: h2d_comp_JQuery
+};
+var h2d_comp_Label = function(text,parent) {
+	h2d_comp_Component.call(this,"label",parent);
+	this.tf = new h2d_Text(null,this);
+	this.set_text(text);
+};
+$hxClasses["h2d.comp.Label"] = h2d_comp_Label;
+h2d_comp_Label.__name__ = ["h2d","comp","Label"];
+h2d_comp_Label.__super__ = h2d_comp_Component;
+h2d_comp_Label.prototype = $extend(h2d_comp_Component.prototype,{
+	set_text: function(t) {
+		this.set_needRebuild(true);
+		return this.text = t;
+	}
+	,resize: function(ctx) {
+		if(ctx.measure) {
+			this.tf.set_font(this.getFont());
+			this.tf.set_textColor(this.style.color);
+			this.tf.set_text(this.text);
+			this.tf.filter = true;
+			this.contentWidth = this.tf.get_textWidth();
+			this.contentHeight = this.tf.get_textHeight();
+		}
+		h2d_comp_Component.prototype.resize.call(this,ctx);
+		if(!ctx.measure) this.textAlign(this.tf);
+	}
+	,__class__: h2d_comp_Label
+});
+var h2d_comp_Select = function() { };
+$hxClasses["h2d.comp.Select"] = h2d_comp_Select;
+h2d_comp_Select.__name__ = ["h2d","comp","Select"];
+h2d_comp_Select.__super__ = h2d_comp_Interactive;
+h2d_comp_Select.prototype = $extend(h2d_comp_Interactive.prototype,{
+	onClick: function() {
+		this.popup();
+	}
+	,popup: function() {
+		var _g = this;
+		if(this.list != null || this.options.length == 0) return;
+		var p = this;
+		while(p.parentComponent != null) p = p.parentComponent;
+		this.list = new h2d_comp_ItemList();
+		this.list.onItemOver = function(i) {
+			_g.onItemOver(i < 0?null:_g.options[i].value);
+		};
+		p.addChild(this.list);
+		this.list.addClass("popup");
+		this.list.evalStyle();
+		var _g1 = 0;
+		var _g11 = this.options;
+		while(_g1 < _g11.length) {
+			var o = _g11[_g1];
+			++_g1;
+			new h2d_comp_Label(o.label,this.list);
+		}
+		this.updateListPos();
+		this.list.set_selected(this.selectedIndex);
+		this.list.onChange = function(i1) {
+			_g.set_selectedIndex(i1);
+			_g.set_needRebuild(true);
+			_g.close();
+			_g.onChange(_g.value);
+		};
+		var scene = this.getScene();
+		scene.startDrag(function(e) {
+			if(e.kind == hxd_EventKind.ERelease) {
+				scene.stopDrag();
+				_g.close();
+			}
+		},$bind(this,this.close));
+	}
+	,close: function() {
+		this.list.remove();
+		this.list = null;
+		this.getScene().stopDrag();
+	}
+	,onChange: function(value) {
+	}
+	,set_selectedIndex: function(i) {
+		var o = this.options[i];
+		if(o == null) this.value = ""; else if(o.value == null) this.value = o.label; else this.value = o.value;
+		if(i != this.selectedIndex) this.set_needRebuild(true);
+		return this.selectedIndex = i;
+	}
+	,setValue: function(v) {
+		var k = -1;
+		var _g1 = 0;
+		var _g = this.options.length;
+		while(_g1 < _g) {
+			var i = _g1++;
+			if(this.options[i].value == v) {
+				k = i;
+				break;
+			}
+		}
+		if(k < 0) {
+			var _g11 = 0;
+			var _g2 = this.options.length;
+			while(_g11 < _g2) {
+				var i1 = _g11++;
+				if(this.options[i1].label == v) {
+					k = i1;
+					break;
+				}
+			}
+		}
+		this.set_selectedIndex(k);
+		return this.value;
+	}
+	,updateListPos: function() {
+		var scene = this.getScene();
+		var s = new h2d_css_Style();
+		var pos = this.localToGlobal();
+		s.offsetX = pos.x - (this.style.paddingLeft + this.style.marginLeft + this.style.borderSize);
+		s.offsetY = pos.y - (this.style.paddingTop + this.style.marginTop + this.style.borderSize);
+		s.width = this.contentWidth + this.style.paddingLeft + this.style.paddingRight - (this.list.style.paddingLeft + this.list.style.paddingRight);
+		var yMargin = (this.list.style.paddingBottom + this.list.style.paddingTop) * 0.5;
+		var xMargin = (this.list.style.paddingLeft + this.list.style.paddingRight) * 0.5;
+		var maxY;
+		maxY = (scene != null?scene.height:h3d_Engine.CURRENT.height) - (this.list.height + yMargin);
+		var maxX;
+		maxX = (scene != null?scene.width:h3d_Engine.CURRENT.width) - (this.list.width + xMargin);
+		if(s.offsetX > maxX) s.offsetX = maxX;
+		if(s.offsetX < xMargin) s.offsetX = xMargin;
+		if(s.offsetY > maxY) s.offsetY = maxY;
+		if(s.offsetY < yMargin) s.offsetY = yMargin;
+		if(this.list.customStyle == null || s.offsetX != this.list.customStyle.offsetX || s.offsetY != this.list.customStyle.offsetY || s.width != this.list.customStyle.width) this.list.setStyle(s);
+	}
+	,onItemOver: function(value) {
+	}
+	,resize: function(ctx) {
+		if(ctx.measure) {
+			this.tf.set_font(this.getFont());
+			this.tf.set_textColor(this.style.color);
+			this.tf.set_text(this.options[this.selectedIndex] == null?"":this.options[this.selectedIndex].label);
+			this.tf.filter = true;
+			this.contentWidth = this.tf.get_textWidth();
+			this.contentHeight = this.tf.get_textHeight();
+		}
+		h2d_comp_Interactive.prototype.resize.call(this,ctx);
+		if(!ctx.measure && this.list != null) this.updateListPos();
+	}
+	,__class__: h2d_comp_Select
+});
+var h2d_comp_Slider = function() {
+	this.maxValue = 1.;
+	this.minValue = 0.;
+};
+$hxClasses["h2d.comp.Slider"] = h2d_comp_Slider;
+h2d_comp_Slider.__name__ = ["h2d","comp","Slider"];
+h2d_comp_Slider.__super__ = h2d_comp_Component;
+h2d_comp_Slider.prototype = $extend(h2d_comp_Component.prototype,{
+	set_value: function(v) {
+		if(v < this.minValue) v = this.minValue;
+		if(v > this.maxValue) v = this.maxValue;
+		this.value = v;
+		this.set_needRebuild(true);
+		return v;
+	}
+	,resize: function(ctx) {
+		h2d_comp_Component.prototype.resize.call(this,ctx);
+		if(!ctx.measure) {
+			this.input.width = this.width - (this.style.marginLeft + this.style.marginRight) + this.cursor.width;
+			this.input.height = this.cursor.height - (this.cursor.style.marginTop + this.cursor.style.marginBottom);
+			this.input.set_x(this.cursor.style.marginLeft - this.style.borderSize - this.cursor.width * 0.5);
+			this.input.set_y(this.cursor.style.marginTop);
+			this.cursor.style.offsetX = this.contentWidth * (this.value - this.minValue) / (this.maxValue - this.minValue) - this.cursor.width * 0.5;
+		}
+	}
+	,__class__: h2d_comp_Slider
+});
+var h2d_css_Unit = $hxClasses["h2d.css.Unit"] = { __ename__ : true, __constructs__ : ["Pix","Percent","EM"] };
+h2d_css_Unit.Pix = function(v) { var $x = ["Pix",0,v]; $x.__enum__ = h2d_css_Unit; $x.toString = $estr; return $x; };
+h2d_css_Unit.Percent = function(v) { var $x = ["Percent",1,v]; $x.__enum__ = h2d_css_Unit; $x.toString = $estr; return $x; };
+h2d_css_Unit.EM = function(v) { var $x = ["EM",2,v]; $x.__enum__ = h2d_css_Unit; $x.toString = $estr; return $x; };
+h2d_css_Unit.__empty_constructs__ = [];
+var h2d_css_FillStyle = $hxClasses["h2d.css.FillStyle"] = { __ename__ : true, __constructs__ : ["Transparent","Color","Gradient"] };
+h2d_css_FillStyle.Transparent = ["Transparent",0];
+h2d_css_FillStyle.Transparent.toString = $estr;
+h2d_css_FillStyle.Transparent.__enum__ = h2d_css_FillStyle;
+h2d_css_FillStyle.Color = function(c) { var $x = ["Color",1,c]; $x.__enum__ = h2d_css_FillStyle; $x.toString = $estr; return $x; };
+h2d_css_FillStyle.Gradient = function(a,b,c,d) { var $x = ["Gradient",2,a,b,c,d]; $x.__enum__ = h2d_css_FillStyle; $x.toString = $estr; return $x; };
+h2d_css_FillStyle.__empty_constructs__ = [h2d_css_FillStyle.Transparent];
+var h2d_css_Layout = $hxClasses["h2d.css.Layout"] = { __ename__ : true, __constructs__ : ["Horizontal","Vertical","Absolute","Dock","Inline"] };
+h2d_css_Layout.Horizontal = ["Horizontal",0];
+h2d_css_Layout.Horizontal.toString = $estr;
+h2d_css_Layout.Horizontal.__enum__ = h2d_css_Layout;
+h2d_css_Layout.Vertical = ["Vertical",1];
+h2d_css_Layout.Vertical.toString = $estr;
+h2d_css_Layout.Vertical.__enum__ = h2d_css_Layout;
+h2d_css_Layout.Absolute = ["Absolute",2];
+h2d_css_Layout.Absolute.toString = $estr;
+h2d_css_Layout.Absolute.__enum__ = h2d_css_Layout;
+h2d_css_Layout.Dock = ["Dock",3];
+h2d_css_Layout.Dock.toString = $estr;
+h2d_css_Layout.Dock.__enum__ = h2d_css_Layout;
+h2d_css_Layout.Inline = ["Inline",4];
+h2d_css_Layout.Inline.toString = $estr;
+h2d_css_Layout.Inline.__enum__ = h2d_css_Layout;
+h2d_css_Layout.__empty_constructs__ = [h2d_css_Layout.Horizontal,h2d_css_Layout.Vertical,h2d_css_Layout.Absolute,h2d_css_Layout.Dock,h2d_css_Layout.Inline];
+var h2d_css_DockStyle = $hxClasses["h2d.css.DockStyle"] = { __ename__ : true, __constructs__ : ["Top","Left","Right","Bottom","Full"] };
+h2d_css_DockStyle.Top = ["Top",0];
+h2d_css_DockStyle.Top.toString = $estr;
+h2d_css_DockStyle.Top.__enum__ = h2d_css_DockStyle;
+h2d_css_DockStyle.Left = ["Left",1];
+h2d_css_DockStyle.Left.toString = $estr;
+h2d_css_DockStyle.Left.__enum__ = h2d_css_DockStyle;
+h2d_css_DockStyle.Right = ["Right",2];
+h2d_css_DockStyle.Right.toString = $estr;
+h2d_css_DockStyle.Right.__enum__ = h2d_css_DockStyle;
+h2d_css_DockStyle.Bottom = ["Bottom",3];
+h2d_css_DockStyle.Bottom.toString = $estr;
+h2d_css_DockStyle.Bottom.__enum__ = h2d_css_DockStyle;
+h2d_css_DockStyle.Full = ["Full",4];
+h2d_css_DockStyle.Full.toString = $estr;
+h2d_css_DockStyle.Full.__enum__ = h2d_css_DockStyle;
+h2d_css_DockStyle.__empty_constructs__ = [h2d_css_DockStyle.Top,h2d_css_DockStyle.Left,h2d_css_DockStyle.Right,h2d_css_DockStyle.Bottom,h2d_css_DockStyle.Full];
+var h2d_css_TextAlign = $hxClasses["h2d.css.TextAlign"] = { __ename__ : true, __constructs__ : ["Left","Right","Center"] };
+h2d_css_TextAlign.Left = ["Left",0];
+h2d_css_TextAlign.Left.toString = $estr;
+h2d_css_TextAlign.Left.__enum__ = h2d_css_TextAlign;
+h2d_css_TextAlign.Right = ["Right",1];
+h2d_css_TextAlign.Right.toString = $estr;
+h2d_css_TextAlign.Right.__enum__ = h2d_css_TextAlign;
+h2d_css_TextAlign.Center = ["Center",2];
+h2d_css_TextAlign.Center.toString = $estr;
+h2d_css_TextAlign.Center.__enum__ = h2d_css_TextAlign;
+h2d_css_TextAlign.__empty_constructs__ = [h2d_css_TextAlign.Left,h2d_css_TextAlign.Right,h2d_css_TextAlign.Center];
+var h2d_css_CssClass = function() {
+};
+$hxClasses["h2d.css.CssClass"] = h2d_css_CssClass;
+h2d_css_CssClass.__name__ = ["h2d","css","CssClass"];
+h2d_css_CssClass.prototype = {
+	__class__: h2d_css_CssClass
+};
+var h2d_css_Rule = function() {
+};
+$hxClasses["h2d.css.Rule"] = h2d_css_Rule;
+h2d_css_Rule.__name__ = ["h2d","css","Rule"];
+h2d_css_Rule.prototype = {
+	__class__: h2d_css_Rule
+};
+var h2d_css_Engine = function() {
+	this.rules = [];
+};
+$hxClasses["h2d.css.Engine"] = h2d_css_Engine;
+h2d_css_Engine.__name__ = ["h2d","css","Engine"];
+h2d_css_Engine.ruleMatch = function(c,d) {
+	if(c.pseudoClass != null) {
+		var pc = ":" + c.pseudoClass;
+		var found = false;
+		var _g = 0;
+		var _g1 = d.classes;
+		while(_g < _g1.length) {
+			var cc = _g1[_g];
+			++_g;
+			if(cc == pc) {
+				found = true;
+				break;
+			}
+		}
+		if(!found) return false;
+	}
+	if(c.className != null) {
+		if(d.classes == null) return false;
+		var found1 = false;
+		var _g2 = 0;
+		var _g11 = d.classes;
+		while(_g2 < _g11.length) {
+			var cc1 = _g11[_g2];
+			++_g2;
+			if(cc1 == c.className) {
+				found1 = true;
+				break;
+			}
+		}
+		if(!found1) return false;
+	}
+	if(c.node != null && c.node != d.name) return false;
+	if(c.id != null && c.id != d.id) return false;
+	if(c.parent != null) {
+		var p = d.parentComponent;
+		while(p != null) {
+			if(h2d_css_Engine.ruleMatch(c.parent,p)) break;
+			p = p.parentComponent;
+		}
+		if(p == null) return false;
+	}
+	return true;
+};
+h2d_css_Engine.prototype = {
+	applyClasses: function(c) {
+		var s = new h2d_css_Style();
+		c.style = s;
+		var rules = [];
+		var _g = 0;
+		var _g1 = this.rules;
+		while(_g < _g1.length) {
+			var r = _g1[_g];
+			++_g;
+			if(!h2d_css_Engine.ruleMatch(r.c,c)) continue;
+			rules.push(r);
+		}
+		rules.sort($bind(this,this.sortByPriority));
+		var _g2 = 0;
+		while(_g2 < rules.length) {
+			var r1 = rules[_g2];
+			++_g2;
+			s.apply(r1.s);
+		}
+		if(c.customStyle != null) s.apply(c.customStyle);
+	}
+	,sortByPriority: function(r1,r2) {
+		var dp = r1.priority - r2.priority;
+		if(dp == 0) return r1.id - r2.id; else return dp;
+	}
+	,addRules: function(text) {
+		var _g = 0;
+		var _g1 = new h2d_css_Parser().parseRules(text);
+		while(_g < _g1.length) {
+			var r = _g1[_g];
+			++_g;
+			var c = r.c;
+			var imp;
+			if(r.imp) imp = 1; else imp = 0;
+			var nids = 0;
+			var nothers = 0;
+			var nnodes = 0;
+			while(c != null) {
+				if(c.id != null) nids++;
+				if(c.node != null) nnodes++;
+				if(c.pseudoClass != null) nothers++;
+				if(c.className != null) nothers++;
+				c = c.parent;
+			}
+			var rule = new h2d_css_Rule();
+			rule.id = this.rules.length;
+			rule.c = r.c;
+			rule.s = r.s;
+			rule.priority = imp << 24 | nids << 16 | nothers << 8 | nnodes;
+			this.rules.push(rule);
+		}
+	}
+	,__class__: h2d_css_Engine
+};
+var h2d_css_Token = $hxClasses["h2d.css.Token"] = { __ename__ : true, __constructs__ : ["TIdent","TString","TInt","TFloat","TDblDot","TSharp","TPOpen","TPClose","TExclam","TComma","TEof","TPercent","TSemicolon","TBrOpen","TBrClose","TDot","TSpaces","TSlash","TStar"] };
+h2d_css_Token.TIdent = function(i) { var $x = ["TIdent",0,i]; $x.__enum__ = h2d_css_Token; $x.toString = $estr; return $x; };
+h2d_css_Token.TString = function(s) { var $x = ["TString",1,s]; $x.__enum__ = h2d_css_Token; $x.toString = $estr; return $x; };
+h2d_css_Token.TInt = function(i) { var $x = ["TInt",2,i]; $x.__enum__ = h2d_css_Token; $x.toString = $estr; return $x; };
+h2d_css_Token.TFloat = function(f) { var $x = ["TFloat",3,f]; $x.__enum__ = h2d_css_Token; $x.toString = $estr; return $x; };
+h2d_css_Token.TDblDot = ["TDblDot",4];
+h2d_css_Token.TDblDot.toString = $estr;
+h2d_css_Token.TDblDot.__enum__ = h2d_css_Token;
+h2d_css_Token.TSharp = ["TSharp",5];
+h2d_css_Token.TSharp.toString = $estr;
+h2d_css_Token.TSharp.__enum__ = h2d_css_Token;
+h2d_css_Token.TPOpen = ["TPOpen",6];
+h2d_css_Token.TPOpen.toString = $estr;
+h2d_css_Token.TPOpen.__enum__ = h2d_css_Token;
+h2d_css_Token.TPClose = ["TPClose",7];
+h2d_css_Token.TPClose.toString = $estr;
+h2d_css_Token.TPClose.__enum__ = h2d_css_Token;
+h2d_css_Token.TExclam = ["TExclam",8];
+h2d_css_Token.TExclam.toString = $estr;
+h2d_css_Token.TExclam.__enum__ = h2d_css_Token;
+h2d_css_Token.TComma = ["TComma",9];
+h2d_css_Token.TComma.toString = $estr;
+h2d_css_Token.TComma.__enum__ = h2d_css_Token;
+h2d_css_Token.TEof = ["TEof",10];
+h2d_css_Token.TEof.toString = $estr;
+h2d_css_Token.TEof.__enum__ = h2d_css_Token;
+h2d_css_Token.TPercent = ["TPercent",11];
+h2d_css_Token.TPercent.toString = $estr;
+h2d_css_Token.TPercent.__enum__ = h2d_css_Token;
+h2d_css_Token.TSemicolon = ["TSemicolon",12];
+h2d_css_Token.TSemicolon.toString = $estr;
+h2d_css_Token.TSemicolon.__enum__ = h2d_css_Token;
+h2d_css_Token.TBrOpen = ["TBrOpen",13];
+h2d_css_Token.TBrOpen.toString = $estr;
+h2d_css_Token.TBrOpen.__enum__ = h2d_css_Token;
+h2d_css_Token.TBrClose = ["TBrClose",14];
+h2d_css_Token.TBrClose.toString = $estr;
+h2d_css_Token.TBrClose.__enum__ = h2d_css_Token;
+h2d_css_Token.TDot = ["TDot",15];
+h2d_css_Token.TDot.toString = $estr;
+h2d_css_Token.TDot.__enum__ = h2d_css_Token;
+h2d_css_Token.TSpaces = ["TSpaces",16];
+h2d_css_Token.TSpaces.toString = $estr;
+h2d_css_Token.TSpaces.__enum__ = h2d_css_Token;
+h2d_css_Token.TSlash = ["TSlash",17];
+h2d_css_Token.TSlash.toString = $estr;
+h2d_css_Token.TSlash.__enum__ = h2d_css_Token;
+h2d_css_Token.TStar = ["TStar",18];
+h2d_css_Token.TStar.toString = $estr;
+h2d_css_Token.TStar.__enum__ = h2d_css_Token;
+h2d_css_Token.__empty_constructs__ = [h2d_css_Token.TDblDot,h2d_css_Token.TSharp,h2d_css_Token.TPOpen,h2d_css_Token.TPClose,h2d_css_Token.TExclam,h2d_css_Token.TComma,h2d_css_Token.TEof,h2d_css_Token.TPercent,h2d_css_Token.TSemicolon,h2d_css_Token.TBrOpen,h2d_css_Token.TBrClose,h2d_css_Token.TDot,h2d_css_Token.TSpaces,h2d_css_Token.TSlash,h2d_css_Token.TStar];
+var h2d_css_Value = $hxClasses["h2d.css.Value"] = { __ename__ : true, __constructs__ : ["VIdent","VString","VUnit","VFloat","VInt","VHex","VList","VGroup","VCall","VLabel","VSlash"] };
+h2d_css_Value.VIdent = function(i) { var $x = ["VIdent",0,i]; $x.__enum__ = h2d_css_Value; $x.toString = $estr; return $x; };
+h2d_css_Value.VString = function(s) { var $x = ["VString",1,s]; $x.__enum__ = h2d_css_Value; $x.toString = $estr; return $x; };
+h2d_css_Value.VUnit = function(v,unit) { var $x = ["VUnit",2,v,unit]; $x.__enum__ = h2d_css_Value; $x.toString = $estr; return $x; };
+h2d_css_Value.VFloat = function(v) { var $x = ["VFloat",3,v]; $x.__enum__ = h2d_css_Value; $x.toString = $estr; return $x; };
+h2d_css_Value.VInt = function(v) { var $x = ["VInt",4,v]; $x.__enum__ = h2d_css_Value; $x.toString = $estr; return $x; };
+h2d_css_Value.VHex = function(v) { var $x = ["VHex",5,v]; $x.__enum__ = h2d_css_Value; $x.toString = $estr; return $x; };
+h2d_css_Value.VList = function(l) { var $x = ["VList",6,l]; $x.__enum__ = h2d_css_Value; $x.toString = $estr; return $x; };
+h2d_css_Value.VGroup = function(l) { var $x = ["VGroup",7,l]; $x.__enum__ = h2d_css_Value; $x.toString = $estr; return $x; };
+h2d_css_Value.VCall = function(f,vl) { var $x = ["VCall",8,f,vl]; $x.__enum__ = h2d_css_Value; $x.toString = $estr; return $x; };
+h2d_css_Value.VLabel = function(v,val) { var $x = ["VLabel",9,v,val]; $x.__enum__ = h2d_css_Value; $x.toString = $estr; return $x; };
+h2d_css_Value.VSlash = ["VSlash",10];
+h2d_css_Value.VSlash.toString = $estr;
+h2d_css_Value.VSlash.__enum__ = h2d_css_Value;
+h2d_css_Value.__empty_constructs__ = [h2d_css_Value.VSlash];
+var h2d_css_Parser = function() {
+};
+$hxClasses["h2d.css.Parser"] = h2d_css_Parser;
+h2d_css_Parser.__name__ = ["h2d","css","Parser"];
+h2d_css_Parser.prototype = {
+	applyStyle: function(r,v,s) {
+		switch(r) {
+		case "padding":
+			switch(v[1]) {
+			case 7:
+				switch(v[2].length) {
+				case 2:
+					var b = v[2][1];
+					var a = v[2][0];
+					var a1 = this.getVal(a);
+					var b1 = this.getVal(b);
+					if(a1 != null && b1 != null) {
+						s.paddingTop = s.paddingBottom = a1;
+						s.paddingLeft = s.paddingRight = b1;
+						return true;
+					}
+					break;
+				default:
+					var i = this.getVal(v);
+					if(i != null) {
+						s.padding(i);
+						return true;
+					}
+				}
+				break;
+			default:
+				var i1 = this.getVal(v);
+				if(i1 != null) {
+					s.padding(i1);
+					return true;
+				}
+			}
+			break;
+		case "padding-top":
+			var i2 = this.getVal(v);
+			if(i2 != null) {
+				s.paddingTop = i2;
+				return true;
+			}
+			break;
+		case "padding-left":
+			var i3 = this.getVal(v);
+			if(i3 != null) {
+				s.paddingLeft = i3;
+				return true;
+			}
+			break;
+		case "padding-right":
+			var i4 = this.getVal(v);
+			if(i4 != null) {
+				s.paddingRight = i4;
+				return true;
+			}
+			break;
+		case "padding-bottom":
+			var i5 = this.getVal(v);
+			if(i5 != null) {
+				s.paddingBottom = i5;
+				return true;
+			}
+			break;
+		case "margin":
+			switch(v[1]) {
+			case 7:
+				switch(v[2].length) {
+				case 2:
+					var b2 = v[2][1];
+					var a2 = v[2][0];
+					var a3 = this.getVal(a2);
+					var b3 = this.getVal(b2);
+					if(a3 != null && b3 != null) {
+						s.marginTop = s.marginBottom = a3;
+						s.marginLeft = s.marginRight = b3;
+						return true;
+					}
+					break;
+				default:
+					var i6 = this.getVal(v);
+					if(i6 != null) {
+						s.margin(i6);
+						return true;
+					}
+				}
+				break;
+			default:
+				var i7 = this.getVal(v);
+				if(i7 != null) {
+					s.margin(i7);
+					return true;
+				}
+			}
+			break;
+		case "margin-top":
+			var i8 = this.getVal(v);
+			if(i8 != null) {
+				s.marginTop = i8;
+				return true;
+			}
+			break;
+		case "margin-left":
+			var i9 = this.getVal(v);
+			if(i9 != null) {
+				s.marginLeft = i9;
+				return true;
+			}
+			break;
+		case "margin-right":
+			var i10 = this.getVal(v);
+			if(i10 != null) {
+				s.marginRight = i10;
+				return true;
+			}
+			break;
+		case "margin-bottom":
+			var i11 = this.getVal(v);
+			if(i11 != null) {
+				s.marginBottom = i11;
+				return true;
+			}
+			break;
+		case "width":
+			var i12 = this.getVal(v);
+			if(i12 != null) {
+				s.width = i12;
+				return true;
+			}
+			if(this.getIdent(v) == "auto") {
+				s.width = null;
+				s.autoWidth = true;
+				return true;
+			}
+			break;
+		case "height":
+			var i13 = this.getVal(v);
+			if(i13 != null) {
+				s.height = i13;
+				return true;
+			}
+			if(this.getIdent(v) == "auto") {
+				s.height = null;
+				s.autoHeight = true;
+				return true;
+			}
+			break;
+		case "background-color":
+			var f = this.getFill(v);
+			if(f != null) {
+				s.backgroundColor = f;
+				return true;
+			}
+			break;
+		case "background":
+			return this.applyComposite(["background-color"],v,s);
+		case "font-family":
+			var l = this.getFontName(v);
+			if(l != null) {
+				s.fontName = l;
+				return true;
+			}
+			break;
+		case "font-size":
+			var i14 = this.getUnit(v);
+			if(i14 != null) {
+				switch(i14[1]) {
+				case 0:
+					var v1 = i14[2];
+					s.fontSize = v1;
+					break;
+				default:
+					null;
+				}
+				return true;
+			}
+			break;
+		case "color":
+			var c = this.getCol(v);
+			if(c != null) {
+				s.color = c;
+				return true;
+			}
+			break;
+		case "border-radius":
+			var i15 = this.getVal(v);
+			if(i15 != null) {
+				s.borderRadius = i15;
+				return true;
+			}
+			break;
+		case "border":
+			if(this.applyComposite(["border-width","border-style","border-color"],v,s)) return true;
+			if(this.getIdent(v) == "none") {
+				s.borderSize = 0;
+				s.borderColor = h2d_css_FillStyle.Transparent;
+				return true;
+			}
+			break;
+		case "border-width":
+			var i16 = this.getVal(v);
+			if(i16 != null) {
+				s.borderSize = i16;
+				return true;
+			}
+			break;
+		case "border-style":
+			if(this.getIdent(v) == "solid") return true;
+			break;
+		case "border-color":
+			var c1 = this.getFill(v);
+			if(c1 != null) {
+				s.borderColor = c1;
+				return true;
+			}
+			break;
+		case "offset":
+			return this.applyComposite(["offset-x","offset-y"],v,s);
+		case "offset-x":
+			var i17 = this.getVal(v);
+			if(i17 != null) {
+				s.offsetX = i17;
+				return true;
+			}
+			break;
+		case "offset-y":
+			var i18 = this.getVal(v);
+			if(i18 != null) {
+				s.offsetY = i18;
+				return true;
+			}
+			break;
+		case "layout":
+			var i19 = this.mapIdent(v,[h2d_css_Layout.Horizontal,h2d_css_Layout.Vertical,h2d_css_Layout.Absolute,h2d_css_Layout.Dock,h2d_css_Layout.Inline]);
+			if(i19 != null) {
+				s.layout = i19;
+				return true;
+			}
+			break;
+		case "spacing":
+			return this.applyComposite(["vertical-spacing","horizontal-spacing"],v,s);
+		case "horizontal-spacing":
+			var i20 = this.getVal(v);
+			if(i20 != null) {
+				s.horizontalSpacing = i20;
+				return true;
+			}
+			break;
+		case "vertical-spacing":
+			var i21 = this.getVal(v);
+			if(i21 != null) {
+				s.verticalSpacing = i21;
+				return true;
+			}
+			break;
+		case "increment":
+			var i22 = this.getVal(v);
+			if(i22 != null) {
+				s.increment = i22;
+				return true;
+			}
+			break;
+		case "max-increment":
+			var i23 = this.getVal(v);
+			if(i23 != null) {
+				s.maxIncrement = i23;
+				return true;
+			}
+			break;
+		case "tick-color":
+			var i24 = this.getFill(v);
+			if(i24 != null) {
+				s.tickColor = i24;
+				return true;
+			}
+			break;
+		case "tick-spacing":
+			var i25 = this.getVal(v);
+			if(i25 != null) {
+				s.tickSpacing = i25;
+				return true;
+			}
+			break;
+		case "dock":
+			var i26 = this.mapIdent(v,[h2d_css_DockStyle.Top,h2d_css_DockStyle.Bottom,h2d_css_DockStyle.Left,h2d_css_DockStyle.Right,h2d_css_DockStyle.Full]);
+			if(i26 != null) {
+				s.dock = i26;
+				return true;
+			}
+			break;
+		case "cursor-color":
+			var i27 = this.getColAlpha(v);
+			if(i27 != null) {
+				s.cursorColor = i27;
+				return true;
+			}
+			break;
+		case "selection-color":
+			var i28 = this.getColAlpha(v);
+			if(i28 != null) {
+				s.selectionColor = i28;
+				return true;
+			}
+			break;
+		case "overflow":
+			var _g = this.getIdent(v);
+			if(_g != null) switch(_g) {
+			case "hidden":
+				s.overflowHidden = true;
+				return true;
+			case "visible":
+				s.overflowHidden = false;
+				return true;
+			}
+			break;
+		case "icon":
+			var i29 = this.getImage(v);
+			if(i29 != null) {
+				s.icon = i29;
+				return true;
+			}
+			break;
+		case "icon-color":
+			var c2 = this.getColAlpha(v);
+			if(c2 != null) {
+				s.iconColor = c2;
+				return true;
+			}
+			break;
+		case "icon-left":
+			var i30 = this.getVal(v);
+			if(i30 != null) {
+				s.iconLeft = i30;
+				return true;
+			}
+			break;
+		case "icon-top":
+			var i31 = this.getVal(v);
+			if(i31 != null) {
+				s.iconTop = i31;
+				return true;
+			}
+			break;
+		case "position":
+			var _g1 = this.getIdent(v);
+			if(_g1 != null) switch(_g1) {
+			case "absolute":
+				s.positionAbsolute = true;
+				return true;
+			case "relative":
+				s.positionAbsolute = false;
+				return true;
+			default:
+			} else {
+			}
+			break;
+		case "text-align":
+			var _g2 = this.getIdent(v);
+			if(_g2 != null) switch(_g2) {
+			case "left":
+				s.textAlign = h2d_css_TextAlign.Left;
+				return true;
+			case "right":
+				s.textAlign = h2d_css_TextAlign.Right;
+				return true;
+			case "center":
+				s.textAlign = h2d_css_TextAlign.Center;
+				return true;
+			default:
+			} else {
+			}
+			break;
+		case "display":
+			var _g3 = this.getIdent(v);
+			if(_g3 != null) switch(_g3) {
+			case "none":
+				s.display = false;
+				return true;
+			case "block":case "inline-block":
+				s.display = true;
+				return true;
+			default:
+			} else {
+			}
+			break;
+		default:
+			throw new js__$Boot_HaxeError("Not implemented '" + r + "' = " + this.valueStr(v));
+		}
+		return false;
+	}
+	,applyComposite: function(names,v,s) {
+		var vl;
+		switch(v[1]) {
+		case 7:
+			var l = v[2];
+			vl = l;
+			break;
+		default:
+			vl = [v];
+		}
+		while(vl.length > 0) {
+			var found = false;
+			var _g = 0;
+			while(_g < names.length) {
+				var n = names[_g];
+				++_g;
+				var count = 1;
+				if(count > vl.length) count = vl.length;
+				while(count > 0) {
+					var v1;
+					if(count == 1) v1 = vl[0]; else v1 = h2d_css_Value.VGroup(vl.slice(0,count));
+					if(this.applyStyle(n,v1,s)) {
+						found = true;
+						HxOverrides.remove(names,n);
+						var _g1 = 0;
+						while(_g1 < count) {
+							var i = _g1++;
+							vl.shift();
+						}
+						break;
+					}
+					count--;
+				}
+				if(found) break;
+			}
+			if(!found) return false;
+		}
+		return true;
+	}
+	,getGroup: function(v,f) {
+		switch(v[1]) {
+		case 7:
+			var l = v[2];
+			var a = [];
+			var _g = 0;
+			while(_g < l.length) {
+				var v1 = l[_g];
+				++_g;
+				var v2 = f(v1);
+				if(v2 == null) return null;
+				a.push(v2);
+			}
+			return a;
+		default:
+			var v3 = f(v);
+			if(v3 == null) return null; else return [v3];
+		}
+	}
+	,getVal: function(v) {
+		switch(v[1]) {
+		case 2:
+			var u = v[3];
+			var f = v[2];
+			switch(u) {
+			case "px":
+				return f;
+			case "pt":
+				return f * 4 / 3;
+			default:
+				return null;
+			}
+			break;
+		case 4:
+			var v1 = v[2];
+			return v1;
+		case 3:
+			var v2 = v[2];
+			return v2;
+		default:
+			return null;
+		}
+	}
+	,getUnit: function(v) {
+		switch(v[1]) {
+		case 2:
+			var u = v[3];
+			var f = v[2];
+			switch(u) {
+			case "px":
+				return h2d_css_Unit.Pix(f);
+			case "pt":
+				return h2d_css_Unit.Pix(f * 4 / 3);
+			case "%":
+				return h2d_css_Unit.Percent(f / 100);
+			default:
+				return null;
+			}
+			break;
+		case 4:
+			var v1 = v[2];
+			return h2d_css_Unit.Pix(v1);
+		case 3:
+			var v2 = v[2];
+			return h2d_css_Unit.Pix(v2);
+		default:
+			return null;
+		}
+	}
+	,mapIdent: function(v,vals) {
+		var i = this.getIdent(v);
+		if(i == null) return null;
+		var _g = 0;
+		while(_g < vals.length) {
+			var v1 = vals[_g];
+			++_g;
+			if(v1[0].toLowerCase() == i) return v1;
+		}
+		return null;
+	}
+	,getIdent: function(v) {
+		switch(v[1]) {
+		case 0:
+			var v1 = v[2];
+			return v1;
+		default:
+			return null;
+		}
+	}
+	,getColAlpha: function(v) {
+		var c = this.getCol(v);
+		if(c != null && c >>> 24 == 0) c |= -16777216;
+		return c;
+	}
+	,getFill: function(v) {
+		var c = this.getColAlpha(v);
+		if(c != null) return h2d_css_FillStyle.Color(c);
+		switch(v[1]) {
+		case 8:
+			switch(v[2]) {
+			case "gradient":
+				switch(v[3].length) {
+				case 4:
+					var d = v[3][3];
+					var c1 = v[3][2];
+					var b = v[3][1];
+					var a = v[3][0];
+					var ca = this.getColAlpha(a);
+					var cb = this.getColAlpha(b);
+					var cc = this.getColAlpha(c1);
+					var cd = this.getColAlpha(d);
+					if(ca != null && cb != null && cc != null && cd != null) return h2d_css_FillStyle.Gradient(ca,cb,cc,cd);
+					break;
+				default:
+				}
+				break;
+			default:
+			}
+			break;
+		case 0:
+			switch(v[2]) {
+			case "transparent":
+				return h2d_css_FillStyle.Transparent;
+			default:
+			}
+			break;
+		default:
+		}
+		return null;
+	}
+	,getCol: function(v) {
+		switch(v[1]) {
+		case 5:
+			var v1 = v[2];
+			if(v1.length == 6) return Std.parseInt("0x" + v1); else if(v1.length == 3) return Std.parseInt("0x" + v1.charAt(0) + v1.charAt(0) + v1.charAt(1) + v1.charAt(1) + v1.charAt(2) + v1.charAt(2)); else return null;
+			break;
+		case 0:
+			var i = v[2];
+			switch(i) {
+			case "black":
+				return 0;
+			case "red":
+				return 16711680;
+			case "lime":
+				return 65280;
+			case "blue":
+				return 255;
+			case "white":
+				return 16777215;
+			case "aqua":
+				return 65535;
+			case "fuchsia":
+				return 16711935;
+			case "yellow":
+				return 16776960;
+			case "maroon":
+				return 8388608;
+			case "green":
+				return 32768;
+			case "navy":
+				return 128;
+			case "olive":
+				return 8421376;
+			case "purple":
+				return 8388736;
+			case "teal":
+				return 32896;
+			case "silver":
+				return 12632256;
+			case "gray":case "grey":
+				return 8421504;
+			default:
+				return null;
+			}
+			break;
+		case 8:
+			switch(v[2]) {
+			case "rgba":
+				switch(v[3].length) {
+				case 4:
+					var a = v[3][3];
+					var b = v[3][2];
+					var g = v[3][1];
+					var r = v[3][0];
+					var r1 = this.getVal(r);
+					var g1 = this.getVal(g);
+					var b1 = this.getVal(b);
+					var a1 = this.getVal(a);
+					if(r1 != null && g1 != null && b1 != null && a1 != null) {
+						var a2;
+						var v2 = a1 * 255 | 0;
+						if(v2 < 0) v2 = 0;
+						if(v2 > 255) v2 = 255;
+						a2 = v2;
+						if(a2 == 0) a2 = 1;
+						return a2 << 24 | (function($this) {
+							var $r;
+							var v3 = r1 | 0;
+							if(v3 < 0) v3 = 0;
+							if(v3 > 255) v3 = 255;
+							$r = v3;
+							return $r;
+						}(this)) << 16 | (function($this) {
+							var $r;
+							var v4 = g1 | 0;
+							if(v4 < 0) v4 = 0;
+							if(v4 > 255) v4 = 255;
+							$r = v4;
+							return $r;
+						}(this)) << 8 | (function($this) {
+							var $r;
+							var v5 = b1 | 0;
+							if(v5 < 0) v5 = 0;
+							if(v5 > 255) v5 = 255;
+							$r = v5;
+							return $r;
+						}(this));
+					} else return null;
+					break;
+				default:
+					return null;
+				}
+				break;
+			default:
+				return null;
+			}
+			break;
+		default:
+			return null;
+		}
+	}
+	,getFontName: function(v) {
+		switch(v[1]) {
+		case 1:
+			var s = v[2];
+			return s;
+		case 7:
+			var g = this.getGroup(v,$bind(this,this.getIdent));
+			if(g == null) return null; else return g.join(" ");
+			break;
+		case 0:
+			var i = v[2];
+			return i;
+		default:
+			return null;
+		}
+	}
+	,getImage: function(v) {
+		switch(v[1]) {
+		case 8:
+			switch(v[2]) {
+			case "url":
+				switch(v[3].length) {
+				case 1:
+					switch(v[3][0][1]) {
+					case 1:
+						var url = v[3][0][2];
+						if(!StringTools.startsWith(url,"data:image/png;base64,")) return null;
+						url = HxOverrides.substr(url,22,null);
+						if(StringTools.endsWith(url,"=")) url = HxOverrides.substr(url,0,-1);
+						var bytes = haxe_crypto_Base64.decode(url);
+						return hxd_res_Any.fromBytes("icon",bytes).toImage().getPixels();
+					default:
+						return null;
+					}
+					break;
+				default:
+					return null;
+				}
+				break;
+			default:
+				return null;
+			}
+			break;
+		default:
+			return null;
+		}
+	}
+	,unexpected: function(t) {
+		throw new js__$Boot_HaxeError("Unexpected " + Std.string(t));
+		return null;
+	}
+	,expect: function(t) {
+		var tk = this.readToken();
+		if(tk != t) this.unexpected(tk);
+	}
+	,isToken: function(t) {
+		var tk = this.readToken();
+		if(tk == t) return true;
+		this.tokens.push(tk);
+		return false;
+	}
+	,parse: function(css,s) {
+		this.css = css;
+		this.s = s;
+		this.pos = 0;
+		this.tokens = [];
+		this.parseStyle(h2d_css_Token.TEof);
+	}
+	,valueStr: function(v) {
+		switch(v[1]) {
+		case 0:
+			var i = v[2];
+			return i;
+		case 1:
+			var s = v[2];
+			return "\"" + s + "\"";
+		case 2:
+			var unit = v[3];
+			var f = v[2];
+			return f + unit;
+		case 3:
+			var f1 = v[2];
+			if(f1 == null) return "null"; else return "" + f1;
+			break;
+		case 4:
+			var v1 = v[2];
+			if(v1 == null) return "null"; else return "" + v1;
+			break;
+		case 5:
+			var v2 = v[2];
+			return "#" + v2;
+		case 6:
+			var l = v[2];
+			return ((function($this) {
+				var $r;
+				var _g = [];
+				{
+					var _g1 = 0;
+					while(_g1 < l.length) {
+						var v3 = l[_g1];
+						++_g1;
+						_g.push($this.valueStr(v3));
+					}
+				}
+				$r = _g;
+				return $r;
+			}(this))).join(", ");
+		case 7:
+			var l1 = v[2];
+			return ((function($this) {
+				var $r;
+				var _g2 = [];
+				{
+					var _g11 = 0;
+					while(_g11 < l1.length) {
+						var v4 = l1[_g11];
+						++_g11;
+						_g2.push($this.valueStr(v4));
+					}
+				}
+				$r = _g2;
+				return $r;
+			}(this))).join(" ");
+		case 8:
+			var args = v[3];
+			var f2 = v[2];
+			return f2 + "(" + ((function($this) {
+				var $r;
+				var _g3 = [];
+				{
+					var _g12 = 0;
+					while(_g12 < args.length) {
+						var v5 = args[_g12];
+						++_g12;
+						_g3.push($this.valueStr(v5));
+					}
+				}
+				$r = _g3;
+				return $r;
+			}(this))).join(", ") + ")";
+		case 9:
+			var v6 = v[3];
+			var label = v[2];
+			return this.valueStr(v6) + " !" + label;
+		case 10:
+			return "/";
+		}
+	}
+	,parseStyle: function(eof) {
+		while(true) {
+			if(this.isToken(eof)) break;
+			var r = this.readIdent();
+			this.expect(h2d_css_Token.TDblDot);
+			var v = this.readValue();
+			var s = this.s;
+			switch(v[1]) {
+			case 9:
+				var val = v[3];
+				var label = v[2];
+				if(label == "important") {
+					v = val;
+					if(this.simp == null) this.simp = new h2d_css_Style();
+					s = this.simp;
+				}
+				break;
+			default:
+			}
+			if(!this.applyStyle(r,v,s)) throw new js__$Boot_HaxeError("Invalid value " + this.valueStr(v) + " for css " + r);
+			if(this.isToken(eof)) break;
+			this.expect(h2d_css_Token.TSemicolon);
+		}
+	}
+	,parseRules: function(css) {
+		this.css = css;
+		this.pos = 0;
+		this.tokens = [];
+		var rules = [];
+		while(true) {
+			if(this.isToken(h2d_css_Token.TEof)) break;
+			var classes = this.readClasses();
+			this.expect(h2d_css_Token.TBrOpen);
+			this.s = new h2d_css_Style();
+			this.simp = null;
+			this.parseStyle(h2d_css_Token.TBrClose);
+			var _g = 0;
+			while(_g < classes.length) {
+				var c = classes[_g];
+				++_g;
+				rules.push({ c : c, s : this.s, imp : false});
+			}
+			if(this.simp != null) {
+				var _g1 = 0;
+				while(_g1 < classes.length) {
+					var c1 = classes[_g1];
+					++_g1;
+					rules.push({ c : c1, s : this.simp, imp : true});
+				}
+			}
+		}
+		return rules;
+	}
+	,parseClasses: function(css) {
+		this.css = css;
+		this.pos = 0;
+		this.tokens = [];
+		var c = this.readClasses();
+		this.expect(h2d_css_Token.TEof);
+		return c;
+	}
+	,readClasses: function() {
+		var classes = [];
+		while(true) {
+			this.spacesTokens = true;
+			this.isToken(h2d_css_Token.TSpaces);
+			var c = this.readClass(null);
+			this.spacesTokens = false;
+			if(c == null) break;
+			this.updateClass(c);
+			classes.push(c);
+			if(!this.isToken(h2d_css_Token.TComma)) break;
+		}
+		if(classes.length == 0) this.unexpected(this.readToken());
+		return classes;
+	}
+	,updateClass: function(c) {
+		var _g = c.node;
+		if(_g != null) switch(_g) {
+		case "div":
+			c.node = "box";
+			break;
+		case "span":
+			c.node = "label";
+			break;
+		case "h1":case "h2":case "h3":case "h4":
+			c.pseudoClass = c.node;
+			c.node = "label";
+			break;
+		}
+		if(c.parent != null) this.updateClass(c.parent);
+	}
+	,readClass: function(parent) {
+		var c = new h2d_css_CssClass();
+		c.parent = parent;
+		var def = false;
+		var last = null;
+		try {
+			while(true) {
+				var t = this.readToken();
+				if(last == null) switch(t[1]) {
+				case 18:
+					def = true;
+					break;
+				case 15:case 5:case 4:
+					last = t;
+					break;
+				case 0:
+					var i = t[2];
+					c.node = i;
+					def = true;
+					break;
+				case 16:
+					if(def) return this.readClass(c); else return null;
+					break;
+				case 13:case 9:case 10:
+					this.tokens.push(t);
+					throw "__break__";
+					break;
+				default:
+					this.unexpected(t);
+				} else switch(t[1]) {
+				case 0:
+					var i1 = t[2];
+					switch(last[1]) {
+					case 15:
+						c.className = i1;
+						def = true;
+						break;
+					case 5:
+						c.id = i1;
+						def = true;
+						break;
+					case 4:
+						c.pseudoClass = i1;
+						def = true;
+						break;
+					default:
+						throw new js__$Boot_HaxeError("assert");
+					}
+					last = null;
+					break;
+				default:
+					this.unexpected(t);
+				}
+			}
+		} catch( e ) { if( e != "__break__" ) throw e; }
+		if(def) return c; else return parent;
+	}
+	,readIdent: function() {
+		var t = this.readToken();
+		switch(t[1]) {
+		case 0:
+			var i = t[2];
+			return i;
+		default:
+			return this.unexpected(t);
+		}
+	}
+	,readValue: function(opt) {
+		var t = this.readToken();
+		var v;
+		switch(t[1]) {
+		case 5:
+			v = h2d_css_Value.VHex(this.readHex());
+			break;
+		case 0:
+			var i = t[2];
+			v = h2d_css_Value.VIdent(i);
+			break;
+		case 1:
+			var s = t[2];
+			v = h2d_css_Value.VString(s);
+			break;
+		case 2:
+			var i1 = t[2];
+			v = this.readValueUnit(i1,i1);
+			break;
+		case 3:
+			var f = t[2];
+			v = this.readValueUnit(f,null);
+			break;
+		case 17:
+			v = h2d_css_Value.VSlash;
+			break;
+		default:
+			if(!opt) this.unexpected(t);
+			this.tokens.push(t);
+			v = null;
+		}
+		if(v != null) v = this.readValueNext(v);
+		return v;
+	}
+	,readHex: function() {
+		var start = this.pos;
+		while(true) {
+			var c = StringTools.fastCodeAt(this.css,this.pos++);
+			if(c >= 65 && c <= 70 || c >= 97 && c <= 102 || c >= 48 && c <= 57) continue;
+			this.pos--;
+			break;
+		}
+		return HxOverrides.substr(this.css,start,this.pos - start);
+	}
+	,readValueUnit: function(f,i) {
+		var t = this.readToken();
+		switch(t[1]) {
+		case 0:
+			var i1 = t[2];
+			return h2d_css_Value.VUnit(f,i1);
+		case 11:
+			return h2d_css_Value.VUnit(f,"%");
+		default:
+			this.tokens.push(t);
+			if(i != null) return h2d_css_Value.VInt(i); else return h2d_css_Value.VFloat(f);
+		}
+	}
+	,readValueNext: function(v) {
+		var t = this.readToken();
+		switch(t[1]) {
+		case 6:
+			switch(v[1]) {
+			case 0:
+				var i = v[2];
+				switch(i) {
+				case "url":
+					return this.readValueNext(h2d_css_Value.VCall("url",[h2d_css_Value.VString(this.readUrl())]));
+				default:
+					var args;
+					{
+						var _g = this.readValue();
+						var x = _g;
+						switch(_g[1]) {
+						case 6:
+							var l = _g[2];
+							args = l;
+							break;
+						default:
+							args = [x];
+						}
+					}
+					this.expect(h2d_css_Token.TPClose);
+					return this.readValueNext(h2d_css_Value.VCall(i,args));
+				}
+				break;
+			default:
+				this.tokens.push(t);
+				return v;
+			}
+			break;
+		case 8:
+			var t1 = this.readToken();
+			switch(t1[1]) {
+			case 0:
+				var i1 = t1[2];
+				return h2d_css_Value.VLabel(i1,v);
+			default:
+				return this.unexpected(t1);
+			}
+			break;
+		case 9:
+			return this.loopComma(v,this.readValue());
+		default:
+			this.tokens.push(t);
+			var v2 = this.readValue(true);
+			if(v2 == null) return v; else return this.loopNext(v,v2);
+		}
+	}
+	,loopNext: function(v,v2) {
+		switch(v2[1]) {
+		case 7:
+			var l = v2[2];
+			l.unshift(v);
+			return v2;
+		case 6:
+			var l1 = v2[2];
+			l1[0] = this.loopNext(v,l1[0]);
+			return v2;
+		case 9:
+			var v21 = v2[3];
+			var lab = v2[2];
+			return h2d_css_Value.VLabel(lab,this.loopNext(v,v21));
+		default:
+			return h2d_css_Value.VGroup([v,v2]);
+		}
+	}
+	,loopComma: function(v,v2) {
+		switch(v2[1]) {
+		case 6:
+			var l = v2[2];
+			l.unshift(v);
+			return v2;
+		case 9:
+			var v21 = v2[3];
+			var lab = v2[2];
+			return h2d_css_Value.VLabel(lab,this.loopComma(v,v21));
+		default:
+			return h2d_css_Value.VList([v,v2]);
+		}
+	}
+	,isSpace: function(c) {
+		return c == 32 || c == 10 || c == 13 || c == 9;
+	}
+	,isNum: function(c) {
+		return c >= 48 && c <= 57;
+	}
+	,readUrl: function() {
+		var c0 = StringTools.fastCodeAt(this.css,this.pos++);
+		while(c0 == 32 || c0 == 10 || c0 == 13 || c0 == 9) c0 = StringTools.fastCodeAt(this.css,this.pos++);
+		var quote = c0;
+		if(quote == 39 || quote == 34) {
+			this.pos--;
+			{
+				var _g = this.readToken();
+				switch(_g[1]) {
+				case 1:
+					var s = _g[2];
+					var c01 = StringTools.fastCodeAt(this.css,this.pos++);
+					while(c01 == 32 || c01 == 10 || c01 == 13 || c01 == 9) c01 = StringTools.fastCodeAt(this.css,this.pos++);
+					if(c01 != 41) throw new js__$Boot_HaxeError("Invalid char " + String.fromCharCode(c01));
+					return s;
+				default:
+					throw new js__$Boot_HaxeError("assert");
+				}
+			}
+		}
+		var start = this.pos - 1;
+		while(true) {
+			if(c0 != c0) break;
+			c0 = StringTools.fastCodeAt(this.css,this.pos++);
+			if(c0 == 41) break;
+		}
+		return StringTools.trim(HxOverrides.substr(this.css,start,this.pos - start - 1));
+	}
+	,readToken: function() {
+		var t = this.tokens.pop();
+		if(t != null) return t;
+		while(true) {
+			var c = StringTools.fastCodeAt(this.css,this.pos++);
+			if(c != c) return h2d_css_Token.TEof;
+			if(c == 32 || c == 10 || c == 13 || c == 9) {
+				if(this.spacesTokens) {
+					while(this.isSpace(StringTools.fastCodeAt(this.css,this.pos++))) {
+					}
+					this.pos--;
+					return h2d_css_Token.TSpaces;
+				}
+				continue;
+			}
+			if(c >= 48 && c <= 57 || c == 45) {
+				var i = 0;
+				var neg = false;
+				if(c == 45) {
+					c = 48;
+					neg = true;
+				}
+				do {
+					i = i * 10 + (c - 48);
+					c = StringTools.fastCodeAt(this.css,this.pos++);
+				} while(c >= 48 && c <= 57);
+				if(c == 46) {
+					var f = i;
+					var k = 0.1;
+					while(this.isNum(c = StringTools.fastCodeAt(this.css,this.pos++))) {
+						f += (c - 48) * k;
+						k *= 0.1;
+					}
+					this.pos--;
+					return h2d_css_Token.TFloat(neg?-f:f);
+				}
+				this.pos--;
+				return h2d_css_Token.TInt(neg?-i:i);
+			}
+			if(c >= 97 && c <= 122 || c >= 65 && c <= 90 || c == 45 || c == 95) {
+				var pos = this.pos - 1;
+				do c = StringTools.fastCodeAt(this.css,this.pos++); while(c >= 97 && c <= 122 || c >= 65 && c <= 90 || c == 45 || c == 95 || c >= 48 && c <= 57);
+				this.pos--;
+				return h2d_css_Token.TIdent(HxOverrides.substr(this.css,pos,this.pos - pos));
+			}
+			switch(c) {
+			case 58:
+				return h2d_css_Token.TDblDot;
+			case 35:
+				return h2d_css_Token.TSharp;
+			case 40:
+				return h2d_css_Token.TPOpen;
+			case 41:
+				return h2d_css_Token.TPClose;
+			case 33:
+				return h2d_css_Token.TExclam;
+			case 37:
+				return h2d_css_Token.TPercent;
+			case 59:
+				return h2d_css_Token.TSemicolon;
+			case 46:
+				return h2d_css_Token.TDot;
+			case 123:
+				return h2d_css_Token.TBrOpen;
+			case 125:
+				return h2d_css_Token.TBrClose;
+			case 44:
+				return h2d_css_Token.TComma;
+			case 42:
+				return h2d_css_Token.TStar;
+			case 47:
+				if((c = StringTools.fastCodeAt(this.css,this.pos++)) != 42) {
+					this.pos--;
+					return h2d_css_Token.TSlash;
+				}
+				while(true) {
+					while((c = StringTools.fastCodeAt(this.css,this.pos++)) != 42) if(c != c) throw new js__$Boot_HaxeError("Unclosed comment");
+					c = StringTools.fastCodeAt(this.css,this.pos++);
+					if(c == 47) break;
+					if(c != c) throw new js__$Boot_HaxeError("Unclosed comment");
+				}
+				return this.readToken();
+			case 39:case 34:
+				var pos1 = this.pos;
+				var k1;
+				while((k1 = StringTools.fastCodeAt(this.css,this.pos++)) != c) {
+					if(k1 != k1) throw new js__$Boot_HaxeError("Unclosed string constant");
+					if(k1 == 92) {
+						throw new js__$Boot_HaxeError("todo");
+						continue;
+					}
+				}
+				return h2d_css_Token.TString(HxOverrides.substr(this.css,pos1,this.pos - pos1 - 1));
+			default:
+			}
+			this.pos--;
+			throw new js__$Boot_HaxeError("Invalid char " + this.css.charAt(this.pos));
+		}
+		return null;
+	}
+	,__class__: h2d_css_Parser
+};
+var h2d_css_Style = function() {
+};
+$hxClasses["h2d.css.Style"] = h2d_css_Style;
+h2d_css_Style.__name__ = ["h2d","css","Style"];
+h2d_css_Style.prototype = {
+	apply: function(s) {
+		if(s.fontName != null) this.fontName = s.fontName;
+		if(s.fontSize != null) this.fontSize = s.fontSize;
+		if(s.color != null) this.color = s.color;
+		if(s.backgroundColor != null) this.backgroundColor = s.backgroundColor;
+		if(s.borderRadius != null) this.borderRadius = s.borderRadius;
+		if(s.borderSize != null) this.borderSize = s.borderSize;
+		if(s.borderColor != null) this.borderColor = s.borderColor;
+		if(s.paddingLeft != null) this.paddingLeft = s.paddingLeft;
+		if(s.paddingRight != null) this.paddingRight = s.paddingRight;
+		if(s.paddingTop != null) this.paddingTop = s.paddingTop;
+		if(s.paddingBottom != null) this.paddingBottom = s.paddingBottom;
+		if(s.offsetX != null) this.offsetX = s.offsetX;
+		if(s.offsetY != null) this.offsetY = s.offsetY;
+		if(s.width != null) this.width = s.width;
+		if(s.height != null) this.height = s.height;
+		if(s.layout != null) this.layout = s.layout;
+		if(s.horizontalSpacing != null) this.horizontalSpacing = s.horizontalSpacing;
+		if(s.verticalSpacing != null) this.verticalSpacing = s.verticalSpacing;
+		if(s.marginLeft != null) this.marginLeft = s.marginLeft;
+		if(s.marginRight != null) this.marginRight = s.marginRight;
+		if(s.marginTop != null) this.marginTop = s.marginTop;
+		if(s.marginBottom != null) this.marginBottom = s.marginBottom;
+		if(s.increment != null) this.increment = s.increment;
+		if(s.maxIncrement != null) this.maxIncrement = s.maxIncrement;
+		if(s.tickColor != null) this.tickColor = s.tickColor;
+		if(s.tickSpacing != null) this.tickSpacing = s.tickSpacing;
+		if(s.dock != null) this.dock = s.dock;
+		if(s.cursorColor != null) this.cursorColor = s.cursorColor;
+		if(s.selectionColor != null) this.selectionColor = s.selectionColor;
+		if(s.overflowHidden != null) this.overflowHidden = s.overflowHidden;
+		if(s.icon != null) this.icon = s.icon;
+		if(s.iconColor != null) this.iconColor = s.iconColor;
+		if(s.iconLeft != null) this.iconLeft = s.iconLeft;
+		if(s.iconTop != null) this.iconTop = s.iconTop;
+		if(s.positionAbsolute != null) this.positionAbsolute = s.positionAbsolute;
+		if(s.autoWidth != null) {
+			this.autoWidth = s.autoWidth;
+			this.width = s.width;
+		}
+		if(s.autoHeight != null) {
+			this.autoHeight = s.autoHeight;
+			this.height = s.height;
+		}
+		if(s.textAlign != null) this.textAlign = s.textAlign;
+		if(s.display != null) this.display = s.display;
+	}
+	,padding: function(v) {
+		this.paddingTop = v;
+		this.paddingLeft = v;
+		this.paddingRight = v;
+		this.paddingBottom = v;
+	}
+	,margin: function(v) {
+		this.marginTop = v;
+		this.marginLeft = v;
+		this.marginRight = v;
+		this.marginBottom = v;
+	}
+	,__class__: h2d_css_Style
+};
 var h2d_filter_Filter = function() {
 	this.boundsExtend = 0.;
 	this.autoBounds = true;
 };
 $hxClasses["h2d.filter.Filter"] = h2d_filter_Filter;
-h2d_filter_Filter.__name__ = true;
+h2d_filter_Filter.__name__ = ["h2d","filter","Filter"];
 h2d_filter_Filter.prototype = {
 	sync: function(ctx,s) {
 	}
@@ -1816,7 +6816,7 @@ var h3d_Buffer = function(vertices,stride,flags,allocPos) {
 	if(!((this.flags & 1 << h3d_BufferFlag.NoAlloc[1]) != 0)) h3d_Engine.CURRENT.mem.allocBuffer(this,stride);
 };
 $hxClasses["h3d.Buffer"] = h3d_Buffer;
-h3d_Buffer.__name__ = true;
+h3d_Buffer.__name__ = ["h3d","Buffer"];
 h3d_Buffer.ofFloats = function(v,stride,flags,allocPos) {
 	var nvert = v.length / stride | 0;
 	var b = new h3d_Buffer(nvert,stride,flags,allocPos);
@@ -1881,7 +6881,7 @@ var h3d_Camera = function(fovY,zoom,screenRatio,zNear,zFar,rightHanded) {
 	this.update();
 };
 $hxClasses["h3d.Camera"] = h3d_Camera;
-h3d_Camera.__name__ = true;
+h3d_Camera.__name__ = ["h3d","Camera"];
 h3d_Camera.prototype = {
 	getInverseViewProj: function() {
 		if(this.minv == null) this.minv = new h3d_Matrix();
@@ -1989,7 +6989,7 @@ var h3d_Engine = function(hardware,aa) {
 	h3d_Engine.CURRENT = this;
 };
 $hxClasses["h3d.Engine"] = h3d_Engine;
-h3d_Engine.__name__ = true;
+h3d_Engine.__name__ = ["h3d","Engine"];
 h3d_Engine.prototype = {
 	init: function() {
 		this.driver.init($bind(this,this.onCreate),!this.hardware);
@@ -2140,6 +7140,13 @@ h3d_Engine.prototype = {
 		if(color != null) this.tmpVector.setColor(color,null);
 		this.driver.clear(color == null?null:this.tmpVector,depth,stencil);
 	}
+	,setRenderZone: function(x,y,width,height) {
+		if(height == null) height = -1;
+		if(width == null) width = -1;
+		if(y == null) y = 0;
+		if(x == null) x = 0;
+		this.driver.setRenderZone(x,y,width,height);
+	}
 	,render: function(obj) {
 		if(!this.begin()) return false;
 		obj.render(this);
@@ -2163,7 +7170,7 @@ var h3d_Indexes = function(count) {
 	this.mem.allocIndexes(this);
 };
 $hxClasses["h3d.Indexes"] = h3d_Indexes;
-h3d_Indexes.__name__ = true;
+h3d_Indexes.__name__ = ["h3d","Indexes"];
 h3d_Indexes.alloc = function(i) {
 	var idx = new h3d_Indexes(i.length);
 	idx.upload(i,0,i.length);
@@ -2185,7 +7192,7 @@ h3d_Indexes.prototype = {
 var h3d_Matrix = function() {
 };
 $hxClasses["h3d.Matrix"] = h3d_Matrix;
-h3d_Matrix.__name__ = true;
+h3d_Matrix.__name__ = ["h3d","Matrix"];
 h3d_Matrix.prototype = {
 	zero: function() {
 		this._11 = 0.0;
@@ -2436,7 +7443,7 @@ var h3d_Quat = function(x,y,z,w) {
 	this.w = w;
 };
 $hxClasses["h3d.Quat"] = h3d_Quat;
-h3d_Quat.__name__ = true;
+h3d_Quat.__name__ = ["h3d","Quat"];
 h3d_Quat.prototype = {
 	saveToMatrix: function(m) {
 		var xx = this.x * this.x;
@@ -2479,13 +7486,10 @@ var h3d_Vector = function(x,y,z,w) {
 	this.w = w;
 };
 $hxClasses["h3d.Vector"] = h3d_Vector;
-h3d_Vector.__name__ = true;
+h3d_Vector.__name__ = ["h3d","Vector"];
 h3d_Vector.prototype = {
 	sub: function(v) {
 		return new h3d_Vector(this.x - v.x,this.y - v.y,this.z - v.z,this.w - v.w);
-	}
-	,add: function(v) {
-		return new h3d_Vector(this.x + v.x,this.y + v.y,this.z + v.z,this.w + v.w);
 	}
 	,cross: function(v) {
 		return new h3d_Vector(this.y * v.z - this.z * v.y,this.z * v.x - this.x * v.z,this.x * v.y - this.y * v.x,1);
@@ -2536,13 +7540,13 @@ h3d_Vector.prototype = {
 };
 var h3d_anim__$Animation_AnimWait = function() { };
 $hxClasses["h3d.anim._Animation.AnimWait"] = h3d_anim__$Animation_AnimWait;
-h3d_anim__$Animation_AnimWait.__name__ = true;
+h3d_anim__$Animation_AnimWait.__name__ = ["h3d","anim","_Animation","AnimWait"];
 h3d_anim__$Animation_AnimWait.prototype = {
 	__class__: h3d_anim__$Animation_AnimWait
 };
 var h3d_anim_Animation = function() { };
 $hxClasses["h3d.anim.Animation"] = h3d_anim_Animation;
-h3d_anim_Animation.__name__ = true;
+h3d_anim_Animation.__name__ = ["h3d","anim","Animation"];
 h3d_anim_Animation.prototype = {
 	sync: function(decompose) {
 		if(decompose == null) decompose = false;
@@ -2603,7 +7607,7 @@ var h3d_col_Bounds = function() {
 	this.zMax = -1e20;
 };
 $hxClasses["h3d.col.Bounds"] = h3d_col_Bounds;
-h3d_col_Bounds.__name__ = true;
+h3d_col_Bounds.__name__ = ["h3d","col","Bounds"];
 h3d_col_Bounds.prototype = {
 	empty: function() {
 		this.xMin = 1e20;
@@ -2631,7 +7635,7 @@ var h3d_col_Frustum = function(mvp) {
 	this.pfar.normalize();
 };
 $hxClasses["h3d.col.Frustum"] = h3d_col_Frustum;
-h3d_col_Frustum.__name__ = true;
+h3d_col_Frustum.__name__ = ["h3d","col","Frustum"];
 h3d_col_Frustum.prototype = {
 	checkSphere: function(s) {
 		var p = new h3d_col_Point(s.x,s.y,s.z);
@@ -2654,7 +7658,7 @@ var h3d_col_Plane = function(nx,ny,nz,d) {
 	this.d = d;
 };
 $hxClasses["h3d.col.Plane"] = h3d_col_Plane;
-h3d_col_Plane.__name__ = true;
+h3d_col_Plane.__name__ = ["h3d","col","Plane"];
 h3d_col_Plane.prototype = {
 	normalize: function() {
 		var len = 1. / Math.sqrt(this.nx * this.nx + this.ny * this.ny + this.nz * this.nz);
@@ -2677,19 +7681,9 @@ var h3d_col_Point = function(x,y,z) {
 	this.z = z;
 };
 $hxClasses["h3d.col.Point"] = h3d_col_Point;
-h3d_col_Point.__name__ = true;
+h3d_col_Point.__name__ = ["h3d","col","Point"];
 h3d_col_Point.prototype = {
-	cross: function(p) {
-		return new h3d_col_Point(this.y * p.z - this.z * p.y,this.z * p.x - this.x * p.z,this.x * p.y - this.y * p.x);
-	}
-	,normalize: function() {
-		var k = this.x * this.x + this.y * this.y + this.z * this.z;
-		if(k < 1e-10) k = 0; else k = 1. / Math.sqrt(k);
-		this.x *= k;
-		this.y *= k;
-		this.z *= k;
-	}
-	,__class__: h3d_col_Point
+	__class__: h3d_col_Point
 };
 var h3d_col_Sphere = function(x,y,z,r) {
 	if(r == null) r = 0.;
@@ -2702,7 +7696,7 @@ var h3d_col_Sphere = function(x,y,z,r) {
 	this.r = r;
 };
 $hxClasses["h3d.col.Sphere"] = h3d_col_Sphere;
-h3d_col_Sphere.__name__ = true;
+h3d_col_Sphere.__name__ = ["h3d","col","Sphere"];
 h3d_col_Sphere.prototype = {
 	__class__: h3d_col_Sphere
 };
@@ -2728,7 +7722,7 @@ h3d_impl_Feature.FullClearRequired.__enum__ = h3d_impl_Feature;
 h3d_impl_Feature.__empty_constructs__ = [h3d_impl_Feature.StandardDerivatives,h3d_impl_Feature.FloatTextures,h3d_impl_Feature.PerTargetDepthBuffer,h3d_impl_Feature.TargetUseDefaultDepthBuffer,h3d_impl_Feature.HardwareAccelerated,h3d_impl_Feature.FullClearRequired];
 var h3d_impl_Driver = function() { };
 $hxClasses["h3d.impl.Driver"] = h3d_impl_Driver;
-h3d_impl_Driver.__name__ = true;
+h3d_impl_Driver.__name__ = ["h3d","impl","Driver"];
 h3d_impl_Driver.prototype = {
 	hasFeature: function(f) {
 		return false;
@@ -2758,6 +7752,8 @@ h3d_impl_Driver.prototype = {
 	}
 	,draw: function(ibuf,startIndex,ntriangles) {
 	}
+	,setRenderZone: function(x,y,width,height) {
+	}
 	,setRenderTarget: function(tex) {
 	}
 	,present: function() {
@@ -2783,6 +7779,8 @@ h3d_impl_Driver.prototype = {
 	}
 	,uploadVertexBuffer: function(v,startVertex,vertexCount,buf,bufPos) {
 	}
+	,uploadTextureBitmap: function(t,bmp,mipLevel,side) {
+	}
 	,uploadTexturePixels: function(t,pixels,mipLevel,side) {
 	}
 	,__class__: h3d_impl_Driver
@@ -2793,14 +7791,14 @@ var h3d_impl__$GlDriver_CompiledShader = function(s,vertex,shader) {
 	this.shader = shader;
 };
 $hxClasses["h3d.impl._GlDriver.CompiledShader"] = h3d_impl__$GlDriver_CompiledShader;
-h3d_impl__$GlDriver_CompiledShader.__name__ = true;
+h3d_impl__$GlDriver_CompiledShader.__name__ = ["h3d","impl","_GlDriver","CompiledShader"];
 h3d_impl__$GlDriver_CompiledShader.prototype = {
 	__class__: h3d_impl__$GlDriver_CompiledShader
 };
 var h3d_impl__$GlDriver_CompiledProgram = function() {
 };
 $hxClasses["h3d.impl._GlDriver.CompiledProgram"] = h3d_impl__$GlDriver_CompiledProgram;
-h3d_impl__$GlDriver_CompiledProgram.__name__ = true;
+h3d_impl__$GlDriver_CompiledProgram.__name__ = ["h3d","impl","_GlDriver","CompiledProgram"];
 h3d_impl__$GlDriver_CompiledProgram.prototype = {
 	__class__: h3d_impl__$GlDriver_CompiledProgram
 };
@@ -2816,7 +7814,7 @@ var h3d_impl_GlDriver = function() {
 	this.gl.pixelStorei(37440,1);
 };
 $hxClasses["h3d.impl.GlDriver"] = h3d_impl_GlDriver;
-h3d_impl_GlDriver.__name__ = true;
+h3d_impl_GlDriver.__name__ = ["h3d","impl","GlDriver"];
 h3d_impl_GlDriver.__super__ = h3d_impl_Driver;
 h3d_impl_GlDriver.prototype = $extend(h3d_impl_Driver.prototype,{
 	begin: function(frame) {
@@ -3106,6 +8104,13 @@ h3d_impl_GlDriver.prototype = $extend(h3d_impl_Driver.prototype,{
 	,disposeVertexes: function(v) {
 		this.gl.deleteBuffer(v.b);
 	}
+	,uploadTextureBitmap: function(t,bmp,mipLevel,side) {
+		var img = bmp.ctx;
+		this.gl.bindTexture(3553,t.t.t);
+		this.gl.texImage2D(3553,mipLevel,6408,6408,5121,img.getImageData(0,0,bmp.ctx.canvas.width,bmp.ctx.canvas.height));
+		if((t.flags & 1 << h3d_mat_TextureFlags.MipMapped[1]) != 0) this.gl.generateMipmap(3553);
+		this.gl.bindTexture(3553,null);
+	}
 	,uploadTexturePixels: function(t,pixels,mipLevel,side) {
 		this.gl.bindTexture(3553,t.t.t);
 		pixels.convert(hxd_PixelFormat.RGBA);
@@ -3188,6 +8193,12 @@ h3d_impl_GlDriver.prototype = $extend(h3d_impl_Driver.prototype,{
 	,isDisposed: function() {
 		return this.gl.isContextLost();
 	}
+	,setRenderZone: function(x,y,width,height) {
+		if(x == 0 && y == 0 && width < 0 && height < 0) this.gl.disable(3089); else {
+			this.gl.enable(3089);
+			this.gl.scissor(x,this.bufferHeight - (y + height),width,height);
+		}
+	}
 	,setRenderTarget: function(tex) {
 		if(tex == null) {
 			this.gl.bindFramebuffer(36160,null);
@@ -3233,7 +8244,7 @@ var h3d_impl__$ManagedBuffer_FreeCell = function(pos,count,next) {
 	this.next = next;
 };
 $hxClasses["h3d.impl._ManagedBuffer.FreeCell"] = h3d_impl__$ManagedBuffer_FreeCell;
-h3d_impl__$ManagedBuffer_FreeCell.__name__ = true;
+h3d_impl__$ManagedBuffer_FreeCell.__name__ = ["h3d","impl","_ManagedBuffer","FreeCell"];
 h3d_impl__$ManagedBuffer_FreeCell.prototype = {
 	__class__: h3d_impl__$ManagedBuffer_FreeCell
 };
@@ -3254,7 +8265,7 @@ var h3d_impl_ManagedBuffer = function(stride,size,flags) {
 	this.mem.allocManaged(this);
 };
 $hxClasses["h3d.impl.ManagedBuffer"] = h3d_impl_ManagedBuffer;
-h3d_impl_ManagedBuffer.__name__ = true;
+h3d_impl_ManagedBuffer.__name__ = ["h3d","impl","ManagedBuffer"];
 h3d_impl_ManagedBuffer.prototype = {
 	uploadVertexBuffer: function(start,vertices,buf,bufPos) {
 		if(bufPos == null) bufPos = 0;
@@ -3332,7 +8343,7 @@ var h3d_impl_MemoryManager = function(driver) {
 	this.driver = driver;
 };
 $hxClasses["h3d.impl.MemoryManager"] = h3d_impl_MemoryManager;
-h3d_impl_MemoryManager.__name__ = true;
+h3d_impl_MemoryManager.__name__ = ["h3d","impl","MemoryManager"];
 h3d_impl_MemoryManager.prototype = {
 	init: function() {
 		this.indexes = [];
@@ -3596,7 +8607,7 @@ var h3d_impl_TextureCache = function() {
 	this.fullClearRequired = engine.driver.hasFeature(h3d_impl_Feature.FullClearRequired);
 };
 $hxClasses["h3d.impl.TextureCache"] = h3d_impl_TextureCache;
-h3d_impl_TextureCache.__name__ = true;
+h3d_impl_TextureCache.__name__ = ["h3d","impl","TextureCache"];
 h3d_impl_TextureCache.prototype = {
 	begin: function(ctx) {
 		if(this.frame != ctx.frame) {
@@ -3794,88 +8805,6 @@ h3d_mat_TextureFlags.WasCleared = ["WasCleared",13];
 h3d_mat_TextureFlags.WasCleared.toString = $estr;
 h3d_mat_TextureFlags.WasCleared.__enum__ = h3d_mat_TextureFlags;
 h3d_mat_TextureFlags.__empty_constructs__ = [h3d_mat_TextureFlags.Target,h3d_mat_TextureFlags.TargetDepth,h3d_mat_TextureFlags.TargetUseDefaultDepth,h3d_mat_TextureFlags.Cubic,h3d_mat_TextureFlags.MipMapped,h3d_mat_TextureFlags.IsNPOT,h3d_mat_TextureFlags.NoAlloc,h3d_mat_TextureFlags.Dynamic,h3d_mat_TextureFlags.FmtFloat,h3d_mat_TextureFlags.Fmt5_6_5,h3d_mat_TextureFlags.Fmt4_4_4_4,h3d_mat_TextureFlags.Fmt5_5_5_1,h3d_mat_TextureFlags.AlphaPremultiplied,h3d_mat_TextureFlags.WasCleared];
-var h3d_mat_Material = function(shader) {
-	if(shader != null) this.addPass(new h3d_mat_Pass("default",null)).addShader(shader);
-};
-$hxClasses["h3d.mat.Material"] = h3d_mat_Material;
-h3d_mat_Material.__name__ = true;
-h3d_mat_Material.prototype = {
-	addPass: function(p) {
-		var prev = null;
-		var cur = this.passes;
-		while(cur != null) {
-			prev = cur;
-			cur = cur.nextPass;
-		}
-		if(prev == null) this.passes = p; else prev.nextPass = p;
-		p.nextPass = null;
-		return p;
-	}
-	,__class__: h3d_mat_Material
-};
-var h3d_mat_MeshMaterial = function(texture) {
-	this.mshader = new h3d_shader_BaseMesh();
-	this.set_blendMode(h2d_BlendMode.None);
-	h3d_mat_Material.call(this,this.mshader);
-	this.set_texture(texture);
-};
-$hxClasses["h3d.mat.MeshMaterial"] = h3d_mat_MeshMaterial;
-h3d_mat_MeshMaterial.__name__ = true;
-h3d_mat_MeshMaterial.__super__ = h3d_mat_Material;
-h3d_mat_MeshMaterial.prototype = $extend(h3d_mat_Material.prototype,{
-	set_blendMode: function(v) {
-		if(this.passes != null) {
-			this.passes.setBlendMode(v);
-			switch(v[1]) {
-			case 0:
-				this.passes.set_depthWrite(true);
-				this.passes.setPassName("default");
-				break;
-			case 1:
-				this.passes.set_depthWrite(true);
-				this.passes.setPassName("alpha");
-				break;
-			case 2:
-				this.passes.set_depthWrite(false);
-				this.passes.setPassName("additive");
-				break;
-			case 3:
-				this.passes.set_depthWrite(false);
-				this.passes.setPassName("additive");
-				break;
-			case 4:
-				this.passes.set_depthWrite(false);
-				this.passes.setPassName("additive");
-				break;
-			case 5:
-				this.passes.set_depthWrite(false);
-				this.passes.setPassName("additive");
-				break;
-			case 6:
-				this.passes.set_depthWrite(false);
-				this.passes.setPassName("additive");
-				break;
-			}
-		}
-		return this.blendMode = v;
-	}
-	,set_texture: function(t) {
-		if(t == null) {
-			if(this.textureShader != null) {
-				this.passes.removeShader(this.textureShader);
-				this.textureShader = null;
-			}
-		} else {
-			if(this.textureShader == null) {
-				this.textureShader = new h3d_shader_Texture();
-				this.passes.addShader(this.textureShader);
-			}
-			this.textureShader.texture__ = t;
-		}
-		return t;
-	}
-	,__class__: h3d_mat_MeshMaterial
-});
 var h3d_mat_Pass = function(name,shaders,parent) {
 	this.bits = 0;
 	this.parentPass = parent;
@@ -3888,7 +8817,7 @@ var h3d_mat_Pass = function(name,shaders,parent) {
 	this.set_colorMask(15);
 };
 $hxClasses["h3d.mat.Pass"] = h3d_mat_Pass;
-h3d_mat_Pass.__name__ = true;
+h3d_mat_Pass.__name__ = ["h3d","mat","Pass"];
 h3d_mat_Pass.prototype = {
 	setPassName: function(name) {
 		this.name = name;
@@ -3928,23 +8857,6 @@ h3d_mat_Pass.prototype = {
 	,depth: function(write,test) {
 		this.set_depthWrite(write);
 		this.set_depthTest(test);
-	}
-	,addShader: function(s) {
-		this.shaders = new hxsl_ShaderList(s,this.shaders);
-		return s;
-	}
-	,removeShader: function(s) {
-		var sl = this.shaders;
-		var prev = null;
-		while(sl != null) {
-			if(sl.s == s) {
-				if(prev == null) this.shaders = sl.next; else prev.next = sl.next;
-				return true;
-			}
-			prev = sl;
-			sl = sl.next;
-		}
-		return false;
 	}
 	,getShadersRec: function() {
 		if(this.parentPass == null || this.parentShaders == this.parentPass.shaders) return this.shaders;
@@ -4029,7 +8941,17 @@ var h3d_mat_Texture = function(w,h,flags,allocPos) {
 	this.alloc();
 };
 $hxClasses["h3d.mat.Texture"] = h3d_mat_Texture;
-h3d_mat_Texture.__name__ = true;
+h3d_mat_Texture.__name__ = ["h3d","mat","Texture"];
+h3d_mat_Texture.fromBitmap = function(bmp,allocPos) {
+	var t = new h3d_mat_Texture(bmp.ctx.canvas.width,bmp.ctx.canvas.height,null,allocPos);
+	t.uploadBitmap(bmp);
+	return t;
+};
+h3d_mat_Texture.fromPixels = function(pixels,allocPos) {
+	var t = new h3d_mat_Texture(pixels.width,pixels.height,null,allocPos);
+	t.uploadPixels(pixels);
+	return t;
+};
 h3d_mat_Texture.fromColor = function(color,alpha,allocPos) {
 	if(alpha == null) alpha = 1.;
 	var aval = alpha * 255 | 0;
@@ -4067,6 +8989,9 @@ h3d_mat_Texture.prototype = {
 		this.bits = this.bits & -193 | w[1] << 6;
 		return this.wrap = w;
 	}
+	,isDisposed: function() {
+		return this.t == null && this.realloc == null;
+	}
 	,clear: function(color,alpha) {
 		if(alpha == null) alpha = 1.;
 		this.alloc();
@@ -4089,6 +9014,12 @@ h3d_mat_Texture.prototype = {
 		this.uploadPixels(p);
 		p.dispose();
 	}
+	,uploadBitmap: function(bmp,mipLevel,side) {
+		if(side == null) side = 0;
+		if(mipLevel == null) mipLevel = 0;
+		this.alloc();
+		this.mem.driver.uploadTextureBitmap(this,bmp,mipLevel,side);
+	}
 	,uploadPixels: function(pixels,mipLevel,side) {
 		if(side == null) side = 0;
 		if(mipLevel == null) mipLevel = 0;
@@ -4105,7 +9036,7 @@ var h3d_pass_Base = function() {
 	this.priority = 0;
 };
 $hxClasses["h3d.pass.Base"] = h3d_pass_Base;
-h3d_pass_Base.__name__ = true;
+h3d_pass_Base.__name__ = ["h3d","pass","Base"];
 h3d_pass_Base.prototype = {
 	setContext: function(ctx) {
 		this.ctx = ctx;
@@ -4127,7 +9058,7 @@ var h3d_pass_ScreenFx = function(shader) {
 	this.fullClearRequired = this.engine.hasFeature(h3d_impl_Feature.FullClearRequired);
 };
 $hxClasses["h3d.pass.ScreenFx"] = h3d_pass_ScreenFx;
-h3d_pass_ScreenFx.__name__ = true;
+h3d_pass_ScreenFx.__name__ = ["h3d","pass","ScreenFx"];
 h3d_pass_ScreenFx.prototype = {
 	render: function() {
 		var rts = this.manager.compileShaders(this.shaders);
@@ -4156,7 +9087,7 @@ var h3d_pass_Blur = function(quality,passes,sigma) {
 	this.set_sigma(sigma);
 };
 $hxClasses["h3d.pass.Blur"] = h3d_pass_Blur;
-h3d_pass_Blur.__name__ = true;
+h3d_pass_Blur.__name__ = ["h3d","pass","Blur"];
 h3d_pass_Blur.__super__ = h3d_pass_ScreenFx;
 h3d_pass_Blur.prototype = $extend(h3d_pass_ScreenFx.prototype,{
 	set_quality: function(q) {
@@ -4233,7 +9164,7 @@ var hxsl_Shader = function() {
 	}
 };
 $hxClasses["hxsl.Shader"] = hxsl_Shader;
-hxsl_Shader.__name__ = true;
+hxsl_Shader.__name__ = ["hxsl","Shader"];
 hxsl_Shader.prototype = {
 	getParamValue: function(index) {
 		throw new js__$Boot_HaxeError("assert");
@@ -4275,7 +9206,7 @@ var h3d_pass__$Border_BorderShader = function() {
 	hxsl_Shader.call(this);
 };
 $hxClasses["h3d.pass._Border.BorderShader"] = h3d_pass__$Border_BorderShader;
-h3d_pass__$Border_BorderShader.__name__ = true;
+h3d_pass__$Border_BorderShader.__name__ = ["h3d","pass","_Border","BorderShader"];
 h3d_pass__$Border_BorderShader.__super__ = hxsl_Shader;
 h3d_pass__$Border_BorderShader.prototype = $extend(hxsl_Shader.prototype,{
 	updateConstants: function(globals) {
@@ -4339,10 +9270,98 @@ var h3d_pass_Border = function(width,height,size) {
 	this.shader.color__.set(1,1,1,1);
 };
 $hxClasses["h3d.pass.Border"] = h3d_pass_Border;
-h3d_pass_Border.__name__ = true;
+h3d_pass_Border.__name__ = ["h3d","pass","Border"];
 h3d_pass_Border.__super__ = h3d_pass_ScreenFx;
 h3d_pass_Border.prototype = $extend(h3d_pass_ScreenFx.prototype,{
 	__class__: h3d_pass_Border
+});
+var h3d_shader_ScreenShader = function() {
+	hxsl_Shader.call(this);
+};
+$hxClasses["h3d.shader.ScreenShader"] = h3d_shader_ScreenShader;
+h3d_shader_ScreenShader.__name__ = ["h3d","shader","ScreenShader"];
+h3d_shader_ScreenShader.__super__ = hxsl_Shader;
+h3d_shader_ScreenShader.prototype = $extend(hxsl_Shader.prototype,{
+	updateConstants: function(globals) {
+		this.constBits = 0;
+		this.updateConstantsFinal(globals);
+	}
+	,getParamValue: function(index) {
+		return null;
+	}
+	,__class__: h3d_shader_ScreenShader
+});
+var h3d_pass_ColorMatrixShader = function() {
+	this.maskMatA__ = new h3d_Vector();
+	this.maskPower__ = 0;
+	this.maskChannel__ = new h3d_Vector();
+	this.matrix2__ = new h3d_Matrix();
+	this.matrix__ = new h3d_Matrix();
+	this.maskMatB__ = new h3d_Vector();
+};
+$hxClasses["h3d.pass.ColorMatrixShader"] = h3d_pass_ColorMatrixShader;
+h3d_pass_ColorMatrixShader.__name__ = ["h3d","pass","ColorMatrixShader"];
+h3d_pass_ColorMatrixShader.__super__ = h3d_shader_ScreenShader;
+h3d_pass_ColorMatrixShader.prototype = $extend(h3d_shader_ScreenShader.prototype,{
+	updateConstants: function(globals) {
+		this.constBits = 0;
+		if(this.maskInvert__) this.constBits |= 1;
+		if(this.hasSecondMatrix__) this.constBits |= 2;
+		if(this.useMask__) this.constBits |= 4;
+		this.updateConstantsFinal(globals);
+	}
+	,getParamValue: function(index) {
+		switch(index) {
+		case 0:
+			return this.maskInvert__;
+		case 1:
+			return this.mask__;
+		case 2:
+			return this.maskMatB__;
+		case 3:
+			return this.texture__;
+		case 4:
+			return this.hasSecondMatrix__;
+		case 5:
+			return this.matrix__;
+		case 6:
+			return this.matrix2__;
+		case 7:
+			return this.useMask__;
+		case 8:
+			return this.maskChannel__;
+		case 9:
+			return this.maskPower__;
+		case 10:
+			return this.maskMatA__;
+		default:
+		}
+		return null;
+	}
+	,__class__: h3d_pass_ColorMatrixShader
+});
+var h3d_pass__$Copy_CopyShader = function() {
+	this.uvDelta__ = new h3d_Vector();
+};
+$hxClasses["h3d.pass._Copy.CopyShader"] = h3d_pass__$Copy_CopyShader;
+h3d_pass__$Copy_CopyShader.__name__ = ["h3d","pass","_Copy","CopyShader"];
+h3d_pass__$Copy_CopyShader.__super__ = h3d_shader_ScreenShader;
+h3d_pass__$Copy_CopyShader.prototype = $extend(h3d_shader_ScreenShader.prototype,{
+	updateConstants: function(globals) {
+		this.constBits = 0;
+		this.updateConstantsFinal(globals);
+	}
+	,getParamValue: function(index) {
+		switch(index) {
+		case 0:
+			return this.texture__;
+		case 1:
+			return this.uvDelta__;
+		default:
+		}
+		return null;
+	}
+	,__class__: h3d_pass__$Copy_CopyShader
 });
 var h3d_pass_Default = function() {
 	h3d_pass_Base.call(this);
@@ -4351,7 +9370,7 @@ var h3d_pass_Default = function() {
 	this.initGlobals();
 };
 $hxClasses["h3d.pass.Default"] = h3d_pass_Default;
-h3d_pass_Default.__name__ = true;
+h3d_pass_Default.__name__ = ["h3d","pass","Default"];
 h3d_pass_Default.__super__ = h3d_pass_Base;
 h3d_pass_Default.prototype = $extend(h3d_pass_Base.prototype,{
 	getOutputs: function() {
@@ -4529,7 +9548,7 @@ var h3d_pass_Depth = function() {
 	this.depthMapId = hxsl_Globals.allocID("depthMap");
 };
 $hxClasses["h3d.pass.Depth"] = h3d_pass_Depth;
-h3d_pass_Depth.__name__ = true;
+h3d_pass_Depth.__name__ = ["h3d","pass","Depth"];
 h3d_pass_Depth.__super__ = h3d_pass_Default;
 h3d_pass_Depth.prototype = $extend(h3d_pass_Default.prototype,{
 	getOutputs: function() {
@@ -4553,7 +9572,7 @@ var h3d_pass_LightSystem = function() {
 	this.ambientShader = new h3d_shader_AmbientLight();
 };
 $hxClasses["h3d.pass.LightSystem"] = h3d_pass_LightSystem;
-h3d_pass_LightSystem.__name__ = true;
+h3d_pass_LightSystem.__name__ = ["h3d","pass","LightSystem"];
 h3d_pass_LightSystem.prototype = {
 	initLights: function(globals,ctx) {
 		this.lightCount = 0;
@@ -4614,7 +9633,7 @@ var h3d_pass_Normal = function() {
 	this.normalMapId = hxsl_Globals.allocID("normalMap");
 };
 $hxClasses["h3d.pass.Normal"] = h3d_pass_Normal;
-h3d_pass_Normal.__name__ = true;
+h3d_pass_Normal.__name__ = ["h3d","pass","Normal"];
 h3d_pass_Normal.__super__ = h3d_pass_Default;
 h3d_pass_Normal.prototype = $extend(h3d_pass_Default.prototype,{
 	getOutputs: function() {
@@ -4630,16 +9649,12 @@ h3d_pass_Normal.prototype = $extend(h3d_pass_Default.prototype,{
 	}
 	,__class__: h3d_pass_Normal
 });
-var h3d_pass_Object = function() {
-};
+var h3d_pass_Object = function() { };
 $hxClasses["h3d.pass.Object"] = h3d_pass_Object;
-h3d_pass_Object.__name__ = true;
+h3d_pass_Object.__name__ = ["h3d","pass","Object"];
 h3d_pass_Object.prototype = {
 	__class__: h3d_pass_Object
 };
-var h3d_pass_Params = function() { };
-$hxClasses["h3d.pass.Params"] = h3d_pass_Params;
-h3d_pass_Params.__name__ = true;
 var h3d_pass_ShadowMap = function(size) {
 	this.bias = 0.01;
 	this.power = 10.0;
@@ -4659,7 +9674,7 @@ var h3d_pass_ShadowMap = function(size) {
 	this.border = new h3d_pass_Border(size,size);
 };
 $hxClasses["h3d.pass.ShadowMap"] = h3d_pass_ShadowMap;
-h3d_pass_ShadowMap.__name__ = true;
+h3d_pass_ShadowMap.__name__ = ["h3d","pass","ShadowMap"];
 h3d_pass_ShadowMap.__super__ = h3d_pass_Default;
 h3d_pass_ShadowMap.prototype = $extend(h3d_pass_Default.prototype,{
 	set_size: function(s) {
@@ -4712,209 +9727,10 @@ h3d_pass_ShadowMap.prototype = $extend(h3d_pass_Default.prototype,{
 	}
 	,__class__: h3d_pass_ShadowMap
 });
-var h3d_prim_Primitive = function() { };
-$hxClasses["h3d.prim.Primitive"] = h3d_prim_Primitive;
-h3d_prim_Primitive.__name__ = true;
-h3d_prim_Primitive.prototype = {
-	triCount: function() {
-		if(this.indexes != null) return this.indexes.count / 3 | 0; else if(this.buffer == null) return 0; else return Std["int"](this.buffer.totalVertices() / 3);
-	}
-	,alloc: function(engine) {
-		throw new js__$Boot_HaxeError("not implemented");
-	}
-	,render: function(engine) {
-		if(this.buffer == null || this.buffer.isDisposed()) this.alloc(engine);
-		if(this.indexes == null) {
-			if((this.buffer.flags & 1 << h3d_BufferFlag.Quads[1]) != 0) engine.renderBuffer(this.buffer,engine.mem.quadIndexes,2,0,-1); else engine.renderBuffer(this.buffer,engine.mem.triIndexes,3,0,-1);
-		} else engine.renderIndexed(this.buffer,this.indexes);
-	}
-	,dispose: function() {
-		if(this.buffer != null) {
-			this.buffer.dispose();
-			this.buffer = null;
-		}
-		if(this.indexes != null) {
-			this.indexes.dispose();
-			this.indexes = null;
-		}
-	}
-	,__class__: h3d_prim_Primitive
-};
-var h3d_prim_Polygon = function(points,idx) {
-	this.points = points;
-	this.idx = idx;
-};
-$hxClasses["h3d.prim.Polygon"] = h3d_prim_Polygon;
-h3d_prim_Polygon.__name__ = true;
-h3d_prim_Polygon.__super__ = h3d_prim_Primitive;
-h3d_prim_Polygon.prototype = $extend(h3d_prim_Primitive.prototype,{
-	alloc: function(engine) {
-		this.dispose();
-		var size = 3;
-		if(this.normals != null) size += 3;
-		if(this.uvs != null) size += 2;
-		if(this.colors != null) size += 3;
-		var buf;
-		var this1;
-		this1 = new Array(0);
-		buf = this1;
-		var _g1 = 0;
-		var _g = this.points.length;
-		while(_g1 < _g) {
-			var k = _g1++;
-			var p = this.points[k];
-			buf.push(p.x);
-			buf.push(p.y);
-			buf.push(p.z);
-			if(this.normals != null) {
-				var n = this.normals[k];
-				buf.push(n.x);
-				buf.push(n.y);
-				buf.push(n.z);
-			}
-			if(this.uvs != null) {
-				var t = this.uvs[k];
-				buf.push(t.u);
-				buf.push(t.v);
-			}
-			if(this.colors != null) {
-				var c = this.colors[k];
-				buf.push(c.x);
-				buf.push(c.y);
-				buf.push(c.z);
-			}
-		}
-		var flags = [];
-		if(this.idx == null) flags.push(h3d_BufferFlag.Triangles);
-		if(this.normals == null) flags.push(h3d_BufferFlag.RawFormat);
-		this.buffer = h3d_Buffer.ofFloats(buf,size,flags);
-		if(this.idx != null) this.indexes = h3d_Indexes.alloc(this.idx);
-	}
-	,translate: function(dx,dy,dz) {
-		var _g = 0;
-		var _g1 = this.points;
-		while(_g < _g1.length) {
-			var p = _g1[_g];
-			++_g;
-			p.x += dx;
-			p.y += dy;
-			p.z += dz;
-		}
-	}
-	,addNormals: function() {
-		this.normals = [];
-		var _g1 = 0;
-		var _g = this.points.length;
-		while(_g1 < _g) {
-			var i = _g1++;
-			this.normals[i] = new h3d_col_Point();
-		}
-		var pos = 0;
-		var _g11 = 0;
-		var _g2 = this.triCount();
-		while(_g11 < _g2) {
-			var i1 = _g11++;
-			var i0;
-			var i11;
-			var i2;
-			if(this.idx == null) {
-				i0 = pos++;
-				i11 = pos++;
-				i2 = pos++;
-			} else {
-				var key = pos++;
-				i0 = this.idx[key];
-				var key1 = pos++;
-				i11 = this.idx[key1];
-				var key2 = pos++;
-				i2 = this.idx[key2];
-			}
-			var p0 = this.points[i0];
-			var p1 = this.points[i11];
-			var p2 = this.points[i2];
-			var n = new h3d_col_Point(p1.x - p0.x,p1.y - p0.y,p1.z - p0.z).cross(new h3d_col_Point(p2.x - p0.x,p2.y - p0.y,p2.z - p0.z));
-			this.normals[i0].x += n.x;
-			this.normals[i0].y += n.y;
-			this.normals[i0].z += n.z;
-			this.normals[i11].x += n.x;
-			this.normals[i11].y += n.y;
-			this.normals[i11].z += n.z;
-			this.normals[i2].x += n.x;
-			this.normals[i2].y += n.y;
-			this.normals[i2].z += n.z;
-		}
-		var _g3 = 0;
-		var _g12 = this.normals;
-		while(_g3 < _g12.length) {
-			var n1 = _g12[_g3];
-			++_g3;
-			n1.normalize();
-		}
-	}
-	,triCount: function() {
-		var n = h3d_prim_Primitive.prototype.triCount.call(this);
-		if(n != 0) return n;
-		return (this.idx == null?this.points.length:this.idx.length) / 3 | 0;
-	}
-	,__class__: h3d_prim_Polygon
-});
-var h3d_prim_Cube = function(x,y,z) {
-	if(z == null) z = 1.;
-	if(y == null) y = 1.;
-	if(x == null) x = 1.;
-	var p = [new h3d_col_Point(0,0,0),new h3d_col_Point(x,0,0),new h3d_col_Point(0,y,0),new h3d_col_Point(0,0,z),new h3d_col_Point(x,y,0),new h3d_col_Point(x,0,z),new h3d_col_Point(0,y,z),new h3d_col_Point(x,y,z)];
-	var idx;
-	var this1;
-	this1 = new Array(0);
-	idx = this1;
-	idx.push(0);
-	idx.push(1);
-	idx.push(5);
-	idx.push(0);
-	idx.push(5);
-	idx.push(3);
-	idx.push(1);
-	idx.push(4);
-	idx.push(7);
-	idx.push(1);
-	idx.push(7);
-	idx.push(5);
-	idx.push(3);
-	idx.push(5);
-	idx.push(7);
-	idx.push(3);
-	idx.push(7);
-	idx.push(6);
-	idx.push(0);
-	idx.push(6);
-	idx.push(2);
-	idx.push(0);
-	idx.push(3);
-	idx.push(6);
-	idx.push(2);
-	idx.push(7);
-	idx.push(4);
-	idx.push(2);
-	idx.push(6);
-	idx.push(7);
-	idx.push(0);
-	idx.push(4);
-	idx.push(1);
-	idx.push(0);
-	idx.push(2);
-	idx.push(4);
-	h3d_prim_Polygon.call(this,p,idx);
-};
-$hxClasses["h3d.prim.Cube"] = h3d_prim_Cube;
-h3d_prim_Cube.__name__ = true;
-h3d_prim_Cube.__super__ = h3d_prim_Polygon;
-h3d_prim_Cube.prototype = $extend(h3d_prim_Polygon.prototype,{
-	__class__: h3d_prim_Cube
-});
 var h3d_prim_Plan2D = function() {
 };
 $hxClasses["h3d.prim.Plan2D"] = h3d_prim_Plan2D;
-h3d_prim_Plan2D.__name__ = true;
+h3d_prim_Plan2D.__name__ = ["h3d","prim","Plan2D"];
 h3d_prim_Plan2D.__super__ = h3d_prim_Primitive;
 h3d_prim_Plan2D.prototype = $extend(h3d_prim_Primitive.prototype,{
 	alloc: function(engine) {
@@ -4954,17 +9770,11 @@ var h3d_prim_RawPrimitive = function(engine,vbuf,stride,ibuf) {
 	if(ibuf != null) this.indexes = h3d_Indexes.alloc(ibuf);
 };
 $hxClasses["h3d.prim.RawPrimitive"] = h3d_prim_RawPrimitive;
-h3d_prim_RawPrimitive.__name__ = true;
+h3d_prim_RawPrimitive.__name__ = ["h3d","prim","RawPrimitive"];
 h3d_prim_RawPrimitive.__super__ = h3d_prim_Primitive;
 h3d_prim_RawPrimitive.prototype = $extend(h3d_prim_Primitive.prototype,{
 	__class__: h3d_prim_RawPrimitive
 });
-var h3d_prim_UV = function() { };
-$hxClasses["h3d.prim.UV"] = h3d_prim_UV;
-h3d_prim_UV.__name__ = true;
-h3d_prim_UV.prototype = {
-	__class__: h3d_prim_UV
-};
 var h3d_scene_Object = function(parent) {
 	this.flags = 0;
 	this.absPos = new h3d_Matrix();
@@ -5003,7 +9813,7 @@ var h3d_scene_Object = function(parent) {
 	if(parent != null) parent.addChild(this);
 };
 $hxClasses["h3d.scene.Object"] = h3d_scene_Object;
-h3d_scene_Object.__name__ = true;
+h3d_scene_Object.__name__ = ["h3d","scene","Object"];
 h3d_scene_Object.prototype = {
 	set_posChanged: function(b) {
 		if(b) this.flags |= 1; else this.flags &= ~1;
@@ -5154,40 +9964,14 @@ h3d_scene_Object.prototype = {
 			c1.emitRec(ctx);
 		}
 	}
-	,set_x: function(v) {
-		this.x = v;
-		this.flags |= 1;
-		true;
-		return v;
-	}
-	,set_y: function(v) {
-		this.y = v;
-		this.flags |= 1;
-		true;
-		return v;
-	}
-	,set_z: function(v) {
-		this.z = v;
-		this.flags |= 1;
-		true;
-		return v;
-	}
-	,set_scaleX: function(v) {
-		this.scaleX = v;
-		this.flags |= 1;
-		true;
-		return v;
-	}
 	,__class__: h3d_scene_Object
 };
-var h3d_scene_Light = function(shader,parent) {
+var h3d_scene_Light = function() {
 	this.priority = 0;
 	this.cullingDistance = 1e10;
-	h3d_scene_Object.call(this,parent);
-	this.shader = shader;
 };
 $hxClasses["h3d.scene.Light"] = h3d_scene_Light;
-h3d_scene_Light.__name__ = true;
+h3d_scene_Light.__name__ = ["h3d","scene","Light"];
 h3d_scene_Light.__super__ = h3d_scene_Object;
 h3d_scene_Light.prototype = $extend(h3d_scene_Object.prototype,{
 	emit: function(ctx) {
@@ -5195,61 +9979,15 @@ h3d_scene_Light.prototype = $extend(h3d_scene_Object.prototype,{
 	}
 	,__class__: h3d_scene_Light
 });
-var h3d_scene_DirLight = function(dir,parent) {
-	this.dshader = new h3d_shader_DirLight();
-	this.direction = dir;
-	h3d_scene_Light.call(this,this.dshader,parent);
-	this.priority = 100;
-};
-$hxClasses["h3d.scene.DirLight"] = h3d_scene_DirLight;
-h3d_scene_DirLight.__name__ = true;
-h3d_scene_DirLight.__super__ = h3d_scene_Light;
-h3d_scene_DirLight.prototype = $extend(h3d_scene_Light.prototype,{
-	get_color: function() {
-		return this.dshader.color__;
-	}
-	,emit: function(ctx) {
-		this.dshader.direction__.set(-this.direction.x,-this.direction.y,-this.direction.z,null);
-		this.dshader.direction__.normalize();
-		h3d_scene_Light.prototype.emit.call(this,ctx);
-	}
-	,__class__: h3d_scene_DirLight
-});
-var h3d_scene_Mesh = function(prim,mat,parent) {
-	h3d_scene_Object.call(this,parent);
-	this.primitive = prim;
-	if(mat == null) mat = new h3d_mat_MeshMaterial(null);
-	this.material = mat;
-};
-$hxClasses["h3d.scene.Mesh"] = h3d_scene_Mesh;
-h3d_scene_Mesh.__name__ = true;
-h3d_scene_Mesh.__super__ = h3d_scene_Object;
-h3d_scene_Mesh.prototype = $extend(h3d_scene_Object.prototype,{
-	draw: function(ctx) {
-		this.primitive.render(ctx.engine);
-	}
-	,emit: function(ctx) {
-		ctx.emit(this.material,this,null);
-	}
-	,__class__: h3d_scene_Mesh
-});
 var h3d_scene_RenderContext = function() {
 	h3d_impl_RenderContext.call(this);
 	this.cachedShaderList = [];
 };
 $hxClasses["h3d.scene.RenderContext"] = h3d_scene_RenderContext;
-h3d_scene_RenderContext.__name__ = true;
+h3d_scene_RenderContext.__name__ = ["h3d","scene","RenderContext"];
 h3d_scene_RenderContext.__super__ = h3d_impl_RenderContext;
 h3d_scene_RenderContext.prototype = $extend(h3d_impl_RenderContext.prototype,{
-	emit: function(mat,obj,index) {
-		if(index == null) index = 0;
-		var p = mat.passes;
-		while(p != null) {
-			this.emitPass(p,obj).index = index;
-			p = p.nextPass;
-		}
-	}
-	,start: function() {
+	start: function() {
 		this.sharedGlobals = new haxe_ds_IntMap();
 		this.lights = null;
 		this.drawPass = null;
@@ -5263,15 +10001,6 @@ h3d_scene_RenderContext.prototype = $extend(h3d_impl_RenderContext.prototype,{
 	,nextPass: function() {
 		this.cachedPos = 0;
 		this.drawPass = null;
-	}
-	,emitPass: function(pass,obj) {
-		var o = this.pool;
-		if(o == null) o = new h3d_pass_Object(); else this.pool = o.next;
-		o.pass = pass;
-		o.obj = obj;
-		o.next = this.passes;
-		this.passes = o;
-		return o;
 	}
 	,allocShaderList: function(s,next) {
 		var sl = this.cachedShaderList[this.cachedPos++];
@@ -5323,7 +10052,7 @@ var h3d_scene_PassGroup = function(name,passes) {
 	this.passes = passes;
 };
 $hxClasses["h3d.scene.PassGroup"] = h3d_scene_PassGroup;
-h3d_scene_PassGroup.__name__ = true;
+h3d_scene_PassGroup.__name__ = ["h3d","scene","PassGroup"];
 h3d_scene_PassGroup.prototype = {
 	__class__: h3d_scene_PassGroup
 };
@@ -5334,7 +10063,7 @@ var h3d_scene_Renderer = function() {
 	this.passGroups = new haxe_ds_StringMap();
 };
 $hxClasses["h3d.scene.Renderer"] = h3d_scene_Renderer;
-h3d_scene_Renderer.__name__ = true;
+h3d_scene_Renderer.__name__ = ["h3d","scene","Renderer"];
 h3d_scene_Renderer.prototype = {
 	createDefaultPass: function(name) {
 		switch(name) {
@@ -5438,7 +10167,7 @@ var h3d_scene_Scene = function() {
 	this.prePasses = [];
 };
 $hxClasses["h3d.scene.Scene"] = h3d_scene_Scene;
-h3d_scene_Scene.__name__ = true;
+h3d_scene_Scene.__name__ = ["h3d","scene","Scene"];
 h3d_scene_Scene.__interfaces__ = [h3d_IDrawable];
 h3d_scene_Scene.__super__ = h3d_scene_Object;
 h3d_scene_Scene.prototype = $extend(h3d_scene_Object.prototype,{
@@ -5515,7 +10244,7 @@ var h3d_shader_AmbientLight = function() {
 	hxsl_Shader.call(this);
 };
 $hxClasses["h3d.shader.AmbientLight"] = h3d_shader_AmbientLight;
-h3d_shader_AmbientLight.__name__ = true;
+h3d_shader_AmbientLight.__name__ = ["h3d","shader","AmbientLight"];
 h3d_shader_AmbientLight.__super__ = hxsl_Shader;
 h3d_shader_AmbientLight.prototype = $extend(hxsl_Shader.prototype,{
 	updateConstants: function(globals) {
@@ -5538,7 +10267,7 @@ var h3d_shader_Base2d = function() {
 	hxsl_Shader.call(this);
 };
 $hxClasses["h3d.shader.Base2d"] = h3d_shader_Base2d;
-h3d_shader_Base2d.__name__ = true;
+h3d_shader_Base2d.__name__ = ["h3d","shader","Base2d"];
 h3d_shader_Base2d.__super__ = hxsl_Shader;
 h3d_shader_Base2d.prototype = $extend(hxsl_Shader.prototype,{
 	set_hasUVPos: function(_v) {
@@ -5592,11 +10321,9 @@ h3d_shader_Base2d.prototype = $extend(hxsl_Shader.prototype,{
 });
 var h3d_shader_BaseMesh = function() {
 	this.color__ = new h3d_Vector();
-	hxsl_Shader.call(this);
-	this.color__.set(1,1,1,null);
 };
 $hxClasses["h3d.shader.BaseMesh"] = h3d_shader_BaseMesh;
-h3d_shader_BaseMesh.__name__ = true;
+h3d_shader_BaseMesh.__name__ = ["h3d","shader","BaseMesh"];
 h3d_shader_BaseMesh.__super__ = hxsl_Shader;
 h3d_shader_BaseMesh.prototype = $extend(hxsl_Shader.prototype,{
 	updateConstants: function(globals) {
@@ -5613,22 +10340,6 @@ h3d_shader_BaseMesh.prototype = $extend(hxsl_Shader.prototype,{
 	}
 	,__class__: h3d_shader_BaseMesh
 });
-var h3d_shader_ScreenShader = function() {
-	hxsl_Shader.call(this);
-};
-$hxClasses["h3d.shader.ScreenShader"] = h3d_shader_ScreenShader;
-h3d_shader_ScreenShader.__name__ = true;
-h3d_shader_ScreenShader.__super__ = hxsl_Shader;
-h3d_shader_ScreenShader.prototype = $extend(hxsl_Shader.prototype,{
-	updateConstants: function(globals) {
-		this.constBits = 0;
-		this.updateConstantsFinal(globals);
-	}
-	,getParamValue: function(index) {
-		return null;
-	}
-	,__class__: h3d_shader_ScreenShader
-});
 var h3d_shader_Blur = function() {
 	this.values__ = [];
 	this.fixedColor__ = new h3d_Vector();
@@ -5637,7 +10348,7 @@ var h3d_shader_Blur = function() {
 	h3d_shader_ScreenShader.call(this);
 };
 $hxClasses["h3d.shader.Blur"] = h3d_shader_Blur;
-h3d_shader_Blur.__name__ = true;
+h3d_shader_Blur.__name__ = ["h3d","shader","Blur"];
 h3d_shader_Blur.__super__ = h3d_shader_ScreenShader;
 h3d_shader_Blur.prototype = $extend(h3d_shader_ScreenShader.prototype,{
 	set_Quality: function(_v) {
@@ -5691,7 +10402,7 @@ var h3d_shader_ShaderBuffers = function(s) {
 	this.tex = this3;
 };
 $hxClasses["h3d.shader.ShaderBuffers"] = h3d_shader_ShaderBuffers;
-h3d_shader_ShaderBuffers.__name__ = true;
+h3d_shader_ShaderBuffers.__name__ = ["h3d","shader","ShaderBuffers"];
 h3d_shader_ShaderBuffers.prototype = {
 	grow: function(s) {
 		var ng = s.globalsSize << 2;
@@ -5720,7 +10431,7 @@ var h3d_shader_Buffers = function(s) {
 	this.fragment = new h3d_shader_ShaderBuffers(s.fragment);
 };
 $hxClasses["h3d.shader.Buffers"] = h3d_shader_Buffers;
-h3d_shader_Buffers.__name__ = true;
+h3d_shader_Buffers.__name__ = ["h3d","shader","Buffers"];
 h3d_shader_Buffers.prototype = {
 	grow: function(s) {
 		this.vertex.grow(s.vertex);
@@ -5732,7 +10443,7 @@ var h3d_shader_ColorAdd = function() {
 	this.color__ = new h3d_Vector();
 };
 $hxClasses["h3d.shader.ColorAdd"] = h3d_shader_ColorAdd;
-h3d_shader_ColorAdd.__name__ = true;
+h3d_shader_ColorAdd.__name__ = ["h3d","shader","ColorAdd"];
 h3d_shader_ColorAdd.__super__ = hxsl_Shader;
 h3d_shader_ColorAdd.prototype = $extend(hxsl_Shader.prototype,{
 	updateConstants: function(globals) {
@@ -5749,11 +10460,14 @@ h3d_shader_ColorAdd.prototype = $extend(hxsl_Shader.prototype,{
 	}
 	,__class__: h3d_shader_ColorAdd
 });
-var h3d_shader_ColorKey = function() {
+var h3d_shader_ColorKey = function(v) {
+	if(v == null) v = 0;
 	this.colorKey__ = new h3d_Vector();
+	hxsl_Shader.call(this);
+	this.colorKey__.setColor(v,null);
 };
 $hxClasses["h3d.shader.ColorKey"] = h3d_shader_ColorKey;
-h3d_shader_ColorKey.__name__ = true;
+h3d_shader_ColorKey.__name__ = ["h3d","shader","ColorKey"];
 h3d_shader_ColorKey.__super__ = hxsl_Shader;
 h3d_shader_ColorKey.prototype = $extend(hxsl_Shader.prototype,{
 	updateConstants: function(globals) {
@@ -5774,7 +10488,7 @@ var h3d_shader_ColorMatrix = function() {
 	this.matrix__ = new h3d_Matrix();
 };
 $hxClasses["h3d.shader.ColorMatrix"] = h3d_shader_ColorMatrix;
-h3d_shader_ColorMatrix.__name__ = true;
+h3d_shader_ColorMatrix.__name__ = ["h3d","shader","ColorMatrix"];
 h3d_shader_ColorMatrix.__super__ = hxsl_Shader;
 h3d_shader_ColorMatrix.prototype = $extend(hxsl_Shader.prototype,{
 	updateConstants: function(globals) {
@@ -5794,11 +10508,9 @@ h3d_shader_ColorMatrix.prototype = $extend(hxsl_Shader.prototype,{
 var h3d_shader_DirLight = function() {
 	this.direction__ = new h3d_Vector();
 	this.color__ = new h3d_Vector();
-	hxsl_Shader.call(this);
-	this.color__.set(1,1,1,null);
 };
 $hxClasses["h3d.shader.DirLight"] = h3d_shader_DirLight;
-h3d_shader_DirLight.__name__ = true;
+h3d_shader_DirLight.__name__ = ["h3d","shader","DirLight"];
 h3d_shader_DirLight.__super__ = hxsl_Shader;
 h3d_shader_DirLight.prototype = $extend(hxsl_Shader.prototype,{
 	updateConstants: function(globals) {
@@ -5817,13 +10529,44 @@ h3d_shader_DirLight.prototype = $extend(hxsl_Shader.prototype,{
 	}
 	,__class__: h3d_shader_DirLight
 });
+var h3d_shader_Displacement = function() {
+	this.displacement__ = new h3d_Vector();
+	this.normalScale__ = new h3d_Vector();
+	this.normalPos__ = new h3d_Vector();
+};
+$hxClasses["h3d.shader.Displacement"] = h3d_shader_Displacement;
+h3d_shader_Displacement.__name__ = ["h3d","shader","Displacement"];
+h3d_shader_Displacement.__super__ = h3d_shader_ScreenShader;
+h3d_shader_Displacement.prototype = $extend(h3d_shader_ScreenShader.prototype,{
+	updateConstants: function(globals) {
+		this.constBits = 0;
+		this.updateConstantsFinal(globals);
+	}
+	,getParamValue: function(index) {
+		switch(index) {
+		case 0:
+			return this.texture__;
+		case 1:
+			return this.normalPos__;
+		case 2:
+			return this.normalScale__;
+		case 3:
+			return this.normalMap__;
+		case 4:
+			return this.displacement__;
+		default:
+		}
+		return null;
+	}
+	,__class__: h3d_shader_Displacement
+});
 var h3d_shader_Manager = function(output) {
 	this.shaderCache = hxsl_Cache.get();
 	this.globals = new hxsl_Globals();
 	this.output = this.shaderCache.allocOutputVars(output);
 };
 $hxClasses["h3d.shader.Manager"] = h3d_shader_Manager;
-h3d_shader_Manager.__name__ = true;
+h3d_shader_Manager.__name__ = ["h3d","shader","Manager"];
 h3d_shader_Manager.prototype = {
 	fillRec: function(v,type,out,pos) {
 		switch(type[1]) {
@@ -6199,7 +10942,7 @@ h3d_shader_Manager.prototype = {
 };
 var h3d_shader_Shadow = function() { };
 $hxClasses["h3d.shader.Shadow"] = h3d_shader_Shadow;
-h3d_shader_Shadow.__name__ = true;
+h3d_shader_Shadow.__name__ = ["h3d","shader","Shadow"];
 h3d_shader_Shadow.__super__ = hxsl_Shader;
 h3d_shader_Shadow.prototype = $extend(hxsl_Shader.prototype,{
 	updateConstants: function(globals) {
@@ -6222,7 +10965,7 @@ var h3d_shader_Skin = function() {
 	this.bonesMatrixes__ = [];
 };
 $hxClasses["h3d.shader.Skin"] = h3d_shader_Skin;
-h3d_shader_Skin.__name__ = true;
+h3d_shader_Skin.__name__ = ["h3d","shader","Skin"];
 h3d_shader_Skin.__super__ = hxsl_Shader;
 h3d_shader_Skin.prototype = $extend(hxsl_Shader.prototype,{
 	updateConstants: function(globals) {
@@ -6244,14 +10987,11 @@ h3d_shader_Skin.prototype = $extend(hxsl_Shader.prototype,{
 	}
 	,__class__: h3d_shader_Skin
 });
-var h3d_shader_Texture = function(tex) {
+var h3d_shader_Texture = function() {
 	this.killAlphaThreshold__ = 0;
-	hxsl_Shader.call(this);
-	this.texture__ = tex;
-	this.killAlphaThreshold__ = h3d_pass_Params.defaultKillAlphaThreshold;
 };
 $hxClasses["h3d.shader.Texture"] = h3d_shader_Texture;
-h3d_shader_Texture.__name__ = true;
+h3d_shader_Texture.__name__ = ["h3d","shader","Texture"];
 h3d_shader_Texture.__super__ = hxsl_Shader;
 h3d_shader_Texture.prototype = $extend(hxsl_Shader.prototype,{
 	updateConstants: function(globals) {
@@ -6276,17 +11016,74 @@ h3d_shader_Texture.prototype = $extend(hxsl_Shader.prototype,{
 	}
 	,__class__: h3d_shader_Texture
 });
+var h3d_shader_UVDelta = function() {
+	this.uvDelta__ = new h3d_Vector();
+};
+$hxClasses["h3d.shader.UVDelta"] = h3d_shader_UVDelta;
+h3d_shader_UVDelta.__name__ = ["h3d","shader","UVDelta"];
+h3d_shader_UVDelta.__super__ = hxsl_Shader;
+h3d_shader_UVDelta.prototype = $extend(hxsl_Shader.prototype,{
+	updateConstants: function(globals) {
+		this.constBits = 0;
+		this.updateConstantsFinal(globals);
+	}
+	,getParamValue: function(index) {
+		switch(index) {
+		case 0:
+			return this.uvDelta__;
+		default:
+		}
+		return null;
+	}
+	,__class__: h3d_shader_UVDelta
+});
+var h3d_shader_VertexColor = function() { };
+$hxClasses["h3d.shader.VertexColor"] = h3d_shader_VertexColor;
+h3d_shader_VertexColor.__name__ = ["h3d","shader","VertexColor"];
+h3d_shader_VertexColor.__super__ = hxsl_Shader;
+h3d_shader_VertexColor.prototype = $extend(hxsl_Shader.prototype,{
+	updateConstants: function(globals) {
+		this.constBits = 0;
+		if(this.additive__) this.constBits |= 1;
+		this.updateConstantsFinal(globals);
+	}
+	,getParamValue: function(index) {
+		switch(index) {
+		case 0:
+			return this.additive__;
+		default:
+		}
+		return null;
+	}
+	,__class__: h3d_shader_VertexColor
+});
 var haxe_IMap = function() { };
 $hxClasses["haxe.IMap"] = haxe_IMap;
-haxe_IMap.__name__ = true;
+haxe_IMap.__name__ = ["haxe","IMap"];
 var haxe__$Int64__$_$_$Int64 = function(high,low) {
 	this.high = high;
 	this.low = low;
 };
 $hxClasses["haxe._Int64.___Int64"] = haxe__$Int64__$_$_$Int64;
-haxe__$Int64__$_$_$Int64.__name__ = true;
+haxe__$Int64__$_$_$Int64.__name__ = ["haxe","_Int64","___Int64"];
 haxe__$Int64__$_$_$Int64.prototype = {
 	__class__: haxe__$Int64__$_$_$Int64
+};
+var haxe_Resource = function() { };
+$hxClasses["haxe.Resource"] = haxe_Resource;
+haxe_Resource.__name__ = ["haxe","Resource"];
+haxe_Resource.getBytes = function(name) {
+	var _g = 0;
+	var _g1 = haxe_Resource.content;
+	while(_g < _g1.length) {
+		var x = _g1[_g];
+		++_g;
+		if(x.name == name) {
+			if(x.str != null) return haxe_io_Bytes.ofString(x.str);
+			return haxe_crypto_Base64.decode(x.data);
+		}
+	}
+	return null;
 };
 var haxe_Timer = function(time_ms) {
 	var me = this;
@@ -6295,7 +11092,7 @@ var haxe_Timer = function(time_ms) {
 	},time_ms);
 };
 $hxClasses["haxe.Timer"] = haxe_Timer;
-haxe_Timer.__name__ = true;
+haxe_Timer.__name__ = ["haxe","Timer"];
 haxe_Timer.delay = function(f,time_ms) {
 	var t = new haxe_Timer(time_ms);
 	t.run = function() {
@@ -6331,7 +11128,7 @@ var haxe_Unserializer = function(buf) {
 	this.setResolver(r);
 };
 $hxClasses["haxe.Unserializer"] = haxe_Unserializer;
-haxe_Unserializer.__name__ = true;
+haxe_Unserializer.__name__ = ["haxe","Unserializer"];
 haxe_Unserializer.initCodes = function() {
 	var codes = [];
 	var _g1 = 0;
@@ -6607,10 +11404,186 @@ haxe_Unserializer.prototype = {
 	}
 	,__class__: haxe_Unserializer
 };
+var haxe_io_Bytes = function(data) {
+	this.length = data.byteLength;
+	this.b = new Uint8Array(data);
+	data.hxBytes = this;
+	data.bytes = this.b;
+};
+$hxClasses["haxe.io.Bytes"] = haxe_io_Bytes;
+haxe_io_Bytes.__name__ = ["haxe","io","Bytes"];
+haxe_io_Bytes.alloc = function(length) {
+	return new haxe_io_Bytes(new ArrayBuffer(length));
+};
+haxe_io_Bytes.ofString = function(s) {
+	var a = [];
+	var i = 0;
+	while(i < s.length) {
+		var c = StringTools.fastCodeAt(s,i++);
+		if(55296 <= c && c <= 56319) c = c - 55232 << 10 | StringTools.fastCodeAt(s,i++) & 1023;
+		if(c <= 127) a.push(c); else if(c <= 2047) {
+			a.push(192 | c >> 6);
+			a.push(128 | c & 63);
+		} else if(c <= 65535) {
+			a.push(224 | c >> 12);
+			a.push(128 | c >> 6 & 63);
+			a.push(128 | c & 63);
+		} else {
+			a.push(240 | c >> 18);
+			a.push(128 | c >> 12 & 63);
+			a.push(128 | c >> 6 & 63);
+			a.push(128 | c & 63);
+		}
+	}
+	return new haxe_io_Bytes(new Uint8Array(a).buffer);
+};
+haxe_io_Bytes.prototype = {
+	get: function(pos) {
+		return this.b[pos];
+	}
+	,set: function(pos,v) {
+		this.b[pos] = v & 255;
+	}
+	,blit: function(pos,src,srcpos,len) {
+		if(pos < 0 || srcpos < 0 || len < 0 || pos + len > this.length || srcpos + len > src.length) throw new js__$Boot_HaxeError(haxe_io_Error.OutsideBounds);
+		if(srcpos == 0 && len == src.length) this.b.set(src.b,pos); else this.b.set(src.b.subarray(srcpos,srcpos + len),pos);
+	}
+	,fill: function(pos,len,value) {
+		var _g = 0;
+		while(_g < len) {
+			var i = _g++;
+			this.set(pos++,value);
+		}
+	}
+	,getString: function(pos,len) {
+		if(pos < 0 || len < 0 || pos + len > this.length) throw new js__$Boot_HaxeError(haxe_io_Error.OutsideBounds);
+		var s = "";
+		var b = this.b;
+		var fcc = String.fromCharCode;
+		var i = pos;
+		var max = pos + len;
+		while(i < max) {
+			var c = b[i++];
+			if(c < 128) {
+				if(c == 0) break;
+				s += fcc(c);
+			} else if(c < 224) s += fcc((c & 63) << 6 | b[i++] & 127); else if(c < 240) {
+				var c2 = b[i++];
+				s += fcc((c & 31) << 12 | (c2 & 127) << 6 | b[i++] & 127);
+			} else {
+				var c21 = b[i++];
+				var c3 = b[i++];
+				var u = (c & 15) << 18 | (c21 & 127) << 12 | (c3 & 127) << 6 | b[i++] & 127;
+				s += fcc((u >> 10) + 55232);
+				s += fcc(u & 1023 | 56320);
+			}
+		}
+		return s;
+	}
+	,toString: function() {
+		return this.getString(0,this.length);
+	}
+	,__class__: haxe_io_Bytes
+};
+var haxe_crypto_Base64 = function() { };
+$hxClasses["haxe.crypto.Base64"] = haxe_crypto_Base64;
+haxe_crypto_Base64.__name__ = ["haxe","crypto","Base64"];
+haxe_crypto_Base64.decode = function(str,complement) {
+	if(complement == null) complement = true;
+	if(complement) while(HxOverrides.cca(str,str.length - 1) == 61) str = HxOverrides.substr(str,0,-1);
+	return new haxe_crypto_BaseCode(haxe_crypto_Base64.BYTES).decodeBytes(haxe_io_Bytes.ofString(str));
+};
+var haxe_crypto_BaseCode = function(base) {
+	var len = base.length;
+	var nbits = 1;
+	while(len > 1 << nbits) nbits++;
+	if(nbits > 8 || len != 1 << nbits) throw new js__$Boot_HaxeError("BaseCode : base length must be a power of two.");
+	this.base = base;
+	this.nbits = nbits;
+};
+$hxClasses["haxe.crypto.BaseCode"] = haxe_crypto_BaseCode;
+haxe_crypto_BaseCode.__name__ = ["haxe","crypto","BaseCode"];
+haxe_crypto_BaseCode.prototype = {
+	initTable: function() {
+		var tbl = [];
+		var _g = 0;
+		while(_g < 256) {
+			var i = _g++;
+			tbl[i] = -1;
+		}
+		var _g1 = 0;
+		var _g2 = this.base.length;
+		while(_g1 < _g2) {
+			var i1 = _g1++;
+			tbl[this.base.b[i1]] = i1;
+		}
+		this.tbl = tbl;
+	}
+	,decodeBytes: function(b) {
+		var nbits = this.nbits;
+		var base = this.base;
+		if(this.tbl == null) this.initTable();
+		var tbl = this.tbl;
+		var size = b.length * nbits >> 3;
+		var out = haxe_io_Bytes.alloc(size);
+		var buf = 0;
+		var curbits = 0;
+		var pin = 0;
+		var pout = 0;
+		while(pout < size) {
+			while(curbits < 8) {
+				curbits += nbits;
+				buf <<= nbits;
+				var i = tbl[b.get(pin++)];
+				if(i == -1) throw new js__$Boot_HaxeError("BaseCode : invalid encoded char");
+				buf |= i;
+			}
+			curbits -= 8;
+			out.set(pout++,buf >> curbits & 255);
+		}
+		return out;
+	}
+	,__class__: haxe_crypto_BaseCode
+};
+var haxe_crypto_Crc32 = function() {
+	this.crc = -1;
+};
+$hxClasses["haxe.crypto.Crc32"] = haxe_crypto_Crc32;
+haxe_crypto_Crc32.__name__ = ["haxe","crypto","Crc32"];
+haxe_crypto_Crc32.prototype = {
+	'byte': function(b) {
+		var tmp = (this.crc ^ b) & 255;
+		var _g = 0;
+		while(_g < 8) {
+			var j = _g++;
+			if((tmp & 1) == 1) tmp = tmp >>> 1 ^ -306674912; else tmp >>>= 1;
+		}
+		this.crc = this.crc >>> 8 ^ tmp;
+	}
+	,update: function(b,pos,len) {
+		var b1 = b.b.buffer;
+		var _g1 = pos;
+		var _g = pos + len;
+		while(_g1 < _g) {
+			var i = _g1++;
+			var tmp = (this.crc ^ b1.bytes[i]) & 255;
+			var _g2 = 0;
+			while(_g2 < 8) {
+				var j = _g2++;
+				if((tmp & 1) == 1) tmp = tmp >>> 1 ^ -306674912; else tmp >>>= 1;
+			}
+			this.crc = this.crc >>> 8 ^ tmp;
+		}
+	}
+	,get: function() {
+		return this.crc ^ -1;
+	}
+	,__class__: haxe_crypto_Crc32
+};
 var haxe_crypto_Md5 = function() {
 };
 $hxClasses["haxe.crypto.Md5"] = haxe_crypto_Md5;
-haxe_crypto_Md5.__name__ = true;
+haxe_crypto_Md5.__name__ = ["haxe","crypto","Md5"];
 haxe_crypto_Md5.encode = function(s) {
 	var m = new haxe_crypto_Md5();
 	var h = m.doEncode(haxe_crypto_Md5.str2blks(s));
@@ -6782,7 +11755,7 @@ haxe_crypto_Md5.prototype = {
 };
 var haxe_ds_ArraySort = function() { };
 $hxClasses["haxe.ds.ArraySort"] = haxe_ds_ArraySort;
-haxe_ds_ArraySort.__name__ = true;
+haxe_ds_ArraySort.__name__ = ["haxe","ds","ArraySort"];
 haxe_ds_ArraySort.sort = function(a,cmp) {
 	haxe_ds_ArraySort.rec(a,cmp,0,a.length);
 };
@@ -6893,7 +11866,7 @@ haxe_ds_ArraySort.swap = function(a,i,j) {
 var haxe_ds_BalancedTree = function() {
 };
 $hxClasses["haxe.ds.BalancedTree"] = haxe_ds_BalancedTree;
-haxe_ds_BalancedTree.__name__ = true;
+haxe_ds_BalancedTree.__name__ = ["haxe","ds","BalancedTree"];
 haxe_ds_BalancedTree.prototype = {
 	set: function(key,value) {
 		this.root = this.setLoop(key,value,this.root);
@@ -6995,7 +11968,7 @@ var haxe_ds_TreeNode = function(l,k,v,r,h) {
 	}(this))) + 1; else this._height = h;
 };
 $hxClasses["haxe.ds.TreeNode"] = haxe_ds_TreeNode;
-haxe_ds_TreeNode.__name__ = true;
+haxe_ds_TreeNode.__name__ = ["haxe","ds","TreeNode"];
 haxe_ds_TreeNode.prototype = {
 	__class__: haxe_ds_TreeNode
 };
@@ -7003,7 +11976,7 @@ var haxe_ds_EnumValueMap = function() {
 	haxe_ds_BalancedTree.call(this);
 };
 $hxClasses["haxe.ds.EnumValueMap"] = haxe_ds_EnumValueMap;
-haxe_ds_EnumValueMap.__name__ = true;
+haxe_ds_EnumValueMap.__name__ = ["haxe","ds","EnumValueMap"];
 haxe_ds_EnumValueMap.__interfaces__ = [haxe_IMap];
 haxe_ds_EnumValueMap.__super__ = haxe_ds_BalancedTree;
 haxe_ds_EnumValueMap.prototype = $extend(haxe_ds_BalancedTree.prototype,{
@@ -7036,7 +12009,7 @@ var haxe_ds_IntMap = function() {
 	this.h = { };
 };
 $hxClasses["haxe.ds.IntMap"] = haxe_ds_IntMap;
-haxe_ds_IntMap.__name__ = true;
+haxe_ds_IntMap.__name__ = ["haxe","ds","IntMap"];
 haxe_ds_IntMap.__interfaces__ = [haxe_IMap];
 haxe_ds_IntMap.prototype = {
 	set: function(key,value) {
@@ -7066,7 +12039,7 @@ haxe_ds_IntMap.prototype = {
 };
 var haxe_ds_ListSort = function() { };
 $hxClasses["haxe.ds.ListSort"] = haxe_ds_ListSort;
-haxe_ds_ListSort.__name__ = true;
+haxe_ds_ListSort.__name__ = ["haxe","ds","ListSort"];
 haxe_ds_ListSort.sortSingleLinked = function(list,cmp) {
 	if(list == null) return null;
 	var insize = 1;
@@ -7124,7 +12097,7 @@ var haxe_ds_ObjectMap = function() {
 	this.h.__keys__ = { };
 };
 $hxClasses["haxe.ds.ObjectMap"] = haxe_ds_ObjectMap;
-haxe_ds_ObjectMap.__name__ = true;
+haxe_ds_ObjectMap.__name__ = ["haxe","ds","ObjectMap"];
 haxe_ds_ObjectMap.__interfaces__ = [haxe_IMap];
 haxe_ds_ObjectMap.prototype = {
 	set: function(key,value) {
@@ -7152,7 +12125,7 @@ var haxe_ds_StringMap = function() {
 	this.h = { };
 };
 $hxClasses["haxe.ds.StringMap"] = haxe_ds_StringMap;
-haxe_ds_StringMap.__name__ = true;
+haxe_ds_StringMap.__name__ = ["haxe","ds","StringMap"];
 haxe_ds_StringMap.__interfaces__ = [haxe_IMap];
 haxe_ds_StringMap.prototype = {
 	set: function(key,value) {
@@ -7195,30 +12168,138 @@ haxe_ds_StringMap.prototype = {
 	}
 	,__class__: haxe_ds_StringMap
 };
-var haxe_io_Bytes = function(data) {
-	this.length = data.byteLength;
-	this.b = new Uint8Array(data);
-	data.hxBytes = this;
-	data.bytes = this.b;
+var haxe_io_BytesBuffer = function() {
+	this.b = [];
 };
-$hxClasses["haxe.io.Bytes"] = haxe_io_Bytes;
-haxe_io_Bytes.__name__ = true;
-haxe_io_Bytes.alloc = function(length) {
-	return new haxe_io_Bytes(new ArrayBuffer(length));
-};
-haxe_io_Bytes.prototype = {
-	set: function(pos,v) {
-		this.b[pos] = v & 255;
+$hxClasses["haxe.io.BytesBuffer"] = haxe_io_BytesBuffer;
+haxe_io_BytesBuffer.__name__ = ["haxe","io","BytesBuffer"];
+haxe_io_BytesBuffer.prototype = {
+	add: function(src) {
+		var b1 = this.b;
+		var b2 = src.b;
+		var _g1 = 0;
+		var _g = src.length;
+		while(_g1 < _g) {
+			var i = _g1++;
+			this.b.push(b2[i]);
+		}
 	}
-	,blit: function(pos,src,srcpos,len) {
-		if(pos < 0 || srcpos < 0 || len < 0 || pos + len > this.length || srcpos + len > src.length) throw new js__$Boot_HaxeError(haxe_io_Error.OutsideBounds);
-		if(srcpos == 0 && len == src.length) this.b.set(src.b,pos); else this.b.set(src.b.subarray(srcpos,srcpos + len),pos);
+	,addBytes: function(src,pos,len) {
+		if(pos < 0 || len < 0 || pos + len > src.length) throw new js__$Boot_HaxeError(haxe_io_Error.OutsideBounds);
+		var b1 = this.b;
+		var b2 = src.b;
+		var _g1 = pos;
+		var _g = pos + len;
+		while(_g1 < _g) {
+			var i = _g1++;
+			this.b.push(b2[i]);
+		}
 	}
-	,__class__: haxe_io_Bytes
+	,getBytes: function() {
+		var bytes = new haxe_io_Bytes(new Uint8Array(this.b).buffer);
+		this.b = null;
+		return bytes;
+	}
+	,__class__: haxe_io_BytesBuffer
 };
-var haxe_io_Eof = function() { };
+var haxe_io_Input = function() { };
+$hxClasses["haxe.io.Input"] = haxe_io_Input;
+haxe_io_Input.__name__ = ["haxe","io","Input"];
+haxe_io_Input.prototype = {
+	readByte: function() {
+		throw new js__$Boot_HaxeError("Not implemented");
+	}
+	,readBytes: function(s,pos,len) {
+		var k = len;
+		var b = s.b;
+		if(pos < 0 || len < 0 || pos + len > s.length) throw new js__$Boot_HaxeError(haxe_io_Error.OutsideBounds);
+		while(k > 0) {
+			b[pos] = this.readByte();
+			pos++;
+			k--;
+		}
+		return len;
+	}
+	,set_bigEndian: function(b) {
+		this.bigEndian = b;
+		return b;
+	}
+	,readFullBytes: function(s,pos,len) {
+		while(len > 0) {
+			var k = this.readBytes(s,pos,len);
+			pos += k;
+			len -= k;
+		}
+	}
+	,read: function(nbytes) {
+		var s = haxe_io_Bytes.alloc(nbytes);
+		var p = 0;
+		while(nbytes > 0) {
+			var k = this.readBytes(s,p,nbytes);
+			if(k == 0) throw new js__$Boot_HaxeError(haxe_io_Error.Blocked);
+			p += k;
+			nbytes -= k;
+		}
+		return s;
+	}
+	,readUInt16: function() {
+		var ch1 = this.readByte();
+		var ch2 = this.readByte();
+		if(this.bigEndian) return ch2 | ch1 << 8; else return ch1 | ch2 << 8;
+	}
+	,readInt32: function() {
+		var ch1 = this.readByte();
+		var ch2 = this.readByte();
+		var ch3 = this.readByte();
+		var ch4 = this.readByte();
+		if(this.bigEndian) return ch4 | ch3 << 8 | ch2 << 16 | ch1 << 24; else return ch1 | ch2 << 8 | ch3 << 16 | ch4 << 24;
+	}
+	,readString: function(len) {
+		var b = haxe_io_Bytes.alloc(len);
+		this.readFullBytes(b,0,len);
+		return b.toString();
+	}
+	,__class__: haxe_io_Input
+};
+var haxe_io_BytesInput = function(b,pos,len) {
+	if(pos == null) pos = 0;
+	if(len == null) len = b.length - pos;
+	if(pos < 0 || len < 0 || pos + len > b.length) throw new js__$Boot_HaxeError(haxe_io_Error.OutsideBounds);
+	this.b = b.b;
+	this.pos = pos;
+	this.len = len;
+	this.totlen = len;
+};
+$hxClasses["haxe.io.BytesInput"] = haxe_io_BytesInput;
+haxe_io_BytesInput.__name__ = ["haxe","io","BytesInput"];
+haxe_io_BytesInput.__super__ = haxe_io_Input;
+haxe_io_BytesInput.prototype = $extend(haxe_io_Input.prototype,{
+	readByte: function() {
+		if(this.len == 0) throw new js__$Boot_HaxeError(new haxe_io_Eof());
+		this.len--;
+		return this.b[this.pos++];
+	}
+	,readBytes: function(buf,pos,len) {
+		if(pos < 0 || len < 0 || pos + len > buf.length) throw new js__$Boot_HaxeError(haxe_io_Error.OutsideBounds);
+		if(this.len == 0 && len > 0) throw new js__$Boot_HaxeError(new haxe_io_Eof());
+		if(this.len < len) len = this.len;
+		var b1 = this.b;
+		var b2 = buf.b;
+		var _g = 0;
+		while(_g < len) {
+			var i = _g++;
+			b2[pos + i] = b1[this.pos + i];
+		}
+		this.pos += len;
+		this.len -= len;
+		return len;
+	}
+	,__class__: haxe_io_BytesInput
+});
+var haxe_io_Eof = function() {
+};
 $hxClasses["haxe.io.Eof"] = haxe_io_Eof;
-haxe_io_Eof.__name__ = true;
+haxe_io_Eof.__name__ = ["haxe","io","Eof"];
 haxe_io_Eof.prototype = {
 	toString: function() {
 		return "Eof";
@@ -7239,7 +12320,7 @@ haxe_io_Error.Custom = function(e) { var $x = ["Custom",3,e]; $x.__enum__ = haxe
 haxe_io_Error.__empty_constructs__ = [haxe_io_Error.Blocked,haxe_io_Error.Overflow,haxe_io_Error.OutsideBounds];
 var haxe_io_FPHelper = function() { };
 $hxClasses["haxe.io.FPHelper"] = haxe_io_FPHelper;
-haxe_io_FPHelper.__name__ = true;
+haxe_io_FPHelper.__name__ = ["haxe","io","FPHelper"];
 haxe_io_FPHelper.i32ToFloat = function(i) {
 	var sign = 1 - (i >>> 31 << 1);
 	var exp = i >>> 23 & 255;
@@ -7368,11 +12449,149 @@ haxe_macro_Unop.OpNegBits = ["OpNegBits",4];
 haxe_macro_Unop.OpNegBits.toString = $estr;
 haxe_macro_Unop.OpNegBits.__enum__ = haxe_macro_Unop;
 haxe_macro_Unop.__empty_constructs__ = [haxe_macro_Unop.OpIncrement,haxe_macro_Unop.OpDecrement,haxe_macro_Unop.OpNot,haxe_macro_Unop.OpNeg,haxe_macro_Unop.OpNegBits];
-var hxd_BitmapData = function() { };
+var hxd_BitmapData = function(width,height) {
+	if(width == -101 && height == -102) {
+	} else {
+		var canvas;
+		var _this = window.document;
+		canvas = _this.createElement("canvas");
+		canvas.width = width;
+		canvas.height = height;
+		this.ctx = canvas.getContext("2d",null);
+	}
+};
 $hxClasses["hxd.BitmapData"] = hxd_BitmapData;
-hxd_BitmapData.__name__ = true;
+hxd_BitmapData.__name__ = ["hxd","BitmapData"];
+hxd_BitmapData.fromNative = function(data) {
+	var b = new hxd_BitmapData(-101,-102);
+	b.ctx = data;
+	return b;
+};
 hxd_BitmapData.prototype = {
 	__class__: hxd_BitmapData
+};
+var hxd_Charset = function() {
+	var _g = this;
+	this.map = new haxe_ds_IntMap();
+	var _g1 = 1;
+	while(_g1 < 94) {
+		var i = _g1++;
+		_g.map.h[65281 + i] = 33 + i;
+	}
+	var _g11 = 192;
+	var _g2 = 199;
+	while(_g11 < _g2) {
+		var i1 = _g11++;
+		_g.map.h[i1] = 65;
+	}
+	var _g12 = 224;
+	var _g3 = 231;
+	while(_g12 < _g3) {
+		var i2 = _g12++;
+		_g.map.h[i2] = 97;
+	}
+	var _g13 = 200;
+	var _g4 = 204;
+	while(_g13 < _g4) {
+		var i3 = _g13++;
+		_g.map.h[i3] = 69;
+	}
+	var _g14 = 232;
+	var _g5 = 236;
+	while(_g14 < _g5) {
+		var i4 = _g14++;
+		_g.map.h[i4] = 101;
+	}
+	var _g15 = 204;
+	var _g6 = 208;
+	while(_g15 < _g6) {
+		var i5 = _g15++;
+		_g.map.h[i5] = 73;
+	}
+	var _g16 = 236;
+	var _g7 = 240;
+	while(_g16 < _g7) {
+		var i6 = _g16++;
+		_g.map.h[i6] = 105;
+	}
+	var _g17 = 210;
+	var _g8 = 215;
+	while(_g17 < _g8) {
+		var i7 = _g17++;
+		_g.map.h[i7] = 79;
+	}
+	var _g18 = 242;
+	var _g9 = 247;
+	while(_g18 < _g9) {
+		var i8 = _g18++;
+		_g.map.h[i8] = 111;
+	}
+	var _g19 = 217;
+	var _g10 = 221;
+	while(_g19 < _g10) {
+		var i9 = _g19++;
+		_g.map.h[i9] = 85;
+	}
+	var _g110 = 249;
+	var _g20 = 253;
+	while(_g110 < _g20) {
+		var i10 = _g110++;
+		_g.map.h[i10] = 117;
+	}
+	_g.map.h[199] = 67;
+	_g.map.h[231] = 67;
+	_g.map.h[208] = 68;
+	_g.map.h[222] = 100;
+	_g.map.h[209] = 78;
+	_g.map.h[241] = 110;
+	_g.map.h[221] = 89;
+	_g.map.h[253] = 121;
+	_g.map.h[255] = 121;
+	_g.map.h[12288] = 32;
+	_g.map.h[160] = 32;
+	_g.map.h[171] = 34;
+	_g.map.h[187] = 34;
+	_g.map.h[8220] = 34;
+	_g.map.h[8221] = 34;
+	_g.map.h[8216] = 39;
+	_g.map.h[8217] = 39;
+	_g.map.h[180] = 39;
+	_g.map.h[8216] = 39;
+	_g.map.h[8249] = 60;
+	_g.map.h[8250] = 62;
+};
+$hxClasses["hxd.Charset"] = hxd_Charset;
+hxd_Charset.__name__ = ["hxd","Charset"];
+hxd_Charset.getDefault = function() {
+	if(hxd_Charset.inst == null) hxd_Charset.inst = new hxd_Charset();
+	return hxd_Charset.inst;
+};
+hxd_Charset.prototype = {
+	resolveChar: function(code,glyphs) {
+		var c = code;
+		while(c != null) {
+			var g = glyphs.h[c];
+			if(g != null) return g;
+			c = this.map.h[c];
+		}
+		return null;
+	}
+	,isSpace: function(code) {
+		return code == 32 || code == 12288;
+	}
+	,isBreakChar: function(code) {
+		switch(code) {
+		case 33:case 63:case 46:case 44:case 58:
+			return true;
+		case 65281:case 65311:case 65294:case 65292:case 65306:
+			return true;
+		case 12539:case 12289:case 12290:
+			return true;
+		default:
+			return this.isSpace(code);
+		}
+	}
+	,__class__: hxd_Charset
 };
 var hxd_EventKind = $hxClasses["hxd.EventKind"] = { __ename__ : true, __constructs__ : ["EPush","ERelease","EMove","EOver","EOut","EWheel","EFocus","EFocusLost","EKeyDown","EKeyUp"] };
 hxd_EventKind.EPush = ["EPush",0];
@@ -7415,16 +12634,13 @@ var hxd_Event = function(k,x,y) {
 	this.relY = y;
 };
 $hxClasses["hxd.Event"] = hxd_Event;
-hxd_Event.__name__ = true;
+hxd_Event.__name__ = ["hxd","Event"];
 hxd_Event.prototype = {
 	__class__: hxd_Event
 };
 var hxd_Key = function() { };
 $hxClasses["hxd.Key"] = hxd_Key;
-hxd_Key.__name__ = true;
-hxd_Key.isDown = function(code) {
-	return hxd_Key.keyPressed[code] > 0;
-};
+hxd_Key.__name__ = ["hxd","Key"];
 hxd_Key.initialize = function() {
 	if(hxd_Key.initDone) hxd_Key.dispose();
 	hxd_Key.initDone = true;
@@ -7458,9 +12674,9 @@ hxd_Key.onEvent = function(e) {
 };
 var hxd_Math = function() { };
 $hxClasses["hxd.Math"] = hxd_Math;
-hxd_Math.__name__ = true;
-hxd_Math.floor = function(f) {
-	return Math.floor(f);
+hxd_Math.__name__ = ["hxd","Math"];
+hxd_Math.ceil = function(f) {
+	return Math.ceil(f);
 };
 hxd_Math.round = function(f) {
 	return Math.round(f);
@@ -7503,7 +12719,7 @@ var hxd_Pixels = function(width,height,bytes,format,offset) {
 	this.offset = offset;
 };
 $hxClasses["hxd.Pixels"] = hxd_Pixels;
-hxd_Pixels.__name__ = true;
+hxd_Pixels.__name__ = ["hxd","Pixels"];
 hxd_Pixels.bytesPerPixel = function(format) {
 	switch(format[1]) {
 	case 0:case 1:case 2:
@@ -7514,7 +12730,46 @@ hxd_Pixels.alloc = function(width,height,format) {
 	return new hxd_Pixels(width,height,hxd_impl_Tmp.getBytes(width * height * hxd_Pixels.bytesPerPixel(format)),format);
 };
 hxd_Pixels.prototype = {
-	copyInner: function() {
+	makeSquare: function(copy) {
+		var w = this.width;
+		var h = this.height;
+		var tw;
+		if(w == 0) tw = 0; else tw = 1;
+		var th;
+		if(h == 0) th = 0; else th = 1;
+		while(tw < w) tw <<= 1;
+		while(th < h) th <<= 1;
+		if(w == tw && h == th) return this;
+		var out = hxd_impl_Tmp.getBytes(tw * th * 4);
+		var p = 0;
+		var b = this.offset;
+		var _g = 0;
+		while(_g < h) {
+			var y = _g++;
+			out.blit(p,this.bytes,b,w * 4);
+			p += w * 4;
+			b += w * 4;
+			var _g2 = 0;
+			var _g1 = (tw - w) * 4;
+			while(_g2 < _g1) {
+				var i = _g2++;
+				out.set(p++,0);
+			}
+		}
+		var _g11 = 0;
+		var _g3 = (th - h) * tw * 4;
+		while(_g11 < _g3) {
+			var i1 = _g11++;
+			out.set(p++,0);
+		}
+		if(copy) return new hxd_Pixels(tw,th,out,this.format);
+		if(!((this.flags & 1 << hxd_Flags.ReadOnly[1]) != 0)) hxd_impl_Tmp.saveBytes(this.bytes);
+		this.bytes = out;
+		this.width = tw;
+		this.height = th;
+		return this;
+	}
+	,copyInner: function() {
 		var old = this.bytes;
 		this.bytes = hxd_impl_Tmp.getBytes(this.width * this.height * 4);
 		this.bytes.blit(0,old,this.offset,this.width * this.height * 4);
@@ -7618,6 +12873,9 @@ hxd_Pixels.prototype = {
 	}
 	,__class__: hxd_Pixels
 };
+var hxd_Res = function() { };
+$hxClasses["hxd.Res"] = hxd_Res;
+hxd_Res.__name__ = ["hxd","Res"];
 var hxd_Stage = function() {
 	this.curMouseY = 0.;
 	this.curMouseX = 0.;
@@ -7652,7 +12910,7 @@ var hxd_Stage = function() {
 	};
 };
 $hxClasses["hxd.Stage"] = hxd_Stage;
-hxd_Stage.__name__ = true;
+hxd_Stage.__name__ = ["hxd","Stage"];
 hxd_Stage.getCanvas = function() {
 	var canvas = window.document.getElementById("webgl");
 	if(canvas == null) throw new js__$Boot_HaxeError("Missing canvas#webgl");
@@ -7769,7 +13027,7 @@ hxd_Cursor.Custom = function(frames,speed,offsetX,offsetY) { var $x = ["Custom",
 hxd_Cursor.__empty_constructs__ = [hxd_Cursor.Default,hxd_Cursor.Button,hxd_Cursor.Move,hxd_Cursor.TextInput,hxd_Cursor.Hide];
 var hxd_System = function() { };
 $hxClasses["hxd.System"] = hxd_System;
-hxd_System.__name__ = true;
+hxd_System.__name__ = ["hxd","System"];
 hxd_System.loopFunc = function() {
 	var $window = window;
 	var rqf = $window.requestAnimationFrame || $window.webkitRequestAnimationFrame || $window.mozRequestAnimationFrame;
@@ -7814,7 +13072,7 @@ hxd_System.get_isWindowed = function() {
 };
 var hxd_Timer = function() { };
 $hxClasses["hxd.Timer"] = hxd_Timer;
-hxd_Timer.__name__ = true;
+hxd_Timer.__name__ = ["hxd","Timer"];
 hxd_Timer.update = function() {
 	hxd_Timer.frameCount++;
 	var newTime = haxe_Timer.stamp();
@@ -7826,16 +13084,211 @@ hxd_Timer.update = function() {
 hxd_Timer.skip = function() {
 	hxd_Timer.oldTime = haxe_Timer.stamp();
 };
+var hxd_res_Embed = function() { };
+$hxClasses["hxd.res.Embed"] = hxd_res_Embed;
+hxd_res_Embed.__name__ = ["hxd","res","Embed"];
+var hxd__$res_R_$font_$ttf = function() { };
+$hxClasses["hxd._res.R_font_ttf"] = hxd__$res_R_$font_$ttf;
+hxd__$res_R_$font_$ttf.__name__ = ["hxd","_res","R_font_ttf"];
+hxd__$res_R_$font_$ttf.__super__ = hxd_res_Embed;
+hxd__$res_R_$font_$ttf.prototype = $extend(hxd_res_Embed.prototype,{
+	__class__: hxd__$res_R_$font_$ttf
+});
+var hxd_fs_FileEntry = function() { };
+$hxClasses["hxd.fs.FileEntry"] = hxd_fs_FileEntry;
+hxd_fs_FileEntry.__name__ = ["hxd","fs","FileEntry"];
+hxd_fs_FileEntry.prototype = {
+	getBytes: function() {
+		return null;
+	}
+	,open: function() {
+	}
+	,skip: function(nbytes) {
+	}
+	,readByte: function() {
+		return 0;
+	}
+	,read: function(out,pos,size) {
+	}
+	,close: function() {
+	}
+	,get_path: function() {
+		throw new js__$Boot_HaxeError("path() not implemented");
+		return null;
+	}
+	,__class__: hxd_fs_FileEntry
+};
+var hxd_fs_BytesFileEntry = function(path,bytes) {
+	this.fullPath = path;
+	this.name = path.split("/").pop();
+	this.bytes = bytes;
+};
+$hxClasses["hxd.fs.BytesFileEntry"] = hxd_fs_BytesFileEntry;
+hxd_fs_BytesFileEntry.__name__ = ["hxd","fs","BytesFileEntry"];
+hxd_fs_BytesFileEntry.__super__ = hxd_fs_FileEntry;
+hxd_fs_BytesFileEntry.prototype = $extend(hxd_fs_FileEntry.prototype,{
+	get_path: function() {
+		return this.fullPath;
+	}
+	,getBytes: function() {
+		return this.bytes;
+	}
+	,open: function() {
+		this.pos = 0;
+	}
+	,skip: function(nbytes) {
+		this.pos += nbytes;
+	}
+	,readByte: function() {
+		return this.bytes.get(this.pos++);
+	}
+	,read: function(out,pos,size) {
+		out.blit(pos,this.bytes,this.pos,size);
+		this.pos += size;
+	}
+	,close: function() {
+	}
+	,__class__: hxd_fs_BytesFileEntry
+});
+var hxd_fs_FileSystem = function() { };
+$hxClasses["hxd.fs.FileSystem"] = hxd_fs_FileSystem;
+hxd_fs_FileSystem.__name__ = ["hxd","fs","FileSystem"];
+hxd_fs_FileSystem.prototype = {
+	__class__: hxd_fs_FileSystem
+};
+var hxd_fs_BytesFileSystem = function() {
+};
+$hxClasses["hxd.fs.BytesFileSystem"] = hxd_fs_BytesFileSystem;
+hxd_fs_BytesFileSystem.__name__ = ["hxd","fs","BytesFileSystem"];
+hxd_fs_BytesFileSystem.__interfaces__ = [hxd_fs_FileSystem];
+hxd_fs_BytesFileSystem.prototype = {
+	getBytes: function(path) {
+		throw new js__$Boot_HaxeError("Not implemented");
+		return null;
+	}
+	,get: function(path) {
+		var bytes = this.getBytes(path);
+		if(bytes == null) throw new js__$Boot_HaxeError("Resource not found '" + path + "'");
+		return new hxd_fs_BytesFileEntry(path,bytes);
+	}
+	,__class__: hxd_fs_BytesFileSystem
+};
+var hxd_fs__$EmbedFileSystem_EmbedEntry = function(fs,name,relPath,data) {
+	this.fs = fs;
+	this.name = name;
+	this.relPath = relPath;
+	this.data = data;
+};
+$hxClasses["hxd.fs._EmbedFileSystem.EmbedEntry"] = hxd_fs__$EmbedFileSystem_EmbedEntry;
+hxd_fs__$EmbedFileSystem_EmbedEntry.__name__ = ["hxd","fs","_EmbedFileSystem","EmbedEntry"];
+hxd_fs__$EmbedFileSystem_EmbedEntry.__super__ = hxd_fs_FileEntry;
+hxd_fs__$EmbedFileSystem_EmbedEntry.prototype = $extend(hxd_fs_FileEntry.prototype,{
+	getBytes: function() {
+		if(this.bytes == null) this.open();
+		return this.bytes;
+	}
+	,open: function() {
+		if(this.bytes == null) {
+			this.bytes = haxe_Resource.getBytes(this.data);
+			if(this.bytes == null) throw new js__$Boot_HaxeError("Missing resource " + this.data);
+		}
+		this.readPos = 0;
+	}
+	,skip: function(nbytes) {
+		this.readPos += nbytes;
+	}
+	,readByte: function() {
+		return this.bytes.get(this.readPos++);
+	}
+	,read: function(out,pos,size) {
+		out.blit(pos,this.bytes,this.readPos,size);
+		this.readPos += size;
+	}
+	,close: function() {
+		this.bytes = null;
+		this.readPos = 0;
+	}
+	,get_path: function() {
+		if(this.relPath == ".") return "<root>"; else return this.relPath;
+	}
+	,__class__: hxd_fs__$EmbedFileSystem_EmbedEntry
+});
+var hxd_fs_EmbedFileSystem = function(root) {
+	this.root = root;
+};
+$hxClasses["hxd.fs.EmbedFileSystem"] = hxd_fs_EmbedFileSystem;
+hxd_fs_EmbedFileSystem.__name__ = ["hxd","fs","EmbedFileSystem"];
+hxd_fs_EmbedFileSystem.__interfaces__ = [hxd_fs_FileSystem];
+hxd_fs_EmbedFileSystem.resolve = function(path) {
+	return "R_" + hxd_fs_EmbedFileSystem.invalidChars.replace(path,"_");
+};
+hxd_fs_EmbedFileSystem.prototype = {
+	splitPath: function(path) {
+		if(path == ".") return []; else return path.split("/");
+	}
+	,exists: function(path) {
+		var r = this.root;
+		var _g = 0;
+		var _g1 = this.splitPath(path);
+		while(_g < _g1.length) {
+			var p = _g1[_g];
+			++_g;
+			r = Reflect.field(r,p);
+			if(r == null) return false;
+		}
+		return true;
+	}
+	,get: function(path) {
+		if(!this.exists(path)) throw new js__$Boot_HaxeError(new hxd_fs_NotFound(path));
+		var id = hxd_fs_EmbedFileSystem.resolve(path);
+		return new hxd_fs__$EmbedFileSystem_EmbedEntry(this,path.split("/").pop(),path,id);
+	}
+	,__class__: hxd_fs_EmbedFileSystem
+};
+var hxd_fs_FileInput = function(f) {
+	this.f = f;
+	f.open();
+};
+$hxClasses["hxd.fs.FileInput"] = hxd_fs_FileInput;
+hxd_fs_FileInput.__name__ = ["hxd","fs","FileInput"];
+hxd_fs_FileInput.__super__ = haxe_io_Input;
+hxd_fs_FileInput.prototype = $extend(haxe_io_Input.prototype,{
+	skip: function(nbytes) {
+		this.f.skip(nbytes);
+	}
+	,readByte: function() {
+		return this.f.readByte();
+	}
+	,readBytes: function(b,pos,len) {
+		this.f.read(b,pos,len);
+		return len;
+	}
+	,close: function() {
+		this.f.close();
+	}
+	,__class__: hxd_fs_FileInput
+});
+var hxd_fs_NotFound = function(path) {
+	this.path = path;
+};
+$hxClasses["hxd.fs.NotFound"] = hxd_fs_NotFound;
+hxd_fs_NotFound.__name__ = ["hxd","fs","NotFound"];
+hxd_fs_NotFound.prototype = {
+	toString: function() {
+		return "Resource file not found '" + this.path + "'";
+	}
+	,__class__: hxd_fs_NotFound
+};
 var hxd_impl_MemoryReader = function() {
 };
 $hxClasses["hxd.impl.MemoryReader"] = hxd_impl_MemoryReader;
-hxd_impl_MemoryReader.__name__ = true;
+hxd_impl_MemoryReader.__name__ = ["hxd","impl","MemoryReader"];
 hxd_impl_MemoryReader.prototype = {
 	__class__: hxd_impl_MemoryReader
 };
 var hxd_impl_Memory = function() { };
 $hxClasses["hxd.impl.Memory"] = hxd_impl_Memory;
-hxd_impl_Memory.__name__ = true;
+hxd_impl_Memory.__name__ = ["hxd","impl","Memory"];
 hxd_impl_Memory.select = function(b) {
 	if(hxd_impl_Memory.current != null) hxd_impl_Memory.stack.push(hxd_impl_Memory.current);
 	hxd_impl_Memory.current = b;
@@ -7846,7 +13299,7 @@ hxd_impl_Memory.end = function() {
 };
 var hxd_impl_Tmp = function() { };
 $hxClasses["hxd.impl.Tmp"] = hxd_impl_Tmp;
-hxd_impl_Tmp.__name__ = true;
+hxd_impl_Tmp.__name__ = ["hxd","impl","Tmp"];
 hxd_impl_Tmp.getBytes = function(size) {
 	var found = -1;
 	var _g1 = 0;
@@ -7877,6 +13330,1107 @@ hxd_impl_Tmp.saveBytes = function(b) {
 		}
 	}
 	hxd_impl_Tmp.bytes.push(b);
+};
+var hxd_res__$Any_SingleFileSystem = function(path,bytes) {
+	hxd_fs_BytesFileSystem.call(this);
+	this.path = path;
+	this.bytes = bytes;
+};
+$hxClasses["hxd.res._Any.SingleFileSystem"] = hxd_res__$Any_SingleFileSystem;
+hxd_res__$Any_SingleFileSystem.__name__ = ["hxd","res","_Any","SingleFileSystem"];
+hxd_res__$Any_SingleFileSystem.__super__ = hxd_fs_BytesFileSystem;
+hxd_res__$Any_SingleFileSystem.prototype = $extend(hxd_fs_BytesFileSystem.prototype,{
+	getBytes: function(p) {
+		if(p == this.path) return this.bytes; else return null;
+	}
+	,__class__: hxd_res__$Any_SingleFileSystem
+});
+var hxd_res_Resource = function(entry) {
+	this.entry = entry;
+};
+$hxClasses["hxd.res.Resource"] = hxd_res_Resource;
+hxd_res_Resource.__name__ = ["hxd","res","Resource"];
+hxd_res_Resource.prototype = {
+	__class__: hxd_res_Resource
+};
+var hxd_res_Any = function(loader,entry) {
+	hxd_res_Resource.call(this,entry);
+	this.loader = loader;
+};
+$hxClasses["hxd.res.Any"] = hxd_res_Any;
+hxd_res_Any.__name__ = ["hxd","res","Any"];
+hxd_res_Any.fromBytes = function(path,bytes) {
+	var fs = new hxd_res__$Any_SingleFileSystem(path,bytes);
+	return new hxd_res_Loader(fs).load(path);
+};
+hxd_res_Any.__super__ = hxd_res_Resource;
+hxd_res_Any.prototype = $extend(hxd_res_Resource.prototype,{
+	toImage: function() {
+		return this.loader.loadImage(this.entry.get_path());
+	}
+	,__class__: hxd_res_Any
+});
+var hxd_res_Font = function() { };
+$hxClasses["hxd.res.Font"] = hxd_res_Font;
+hxd_res_Font.__name__ = ["hxd","res","Font"];
+hxd_res_Font.__super__ = hxd_res_Resource;
+hxd_res_Font.prototype = $extend(hxd_res_Resource.prototype,{
+	__class__: hxd_res_Font
+});
+var hxd_res_FontBuilder = function(name,size,opt) {
+	this.font = new h2d_Font(name,size);
+	if(opt == null) this.options = { }; else this.options = opt;
+	if(this.options.antiAliasing == null) this.options.antiAliasing = true;
+	if(this.options.chars == null) this.options.chars = hxd_Charset.DEFAULT_CHARS;
+};
+$hxClasses["hxd.res.FontBuilder"] = hxd_res_FontBuilder;
+hxd_res_FontBuilder.__name__ = ["hxd","res","FontBuilder"];
+hxd_res_FontBuilder.getFont = function(name,size,options) {
+	var key = name + "#" + size;
+	var f = hxd_res_FontBuilder.FONTS.get(key);
+	if(f != null && f.tile.innerTex != null) return f;
+	f = new hxd_res_FontBuilder(name,size,options).build();
+	hxd_res_FontBuilder.FONTS.set(key,f);
+	return f;
+};
+hxd_res_FontBuilder.prototype = {
+	build: function() {
+		var bmp;
+		var _this = window.document;
+		bmp = _this.createElement("canvas");
+		var ctx = bmp.getContext("2d",null);
+		ctx.font = "" + this.font.size + "px " + this.font.name;
+		ctx.textAlign = "left";
+		ctx.textBaseline = "top";
+		this.font.lineHeight = 0;
+		var surf = 0;
+		var sizes = [];
+		var _g1 = 0;
+		var _g = this.options.chars.length;
+		while(_g1 < _g) {
+			var i = _g1++;
+			var textChar = this.options.chars.charAt(i);
+			var w = hxd_Math.ceil(ctx.measureText(textChar).width) + 1;
+			if(w == 1) continue;
+			var h = this.font.size + 5;
+			surf += (w + 1) * (h + 1);
+			if(h > this.font.lineHeight) this.font.lineHeight = h;
+			sizes[i] = { w : w, h : h};
+		}
+		var side = hxd_Math.ceil(Math.sqrt(surf));
+		var width = 1;
+		while(side > width) width <<= 1;
+		var height = width;
+		while(width * height >> 1 > surf) height >>= 1;
+		var all;
+		var done;
+		do {
+			done = true;
+			bmp.width = width;
+			bmp.height = height;
+			ctx.font = "" + this.font.size + "px " + this.font.name;
+			ctx.textAlign = "left";
+			ctx.textBaseline = "top";
+			ctx.fillStyle = "red";
+			this.font.glyphs = new haxe_ds_IntMap();
+			all = [];
+			var x = 0;
+			var y = 0;
+			var lineH = 0;
+			var _g11 = 0;
+			var _g2 = this.options.chars.length;
+			while(_g11 < _g2) {
+				var i1 = _g11++;
+				var size = sizes[i1];
+				if(size == null) continue;
+				var w1 = size.w;
+				var h1 = size.h;
+				if(x + w1 > width) {
+					x = 0;
+					y += lineH + 1;
+				}
+				if(y + h1 > height) {
+					done = false;
+					height <<= 1;
+					break;
+				}
+				ctx.fillStyle = "black";
+				ctx.globalAlpha = 0.0;
+				ctx.fillRect(x,y,w1,h1);
+				ctx.globalAlpha = 1.0;
+				ctx.fillStyle = "white";
+				ctx.fillText(this.options.chars.charAt(i1),x,y);
+				var t = new h2d_Tile(this.innerTex,x,y,w1 - 1,h1 - 1);
+				all.push(t);
+				var key = HxOverrides.cca(this.options.chars,i1);
+				var value = new h2d_FontChar(t,w1 - 1);
+				this.font.glyphs.h[key] = value;
+				if(h1 > lineH) lineH = h1;
+				x += w1 + 1;
+			}
+		} while(!done);
+		var rbmp = hxd_BitmapData.fromNative(ctx);
+		if(this.innerTex == null) {
+			this.innerTex = h3d_mat_Texture.fromBitmap(rbmp);
+			this.font.tile = h2d_Tile.fromTexture(this.innerTex);
+			var _g3 = 0;
+			while(_g3 < all.length) {
+				var t1 = all[_g3];
+				++_g3;
+				t1.setTexture(this.innerTex);
+			}
+			this.innerTex.realloc = $bind(this,this.build);
+		} else this.innerTex.uploadBitmap(rbmp);
+		return this.font;
+	}
+	,__class__: hxd_res_FontBuilder
+};
+var hxd_res_Image = function(entry) {
+	hxd_res_Resource.call(this,entry);
+};
+$hxClasses["hxd.res.Image"] = hxd_res_Image;
+hxd_res_Image.__name__ = ["hxd","res","Image"];
+hxd_res_Image.__super__ = hxd_res_Resource;
+hxd_res_Image.prototype = $extend(hxd_res_Resource.prototype,{
+	getSize: function() {
+		if(this.inf != null) return this.inf;
+		var f = new hxd_fs_FileInput(this.entry);
+		var width = 0;
+		var height = 0;
+		var isPNG = false;
+		var _g = f.readUInt16();
+		switch(_g) {
+		case 55551:
+			f.set_bigEndian(true);
+			try {
+				while(true) {
+					var _g1 = f.readUInt16();
+					switch(_g1) {
+					case 65474:case 65472:
+						var len = f.readUInt16();
+						var prec = f.readByte();
+						height = f.readUInt16();
+						width = f.readUInt16();
+						throw "__break__";
+						break;
+					default:
+						f.skip(f.readUInt16() - 2);
+					}
+				}
+			} catch( e ) { if( e != "__break__" ) throw e; }
+			break;
+		case 20617:
+			isPNG = true;
+			var TMP = hxd_impl_Tmp.getBytes(256);
+			f.set_bigEndian(true);
+			f.readBytes(TMP,0,6);
+			while(true) {
+				var dataLen = f.readInt32();
+				if(f.readInt32() == 1229472850) {
+					width = f.readInt32();
+					height = f.readInt32();
+					break;
+				}
+				while(dataLen > 0) {
+					var k;
+					if(dataLen > TMP.length) k = TMP.length; else k = dataLen;
+					f.readBytes(TMP,0,k);
+					dataLen -= k;
+				}
+				var crc = f.readInt32();
+			}
+			hxd_impl_Tmp.saveBytes(TMP);
+			break;
+		default:
+			throw new js__$Boot_HaxeError("Unsupported texture format " + this.entry.get_path());
+		}
+		f.close();
+		this.inf = { width : width, height : height, isPNG : isPNG};
+		return this.inf;
+	}
+	,getPixels: function() {
+		this.getSize();
+		if(this.inf.isPNG) {
+			var png = new format_png_Reader(new haxe_io_BytesInput(this.entry.getBytes()));
+			png.checkCRC = false;
+			var pixels = hxd_Pixels.alloc(this.inf.width,this.inf.height,hxd_PixelFormat.BGRA);
+			format_png_Tools.extract32(png.read(),pixels.bytes);
+			return pixels;
+		} else {
+			var bytes = this.entry.getBytes();
+			var p = hxd_res_NanoJpeg.decode(bytes);
+			return new hxd_Pixels(p.width,p.height,p.pixels,hxd_PixelFormat.BGRA);
+		}
+	}
+	,__class__: hxd_res_Image
+});
+var hxd_res_Loader = function(fs) {
+	this.fs = fs;
+	this.cache = new haxe_ds_StringMap();
+};
+$hxClasses["hxd.res.Loader"] = hxd_res_Loader;
+hxd_res_Loader.__name__ = ["hxd","res","Loader"];
+hxd_res_Loader.prototype = {
+	load: function(path) {
+		return new hxd_res_Any(this,this.fs.get(path));
+	}
+	,loadImage: function(path) {
+		var i = this.cache.get(path);
+		if(i == null) {
+			i = new hxd_res_Image(this.fs.get(path));
+			this.cache.set(path,i);
+		}
+		return i;
+	}
+	,__class__: hxd_res_Loader
+};
+var hxd_res_Filter = $hxClasses["hxd.res.Filter"] = { __ename__ : true, __constructs__ : ["Fast","Chromatic"] };
+hxd_res_Filter.Fast = ["Fast",0];
+hxd_res_Filter.Fast.toString = $estr;
+hxd_res_Filter.Fast.__enum__ = hxd_res_Filter;
+hxd_res_Filter.Chromatic = ["Chromatic",1];
+hxd_res_Filter.Chromatic.toString = $estr;
+hxd_res_Filter.Chromatic.__enum__ = hxd_res_Filter;
+hxd_res_Filter.__empty_constructs__ = [hxd_res_Filter.Fast,hxd_res_Filter.Chromatic];
+var hxd_res__$NanoJpeg_Component = function() {
+};
+$hxClasses["hxd.res._NanoJpeg.Component"] = hxd_res__$NanoJpeg_Component;
+hxd_res__$NanoJpeg_Component.__name__ = ["hxd","res","_NanoJpeg","Component"];
+hxd_res__$NanoJpeg_Component.prototype = {
+	__class__: hxd_res__$NanoJpeg_Component
+};
+var hxd_res_NanoJpeg = function() {
+	var array = [new hxd_res__$NanoJpeg_Component(),new hxd_res__$NanoJpeg_Component(),new hxd_res__$NanoJpeg_Component()];
+	var vec;
+	var this1;
+	this1 = new Array(array.length);
+	vec = this1;
+	var _g1 = 0;
+	var _g = array.length;
+	while(_g1 < _g) {
+		var i = _g1++;
+		vec[i] = array[i];
+	}
+	this.comps = vec;
+	var array1 = [(function($this) {
+		var $r;
+		var this2;
+		this2 = new Array(64);
+		$r = this2;
+		return $r;
+	}(this)),(function($this) {
+		var $r;
+		var this3;
+		this3 = new Array(64);
+		$r = this3;
+		return $r;
+	}(this)),(function($this) {
+		var $r;
+		var this4;
+		this4 = new Array(64);
+		$r = this4;
+		return $r;
+	}(this)),(function($this) {
+		var $r;
+		var this5;
+		this5 = new Array(64);
+		$r = this5;
+		return $r;
+	}(this))];
+	var vec1;
+	var this6;
+	this6 = new Array(array1.length);
+	vec1 = this6;
+	var _g11 = 0;
+	var _g2 = array1.length;
+	while(_g11 < _g2) {
+		var i1 = _g11++;
+		vec1[i1] = array1[i1];
+	}
+	this.qtab = vec1;
+	var this7;
+	this7 = new Array(16);
+	this.counts = this7;
+	var this8;
+	this8 = new Array(64);
+	this.block = this8;
+	var array2 = [0,1,8,16,9,2,3,10,17,24,32,25,18,11,4,5,12,19,26,33,40,48,41,34,27,20,13,6,7,14,21,28,35,42,49,56,57,50,43,36,29,22,15,23,30,37,44,51,58,59,52,45,38,31,39,46,53,60,61,54,47,55,62,63];
+	var vec2;
+	var this9;
+	this9 = new Array(array2.length);
+	vec2 = this9;
+	var _g12 = 0;
+	var _g3 = array2.length;
+	while(_g12 < _g3) {
+		var i2 = _g12++;
+		vec2[i2] = array2[i2];
+	}
+	this.njZZ = vec2;
+	var array3 = [null,null,null,null];
+	var vec3;
+	var this10;
+	this10 = new Array(array3.length);
+	vec3 = this10;
+	var _g13 = 0;
+	var _g4 = array3.length;
+	while(_g13 < _g4) {
+		var i3 = _g13++;
+		vec3[i3] = array3[i3];
+	}
+	this.vlctab = vec3;
+};
+$hxClasses["hxd.res.NanoJpeg"] = hxd_res_NanoJpeg;
+hxd_res_NanoJpeg.__name__ = ["hxd","res","NanoJpeg"];
+hxd_res_NanoJpeg.njClip = function(x) {
+	if(x < 0) return 0; else if(x > 255) return 255; else return x;
+};
+hxd_res_NanoJpeg.decode = function(bytes,filter,position,size) {
+	if(size == null) size = -1;
+	if(position == null) position = 0;
+	if(hxd_res_NanoJpeg.inst == null) hxd_res_NanoJpeg.inst = new hxd_res_NanoJpeg();
+	hxd_res_NanoJpeg.inst.njInit(bytes,position,size,filter);
+	return hxd_res_NanoJpeg.inst.njDecode();
+};
+hxd_res_NanoJpeg.prototype = {
+	njInit: function(bytes,pos,size,filter) {
+		this.bytes = bytes;
+		this.pos = pos;
+		if(filter == null) this.filter = hxd_res_Filter.Chromatic; else this.filter = filter;
+		if(size < 0) size = bytes.length - pos;
+		var _g = 0;
+		while(_g < 4) {
+			var i = _g++;
+			if(this.vlctab[i] == null) {
+				var val = hxd_impl_Tmp.getBytes(131072);
+				this.vlctab[i] = val;
+			}
+		}
+		this.size = size;
+		this.qtused = 0;
+		this.qtavail = 0;
+		this.rstinterval = 0;
+		this.length = 0;
+		this.buf = 0;
+		this.bufbits = 0;
+		var _g1 = 0;
+		while(_g1 < 3) {
+			var i1 = _g1++;
+			this.comps[i1].dcpred = 0;
+		}
+	}
+	,cleanup: function() {
+		this.bytes = null;
+		var _g = 0;
+		var _g1 = this.comps;
+		while(_g < _g1.length) {
+			var c = _g1[_g];
+			++_g;
+			if(c.pixels != null) {
+				hxd_impl_Tmp.saveBytes(c.pixels);
+				c.pixels = null;
+			}
+		}
+		var _g2 = 0;
+		while(_g2 < 4) {
+			var i = _g2++;
+			if(this.vlctab[i] != null) {
+				hxd_impl_Tmp.saveBytes(this.vlctab[i]);
+				this.vlctab[i] = null;
+			}
+		}
+	}
+	,njSkip: function(count) {
+		this.pos += count;
+		this.size -= count;
+		this.length -= count;
+		null;
+	}
+	,njShowBits: function(bits) {
+		if(bits == 0) return 0;
+		while(this.bufbits < bits) {
+			if(this.size <= 0) {
+				this.buf = this.buf << 8 | 255;
+				this.bufbits += 8;
+				continue;
+			}
+			var newbyte = this.bytes.b[this.pos];
+			this.pos++;
+			this.size--;
+			this.bufbits += 8;
+			this.buf = this.buf << 8 | newbyte;
+			if(newbyte == 255) {
+				var marker = this.bytes.b[this.pos];
+				this.pos++;
+				this.size--;
+				switch(marker) {
+				case 0:case 255:
+					break;
+				case 217:
+					this.size = 0;
+					break;
+				default:
+					this.buf = this.buf << 8 | marker;
+					this.bufbits += 8;
+				}
+			}
+		}
+		return this.buf >> this.bufbits - bits & (1 << bits) - 1;
+	}
+	,njGetBits: function(bits) {
+		var r = this.njShowBits(bits);
+		this.bufbits -= bits;
+		return r;
+	}
+	,njDecodeSOF: function() {
+		this.length = this.bytes.b[this.pos] << 8 | this.bytes.b[this.pos + 1];
+		this.pos += 2;
+		this.size -= 2;
+		this.length -= 2;
+		null;
+		if(this.bytes.b[this.pos] != 8) this.notSupported();
+		this.height = this.bytes.b[this.pos + 1] << 8 | this.bytes.b[this.pos + 2];
+		this.width = this.bytes.b[this.pos + 3] << 8 | this.bytes.b[this.pos + 4];
+		this.ncomp = this.bytes.b[this.pos + 5];
+		this.pos += 6;
+		this.size -= 6;
+		this.length -= 6;
+		null;
+		var _g = this.ncomp;
+		switch(_g) {
+		case 1:case 3:
+			break;
+		default:
+			this.notSupported();
+		}
+		var ssxmax = 0;
+		var ssymax = 0;
+		var _g1 = 0;
+		var _g2 = this.ncomp;
+		while(_g1 < _g2) {
+			var i = _g1++;
+			var c = this.comps[i];
+			c.cid = this.bytes.b[this.pos];
+			c.ssx = this.bytes.b[this.pos + 1] >> 4;
+			if((c.ssx & c.ssx - 1) != 0) this.notSupported();
+			c.ssy = this.bytes.b[this.pos + 1] & 15;
+			if((c.ssy & c.ssy - 1) != 0) this.notSupported();
+			c.qtsel = this.bytes.b[this.pos + 2];
+			this.pos += 3;
+			this.size -= 3;
+			this.length -= 3;
+			null;
+			this.qtused |= 1 << c.qtsel;
+			if(c.ssx > ssxmax) ssxmax = c.ssx;
+			if(c.ssy > ssymax) ssymax = c.ssy;
+		}
+		if(this.ncomp == 1) {
+			var c1 = this.comps[0];
+			c1.ssx = c1.ssy = ssxmax = ssymax = 1;
+		}
+		this.mbsizex = ssxmax << 3;
+		this.mbsizey = ssymax << 3;
+		this.mbwidth = (this.width + this.mbsizex - 1) / this.mbsizex | 0;
+		this.mbheight = (this.height + this.mbsizey - 1) / this.mbsizey | 0;
+		var _g11 = 0;
+		var _g3 = this.ncomp;
+		while(_g11 < _g3) {
+			var i1 = _g11++;
+			var c2 = this.comps[i1];
+			c2.width = (this.width * c2.ssx + ssxmax - 1) / ssxmax | 0;
+			c2.stride = c2.width + 7 & 2147483640;
+			c2.height = (this.height * c2.ssy + ssymax - 1) / ssymax | 0;
+			c2.stride = this.mbwidth * this.mbsizex * c2.ssx / ssxmax | 0;
+			if(c2.width < 3 && c2.ssx != ssxmax || c2.height < 3 && c2.ssy != ssymax) this.notSupported();
+			c2.pixels = hxd_impl_Tmp.getBytes(c2.stride * (this.mbheight * this.mbsizey * c2.ssy / ssymax | 0));
+		}
+		this.njSkip(this.length);
+	}
+	,njDecodeDQT: function() {
+		this.length = this.bytes.b[this.pos] << 8 | this.bytes.b[this.pos + 1];
+		this.pos += 2;
+		this.size -= 2;
+		this.length -= 2;
+		null;
+		while(this.length >= 65) {
+			var i = this.bytes.b[this.pos];
+			this.qtavail |= 1 << i;
+			var t = this.qtab[i];
+			var _g = 0;
+			while(_g < 64) {
+				var k = _g++;
+				t[k] = this.bytes.b[this.pos + (k + 1)];
+			}
+			this.pos += 65;
+			this.size -= 65;
+			this.length -= 65;
+			null;
+		}
+		null;
+	}
+	,njDecodeDHT: function() {
+		this.length = this.bytes.b[this.pos] << 8 | this.bytes.b[this.pos + 1];
+		this.pos += 2;
+		this.size -= 2;
+		this.length -= 2;
+		null;
+		while(this.length >= 17) {
+			var i = this.bytes.b[this.pos];
+			if((i & 2) != 0) this.notSupported();
+			i = (i | i >> 3) & 3;
+			var _g = 0;
+			while(_g < 16) {
+				var codelen = _g++;
+				this.counts[codelen] = this.bytes.b[this.pos + (codelen + 1)];
+			}
+			this.pos += 17;
+			this.size -= 17;
+			this.length -= 17;
+			null;
+			var vlc = this.vlctab[i];
+			var vpos = 0;
+			var remain = 65536;
+			var spread = 65536;
+			var _g1 = 1;
+			while(_g1 < 17) {
+				var codelen1 = _g1++;
+				spread >>= 1;
+				var currcnt = this.counts[codelen1 - 1];
+				if(currcnt == 0) continue;
+				remain -= currcnt << 16 - codelen1;
+				var _g11 = 0;
+				while(_g11 < currcnt) {
+					var i1 = _g11++;
+					var code = this.bytes.b[this.pos + i1];
+					var _g2 = 0;
+					while(_g2 < spread) {
+						var j = _g2++;
+						vlc.set(vpos++,codelen1);
+						vlc.set(vpos++,code);
+					}
+				}
+				this.pos += currcnt;
+				this.size -= currcnt;
+				this.length -= currcnt;
+				null;
+			}
+			while(remain-- != 0) {
+				vlc.b[vpos] = 0;
+				vpos += 2;
+			}
+		}
+		null;
+	}
+	,njDecodeDRI: function() {
+		this.length = this.bytes.b[this.pos] << 8 | this.bytes.b[this.pos + 1];
+		this.pos += 2;
+		this.size -= 2;
+		this.length -= 2;
+		null;
+		this.rstinterval = this.bytes.b[this.pos] << 8 | this.bytes.b[this.pos + 1];
+		this.njSkip(this.length);
+	}
+	,njGetVLC: function(vlc) {
+		var value = this.njShowBits(16);
+		var bits = vlc.b[value << 1];
+		if(this.bufbits < bits) this.njShowBits(bits);
+		this.bufbits -= bits;
+		value = vlc.b[value << 1 | 1];
+		this.vlcCode = value;
+		bits = value & 15;
+		if(bits == 0) return 0;
+		value = this.njGetBits(bits);
+		if(value < 1 << bits - 1) value += (-1 << bits) + 1;
+		return value;
+	}
+	,njRowIDCT: function(bp) {
+		var x0;
+		var x1;
+		var x2;
+		var x3;
+		var x4;
+		var x5;
+		var x6;
+		var x7;
+		var x8;
+		if(((x1 = this.block[bp + 4] << 11) | (x2 = this.block[bp + 6]) | (x3 = this.block[bp + 2]) | (x4 = this.block[bp + 1]) | (x5 = this.block[bp + 7]) | (x6 = this.block[bp + 5]) | (x7 = this.block[bp + 3])) == 0) {
+			var val;
+			var val1;
+			var val2;
+			var val3;
+			var val4;
+			var val5;
+			var val6 = this.block[bp + 7] = this.block[bp] << 3;
+			val5 = this.block[bp + 6] = val6;
+			val4 = this.block[bp + 5] = val5;
+			val3 = this.block[bp + 4] = val4;
+			val2 = this.block[bp + 3] = val3;
+			val1 = this.block[bp + 2] = val2;
+			val = this.block[bp + 1] = val1;
+			this.block[bp] = val;
+			return;
+		}
+		x0 = (this.block[bp] << 11) + 128;
+		x8 = 565 * (x4 + x5);
+		x4 = x8 + 2276 * x4;
+		x5 = x8 - 3406 * x5;
+		x8 = 2408 * (x6 + x7);
+		x6 = x8 - 799 * x6;
+		x7 = x8 - 4017 * x7;
+		x8 = x0 + x1;
+		x0 -= x1;
+		x1 = 1108 * (x3 + x2);
+		x2 = x1 - 3784 * x2;
+		x3 = x1 + 1568 * x3;
+		x1 = x4 + x6;
+		x4 -= x6;
+		x6 = x5 + x7;
+		x5 -= x7;
+		x7 = x8 + x3;
+		x8 -= x3;
+		x3 = x0 + x2;
+		x0 -= x2;
+		x2 = 181 * (x4 + x5) + 128 >> 8;
+		x4 = 181 * (x4 - x5) + 128 >> 8;
+		this.block[bp] = x7 + x1 >> 8;
+		this.block[bp + 1] = x3 + x2 >> 8;
+		this.block[bp + 2] = x0 + x4 >> 8;
+		this.block[bp + 3] = x8 + x6 >> 8;
+		this.block[bp + 4] = x8 - x6 >> 8;
+		this.block[bp + 5] = x0 - x4 >> 8;
+		this.block[bp + 6] = x3 - x2 >> 8;
+		this.block[bp + 7] = x7 - x1 >> 8;
+	}
+	,njColIDCT: function(bp,out,po,stride) {
+		var x0;
+		var x1;
+		var x2;
+		var x3;
+		var x4;
+		var x5;
+		var x6;
+		var x7;
+		var x8;
+		if(((x1 = this.block[bp + 32] << 8) | (x2 = this.block[bp + 48]) | (x3 = this.block[bp + 16]) | (x4 = this.block[bp + 8]) | (x5 = this.block[bp + 56]) | (x6 = this.block[bp + 40]) | (x7 = this.block[bp + 24])) == 0) {
+			x1 = hxd_res_NanoJpeg.njClip((this.block[bp] + 32 >> 6) + 128);
+			var _g = 0;
+			while(_g < 8) {
+				var i = _g++;
+				out.b[po] = x1 & 255;
+				po += stride;
+			}
+			return;
+		}
+		x0 = (this.block[bp] << 8) + 8192;
+		x8 = 565 * (x4 + x5) + 4;
+		x4 = x8 + 2276 * x4 >> 3;
+		x5 = x8 - 3406 * x5 >> 3;
+		x8 = 2408 * (x6 + x7) + 4;
+		x6 = x8 - 799 * x6 >> 3;
+		x7 = x8 - 4017 * x7 >> 3;
+		x8 = x0 + x1;
+		x0 -= x1;
+		x1 = 1108 * (x3 + x2) + 4;
+		x2 = x1 - 3784 * x2 >> 3;
+		x3 = x1 + 1568 * x3 >> 3;
+		x1 = x4 + x6;
+		x4 -= x6;
+		x6 = x5 + x7;
+		x5 -= x7;
+		x7 = x8 + x3;
+		x8 -= x3;
+		x3 = x0 + x2;
+		x0 -= x2;
+		x2 = 181 * (x4 + x5) + 128 >> 8;
+		x4 = 181 * (x4 - x5) + 128 >> 8;
+		var v = hxd_res_NanoJpeg.njClip((x7 + x1 >> 14) + 128);
+		out.b[po] = v & 255;
+		po += stride;
+		var v1 = hxd_res_NanoJpeg.njClip((x3 + x2 >> 14) + 128);
+		out.b[po] = v1 & 255;
+		po += stride;
+		var v2 = hxd_res_NanoJpeg.njClip((x0 + x4 >> 14) + 128);
+		out.b[po] = v2 & 255;
+		po += stride;
+		var v3 = hxd_res_NanoJpeg.njClip((x8 + x6 >> 14) + 128);
+		out.b[po] = v3 & 255;
+		po += stride;
+		var v4 = hxd_res_NanoJpeg.njClip((x8 - x6 >> 14) + 128);
+		out.b[po] = v4 & 255;
+		po += stride;
+		var v5 = hxd_res_NanoJpeg.njClip((x0 - x4 >> 14) + 128);
+		out.b[po] = v5 & 255;
+		po += stride;
+		var v6 = hxd_res_NanoJpeg.njClip((x3 - x2 >> 14) + 128);
+		out.b[po] = v6 & 255;
+		po += stride;
+		var v7 = hxd_res_NanoJpeg.njClip((x7 - x1 >> 14) + 128);
+		out.b[po] = v7 & 255;
+	}
+	,njDecodeBlock: function(c,po) {
+		var out = c.pixels;
+		var value;
+		var coef = 0;
+		var _g = 0;
+		while(_g < 64) {
+			var i = _g++;
+			this.block[i] = 0;
+		}
+		c.dcpred += this.njGetVLC(this.vlctab[c.dctabsel]);
+		var qt = this.qtab[c.qtsel];
+		var at = this.vlctab[c.actabsel];
+		this.block[0] = c.dcpred * qt[0];
+		do {
+			value = this.njGetVLC(at);
+			if(this.vlcCode == 0) break;
+			coef += (this.vlcCode >> 4) + 1;
+			this.block[this.njZZ[coef]] = value * qt[coef];
+		} while(coef < 63);
+		var _g1 = 0;
+		while(_g1 < 8) {
+			var coef1 = _g1++;
+			this.njRowIDCT(coef1 * 8);
+		}
+		var _g2 = 0;
+		while(_g2 < 8) {
+			var coef2 = _g2++;
+			this.njColIDCT(coef2,out,coef2 + po,c.stride);
+		}
+	}
+	,notSupported: function() {
+		throw new js__$Boot_HaxeError("This JPG file is not supported");
+	}
+	,njDecodeScan: function() {
+		this.length = this.bytes.b[this.pos] << 8 | this.bytes.b[this.pos + 1];
+		this.pos += 2;
+		this.size -= 2;
+		this.length -= 2;
+		null;
+		if(this.bytes.b[this.pos] != this.ncomp) this.notSupported();
+		this.pos += 1;
+		this.size -= 1;
+		this.length -= 1;
+		null;
+		var _g1 = 0;
+		var _g = this.ncomp;
+		while(_g1 < _g) {
+			var i = _g1++;
+			var c = this.comps[i];
+			c.dctabsel = this.bytes.b[this.pos + 1] >> 4;
+			c.actabsel = this.bytes.b[this.pos + 1] & 1 | 2;
+			this.pos += 2;
+			this.size -= 2;
+			this.length -= 2;
+			null;
+		}
+		if(this.bytes.b[this.pos] != 0 || this.bytes.b[this.pos + 1] != 63 || this.bytes.b[this.pos + 2] != 0) this.notSupported();
+		this.njSkip(this.length);
+		var mbx = 0;
+		var mby = 0;
+		var rstcount = this.rstinterval;
+		var nextrst = 0;
+		while(true) {
+			var _g11 = 0;
+			var _g2 = this.ncomp;
+			while(_g11 < _g2) {
+				var i1 = _g11++;
+				var c1 = this.comps[i1];
+				var _g3 = 0;
+				var _g21 = c1.ssy;
+				while(_g3 < _g21) {
+					var sby = _g3++;
+					var _g5 = 0;
+					var _g4 = c1.ssx;
+					while(_g5 < _g4) {
+						var sbx = _g5++;
+						this.njDecodeBlock(c1,(mby * c1.ssy + sby) * c1.stride + mbx * c1.ssx + sbx << 3);
+					}
+				}
+			}
+			if(++mbx >= this.mbwidth) {
+				mbx = 0;
+				if(++mby >= this.mbheight) break;
+			}
+			if(this.rstinterval != 0 && --rstcount == 0) {
+				this.bufbits &= 248;
+				var i2 = this.njGetBits(16);
+				nextrst = nextrst + 1 & 7;
+				rstcount = this.rstinterval;
+				var _g6 = 0;
+				while(_g6 < 3) {
+					var i3 = _g6++;
+					this.comps[i3].dcpred = 0;
+				}
+			}
+		}
+	}
+	,njUpsampleH: function(c) {
+		var xmax = c.width - 3;
+		var cout = hxd_impl_Tmp.getBytes(c.width * c.height << 1);
+		var lout = cout;
+		var lin = c.pixels;
+		var pi = 0;
+		var po = 0;
+		var _g1 = 0;
+		var _g = c.height;
+		while(_g1 < _g) {
+			var y = _g1++;
+			var v = hxd_res_NanoJpeg.njClip(139 * lin.b[pi] + -11 * lin.b[pi + 1] + 64 >> 7);
+			lout.b[po] = v & 255;
+			var v1 = hxd_res_NanoJpeg.njClip(104 * lin.b[pi] + 27 * lin.b[pi + 1] + -3 * lin.b[pi + 2] + 64 >> 7);
+			lout.b[po + 1] = v1 & 255;
+			var v2 = hxd_res_NanoJpeg.njClip(28 * lin.b[pi] + 109 * lin.b[pi + 1] + -9 * lin.b[pi + 2] + 64 >> 7);
+			lout.b[po + 2] = v2 & 255;
+			var _g2 = 0;
+			while(_g2 < xmax) {
+				var x = _g2++;
+				var v3 = hxd_res_NanoJpeg.njClip(-9 * lin.b[pi + x] + 111 * lin.b[pi + x + 1] + 29 * lin.b[pi + x + 2] + -3 * lin.b[pi + x + 3] + 64 >> 7);
+				lout.b[po + (x << 1) + 3] = v3 & 255;
+				var v4 = hxd_res_NanoJpeg.njClip(-3 * lin.b[pi + x] + 29 * lin.b[pi + x + 1] + 111 * lin.b[pi + x + 2] + -9 * lin.b[pi + x + 3] + 64 >> 7);
+				lout.b[po + (x << 1) + 4] = v4 & 255;
+			}
+			pi += c.stride;
+			po += c.width << 1;
+			var v5 = hxd_res_NanoJpeg.njClip(28 * lin.b[pi - 1] + 109 * lin.b[pi - 2] + -9 * lin.b[pi - 3] + 64 >> 7);
+			lout.b[po - 3] = v5 & 255;
+			var v6 = hxd_res_NanoJpeg.njClip(104 * lin.b[pi - 1] + 27 * lin.b[pi - 2] + -3 * lin.b[pi - 3] + 64 >> 7);
+			lout.b[po - 2] = v6 & 255;
+			var v7 = hxd_res_NanoJpeg.njClip(139 * lin.b[pi - 1] + -11 * lin.b[pi - 2] + 64 >> 7);
+			lout.b[po - 1] = v7 & 255;
+		}
+		c.width <<= 1;
+		c.stride = c.width;
+		hxd_impl_Tmp.saveBytes(c.pixels);
+		c.pixels = cout;
+	}
+	,njUpsampleV: function(c) {
+		var w = c.width;
+		var s1 = c.stride;
+		var s2 = s1 + s1;
+		var out = hxd_impl_Tmp.getBytes(c.width * c.height << 1);
+		var pi = 0;
+		var po = 0;
+		var cout = out;
+		var cin = c.pixels;
+		var _g = 0;
+		while(_g < w) {
+			var x = _g++;
+			pi = po = x;
+			var v = hxd_res_NanoJpeg.njClip(139 * cin.b[pi] + -11 * cin.b[pi + s1] + 64 >> 7);
+			cout.b[po] = v & 255;
+			po += w;
+			var v1 = hxd_res_NanoJpeg.njClip(104 * cin.b[pi] + 27 * cin.b[pi + s1] + -3 * cin.b[pi + s2] + 64 >> 7);
+			cout.b[po] = v1 & 255;
+			po += w;
+			var v2 = hxd_res_NanoJpeg.njClip(28 * cin.b[pi] + 109 * cin.b[pi + s1] + -9 * cin.b[pi + s2] + 64 >> 7);
+			cout.b[po] = v2 & 255;
+			po += w;
+			pi += s1;
+			var _g2 = 0;
+			var _g1 = c.height - 2;
+			while(_g2 < _g1) {
+				var y = _g2++;
+				var v3 = hxd_res_NanoJpeg.njClip(-9 * cin.b[pi - s1] + 111 * cin.b[pi] + 29 * cin.b[pi + s1] + -3 * cin.b[pi + s2] + 64 >> 7);
+				cout.b[po] = v3 & 255;
+				po += w;
+				var v4 = hxd_res_NanoJpeg.njClip(-3 * cin.b[pi - s1] + 29 * cin.b[pi] + 111 * cin.b[pi + s1] + -9 * cin.b[pi + s2] + 64 >> 7);
+				cout.b[po] = v4 & 255;
+				po += w;
+				pi += s1;
+			}
+			pi += s1;
+			var v5 = hxd_res_NanoJpeg.njClip(28 * cin.b[pi] + 109 * cin.b[pi - s1] + -9 * cin.b[pi - s2] + 64 >> 7);
+			cout.b[po] = v5 & 255;
+			po += w;
+			var v6 = hxd_res_NanoJpeg.njClip(104 * cin.b[pi] + 27 * cin.b[pi - s1] + -3 * cin.b[pi - s2] + 64 >> 7);
+			cout.b[po] = v6 & 255;
+			po += w;
+			var v7 = hxd_res_NanoJpeg.njClip(139 * cin.b[pi] + -11 * cin.b[pi - s1] + 64 >> 7);
+			cout.b[po] = v7 & 255;
+		}
+		c.height <<= 1;
+		c.stride = c.width;
+		hxd_impl_Tmp.saveBytes(c.pixels);
+		c.pixels = out;
+	}
+	,njUpsample: function(c) {
+		var xshift = 0;
+		var yshift = 0;
+		while(c.width < this.width) {
+			c.width <<= 1;
+			++xshift;
+		}
+		while(c.height < this.height) {
+			c.height <<= 1;
+			++yshift;
+		}
+		var out = hxd_impl_Tmp.getBytes(c.width * c.height);
+		var lin = c.pixels;
+		var pout = 0;
+		var lout = out;
+		var _g1 = 0;
+		var _g = c.height;
+		while(_g1 < _g) {
+			var y = _g1++;
+			var pin = (y >> yshift) * c.stride;
+			var _g3 = 0;
+			var _g2 = c.width;
+			while(_g3 < _g2) {
+				var x = _g3++;
+				var pos = pout++;
+				lout.b[pos] = lin.b[(x >> xshift) + pin] & 255;
+			}
+		}
+		c.stride = c.width;
+		hxd_impl_Tmp.saveBytes(c.pixels);
+		c.pixels = out;
+	}
+	,njConvert: function() {
+		var _g1 = 0;
+		var _g = this.ncomp;
+		while(_g1 < _g) {
+			var i = _g1++;
+			var c = this.comps[i];
+			var _g2 = this.filter;
+			switch(_g2[1]) {
+			case 0:
+				if(c.width < this.width || c.height < this.height) this.njUpsample(c);
+				break;
+			case 1:
+				while(c.width < this.width || c.height < this.height) {
+					if(c.width < this.width) this.njUpsampleH(c);
+					if(c.height < this.height) this.njUpsampleV(c);
+				}
+				break;
+			}
+			if(c.width < this.width || c.height < this.height) throw new js__$Boot_HaxeError("assert");
+		}
+		var pixels = hxd_impl_Tmp.getBytes(this.width * this.height * 4);
+		if(this.ncomp == 3) {
+			var py = this.comps[0].pixels;
+			var pcb = this.comps[1].pixels;
+			var pcr = this.comps[2].pixels;
+			var pix = pixels;
+			var k1 = 0;
+			var k2 = 0;
+			var k3 = 0;
+			var out = 0;
+			var _g11 = 0;
+			var _g3 = this.height;
+			while(_g11 < _g3) {
+				var yy = _g11++;
+				var _g31 = 0;
+				var _g21 = this.width;
+				while(_g31 < _g21) {
+					var x = _g31++;
+					var y;
+					y = (function($this) {
+						var $r;
+						var i1 = k1++;
+						$r = py.b[i1];
+						return $r;
+					}(this)) << 8;
+					var cb;
+					cb = (function($this) {
+						var $r;
+						var i2 = k2++;
+						$r = pcb.b[i2];
+						return $r;
+					}(this)) - 128;
+					var cr;
+					cr = (function($this) {
+						var $r;
+						var i3 = k3++;
+						$r = pcr.b[i3];
+						return $r;
+					}(this)) - 128;
+					var r = hxd_res_NanoJpeg.njClip(y + 359 * cr + 128 >> 8);
+					var g = hxd_res_NanoJpeg.njClip(y - 88 * cb - 183 * cr + 128 >> 8);
+					var b = hxd_res_NanoJpeg.njClip(y + 454 * cb + 128 >> 8);
+					var out1 = out++;
+					pix.b[out1] = b & 255;
+					var out2 = out++;
+					pix.b[out2] = g & 255;
+					var out3 = out++;
+					pix.b[out3] = r & 255;
+					var out4 = out++;
+					pix.b[out4] = 255;
+				}
+				k1 += this.comps[0].stride - this.width;
+				k2 += this.comps[1].stride - this.width;
+				k3 += this.comps[2].stride - this.width;
+			}
+		} else throw new js__$Boot_HaxeError("TODO");
+		return pixels;
+	}
+	,njDecode: function() {
+		if(this.size < 2 || this.bytes.b[this.pos] != 255 || this.bytes.b[this.pos + 1] != 216) throw new js__$Boot_HaxeError("This file is not a JPEG");
+		this.pos += 2;
+		this.size -= 2;
+		this.length -= 2;
+		null;
+		try {
+			while(true) {
+				this.pos += 2;
+				this.size -= 2;
+				this.length -= 2;
+				null;
+				var _g = this.bytes.b[this.pos + -1];
+				switch(_g) {
+				case 192:
+					this.njDecodeSOF();
+					break;
+				case 219:
+					this.njDecodeDQT();
+					break;
+				case 196:
+					this.njDecodeDHT();
+					break;
+				case 221:
+					this.njDecodeDRI();
+					break;
+				case 218:
+					this.njDecodeScan();
+					throw "__break__";
+					break;
+				case 254:
+					this.length = this.bytes.b[this.pos] << 8 | this.bytes.b[this.pos + 1];
+					this.pos += 2;
+					this.size -= 2;
+					this.length -= 2;
+					null;
+					this.njSkip(this.length);
+					break;
+				case 194:
+					throw new js__$Boot_HaxeError("Unsupported progressive JPG");
+					break;
+				case 195:
+					throw new js__$Boot_HaxeError("Unsupported lossless JPG");
+					break;
+				default:
+					var _g1 = this.bytes.b[this.pos + -1] & 240;
+					switch(_g1) {
+					case 224:
+						this.length = this.bytes.b[this.pos] << 8 | this.bytes.b[this.pos + 1];
+						this.pos += 2;
+						this.size -= 2;
+						this.length -= 2;
+						null;
+						this.njSkip(this.length);
+						break;
+					case 192:
+						throw new js__$Boot_HaxeError("Unsupported jpeg type " + (this.bytes.b[this.pos + -1] & 15));
+						break;
+					default:
+						throw new js__$Boot_HaxeError("Unsupported jpeg tag 0x" + StringTools.hex(this.bytes.b[this.pos + -1],2));
+					}
+				}
+			}
+		} catch( e ) { if( e != "__break__" ) throw e; }
+		var pixels = this.njConvert();
+		this.cleanup();
+		return { pixels : pixels, width : this.width, height : this.height};
+	}
+	,__class__: hxd_res_NanoJpeg
 };
 var hxsl_Type = $hxClasses["hxsl.Type"] = { __ename__ : true, __constructs__ : ["TVoid","TInt","TBool","TFloat","TString","TVec","TMat3","TMat4","TMat3x4","TBytes","TSampler2D","TSamplerCube","TStruct","TFun","TArray"] };
 hxsl_Type.TVoid = ["TVoid",0];
@@ -7935,7 +14489,7 @@ var hxsl_Error = function(msg,pos) {
 	this.pos = pos;
 };
 $hxClasses["hxsl.Error"] = hxsl_Error;
-hxsl_Error.__name__ = true;
+hxsl_Error.__name__ = ["hxsl","Error"];
 hxsl_Error.t = function(msg,pos) {
 	throw new js__$Boot_HaxeError(new hxsl_Error(msg,pos));
 	return null;
@@ -8241,7 +14795,7 @@ hxsl_TExprDef.TArrayDecl = function(el) { var $x = ["TArrayDecl",17,el]; $x.__en
 hxsl_TExprDef.__empty_constructs__ = [hxsl_TExprDef.TDiscard,hxsl_TExprDef.TContinue,hxsl_TExprDef.TBreak];
 var hxsl_Tools = function() { };
 $hxClasses["hxsl.Tools"] = hxsl_Tools;
-hxsl_Tools.__name__ = true;
+hxsl_Tools.__name__ = ["hxsl","Tools"];
 hxsl_Tools.allocVarId = function() {
 	return ++hxsl_Tools.UID;
 };
@@ -8576,7 +15130,7 @@ hxsl_Tools.map = function(e,f) {
 };
 var hxsl_Tools2 = function() { };
 $hxClasses["hxsl.Tools2"] = hxsl_Tools2;
-hxsl_Tools2.__name__ = true;
+hxsl_Tools2.__name__ = ["hxsl","Tools2"];
 hxsl_Tools2.toString = function(g) {
 	var n = g[0];
 	return n.charAt(0).toLowerCase() + HxOverrides.substr(n,1,null);
@@ -8584,7 +15138,7 @@ hxsl_Tools2.toString = function(g) {
 var hxsl_SearchMap = function() {
 };
 $hxClasses["hxsl.SearchMap"] = hxsl_SearchMap;
-hxsl_SearchMap.__name__ = true;
+hxsl_SearchMap.__name__ = ["hxsl","SearchMap"];
 hxsl_SearchMap.prototype = {
 	__class__: hxsl_SearchMap
 };
@@ -8596,7 +15150,7 @@ var hxsl_Cache = function() {
 	this.byID = new haxe_ds_StringMap();
 };
 $hxClasses["hxsl.Cache"] = hxsl_Cache;
-hxsl_Cache.__name__ = true;
+hxsl_Cache.__name__ = ["hxsl","Cache"];
 hxsl_Cache.get = function() {
 	var c = hxsl_Cache.INST;
 	if(c == null) hxsl_Cache.INST = c = new hxsl_Cache();
@@ -8870,7 +15424,7 @@ var hxsl_Clone = function() {
 	this.varMap = new haxe_ds_IntMap();
 };
 $hxClasses["hxsl.Clone"] = hxsl_Clone;
-hxsl_Clone.__name__ = true;
+hxsl_Clone.__name__ = ["hxsl","Clone"];
 hxsl_Clone.shaderData = function(s) {
 	return new hxsl_Clone().shader(s);
 };
@@ -9037,7 +15591,7 @@ hxsl_Clone.prototype = {
 var hxsl__$Dce_Exit = function() {
 };
 $hxClasses["hxsl._Dce.Exit"] = hxsl__$Dce_Exit;
-hxsl__$Dce_Exit.__name__ = true;
+hxsl__$Dce_Exit.__name__ = ["hxsl","_Dce","Exit"];
 hxsl__$Dce_Exit.prototype = {
 	__class__: hxsl__$Dce_Exit
 };
@@ -9047,14 +15601,14 @@ var hxsl__$Dce_VarDeps = function(v) {
 	this.deps = new haxe_ds_IntMap();
 };
 $hxClasses["hxsl._Dce.VarDeps"] = hxsl__$Dce_VarDeps;
-hxsl__$Dce_VarDeps.__name__ = true;
+hxsl__$Dce_VarDeps.__name__ = ["hxsl","_Dce","VarDeps"];
 hxsl__$Dce_VarDeps.prototype = {
 	__class__: hxsl__$Dce_VarDeps
 };
 var hxsl_Dce = function() {
 };
 $hxClasses["hxsl.Dce"] = hxsl_Dce;
-hxsl_Dce.__name__ = true;
+hxsl_Dce.__name__ = ["hxsl","Dce"];
 hxsl_Dce.prototype = {
 	dce: function(vertex,fragment) {
 		this.used = new haxe_ds_IntMap();
@@ -9398,7 +15952,7 @@ var hxsl_Eval = function() {
 	this.constants = new haxe_ds_ObjectMap();
 };
 $hxClasses["hxsl.Eval"] = hxsl_Eval;
-hxsl_Eval.__name__ = true;
+hxsl_Eval.__name__ = ["hxsl","Eval"];
 hxsl_Eval.prototype = {
 	setConstant: function(v,c) {
 		var value = hxsl_TExprDef.TConst(c);
@@ -11257,14 +17811,14 @@ var hxsl__$Flatten_Alloc = function(g,t,pos,size) {
 	this.size = size;
 };
 $hxClasses["hxsl._Flatten.Alloc"] = hxsl__$Flatten_Alloc;
-hxsl__$Flatten_Alloc.__name__ = true;
+hxsl__$Flatten_Alloc.__name__ = ["hxsl","_Flatten","Alloc"];
 hxsl__$Flatten_Alloc.prototype = {
 	__class__: hxsl__$Flatten_Alloc
 };
 var hxsl_Flatten = function() {
 };
 $hxClasses["hxsl.Flatten"] = hxsl_Flatten;
-hxsl_Flatten.__name__ = true;
+hxsl_Flatten.__name__ = ["hxsl","Flatten"];
 hxsl_Flatten.prototype = {
 	flatten: function(s,kind,constsToGlobal) {
 		this.globals = [];
@@ -11969,7 +18523,7 @@ var hxsl_Globals = function() {
 	this.map = new haxe_ds_IntMap();
 };
 $hxClasses["hxsl.Globals"] = hxsl_Globals;
-hxsl_Globals.__name__ = true;
+hxsl_Globals.__name__ = ["hxsl","Globals"];
 hxsl_Globals.allocID = function(path) {
 	if(hxsl_Globals.MAP == null) {
 		hxsl_Globals.MAP = new haxe_ds_StringMap();
@@ -11997,7 +18551,7 @@ hxsl_Globals.prototype = {
 };
 var js_Boot = function() { };
 $hxClasses["js.Boot"] = js_Boot;
-js_Boot.__name__ = true;
+js_Boot.__name__ = ["js","Boot"];
 js_Boot.getClass = function(o) {
 	if((o instanceof Array) && o.__enum__ == null) return Array; else {
 		var cl = o.__class__;
@@ -12119,6 +18673,9 @@ js_Boot.__instanceof = function(o,cl) {
 		return o.__enum__ == cl;
 	}
 };
+js_Boot.__cast = function(o,t) {
+	if(js_Boot.__instanceof(o,t)) return o; else throw new js__$Boot_HaxeError("Cannot cast " + Std.string(o) + " to " + Std.string(t));
+};
 js_Boot.__nativeClassName = function(o) {
 	var name = js_Boot.__toStr.call(o).slice(8,-1);
 	if(name == "Object" || name == "Function" || name == "Math" || name == "JSON") return null;
@@ -12136,7 +18693,7 @@ var hxsl_GlslOut = function() {
 	this.flipY = true;
 };
 $hxClasses["hxsl.GlslOut"] = hxsl_GlslOut;
-hxsl_GlslOut.__name__ = true;
+hxsl_GlslOut.__name__ = ["hxsl","GlslOut"];
 hxsl_GlslOut.prototype = {
 	add: function(v) {
 		this.buf.add(v);
@@ -12831,7 +19388,7 @@ hxsl_GlslOut.prototype = {
 var hxsl__$Linker_AllocatedVar = function() {
 };
 $hxClasses["hxsl._Linker.AllocatedVar"] = hxsl__$Linker_AllocatedVar;
-hxsl__$Linker_AllocatedVar.__name__ = true;
+hxsl__$Linker_AllocatedVar.__name__ = ["hxsl","_Linker","AllocatedVar"];
 hxsl__$Linker_AllocatedVar.prototype = {
 	__class__: hxsl__$Linker_AllocatedVar
 };
@@ -12844,14 +19401,14 @@ var hxsl__$Linker_ShaderInfos = function(n,v) {
 	this.write = new haxe_ds_IntMap();
 };
 $hxClasses["hxsl._Linker.ShaderInfos"] = hxsl__$Linker_ShaderInfos;
-hxsl__$Linker_ShaderInfos.__name__ = true;
+hxsl__$Linker_ShaderInfos.__name__ = ["hxsl","_Linker","ShaderInfos"];
 hxsl__$Linker_ShaderInfos.prototype = {
 	__class__: hxsl__$Linker_ShaderInfos
 };
 var hxsl_Linker = function() {
 };
 $hxClasses["hxsl.Linker"] = hxsl_Linker;
-hxsl_Linker.__name__ = true;
+hxsl_Linker.__name__ = ["hxsl","Linker"];
 hxsl_Linker.prototype = {
 	error: function(msg,p) {
 		return hxsl_Error.t(msg,p);
@@ -13477,7 +20034,7 @@ var hxsl_Printer = function(varId) {
 	this.varId = varId;
 };
 $hxClasses["hxsl.Printer"] = hxsl_Printer;
-hxsl_Printer.__name__ = true;
+hxsl_Printer.__name__ = ["hxsl","Printer"];
 hxsl_Printer.opStr = function(op) {
 	switch(op[1]) {
 	case 0:
@@ -13912,7 +20469,7 @@ var hxsl_AllocParam = function(name,pos,instance,index,type) {
 	this.type = type;
 };
 $hxClasses["hxsl.AllocParam"] = hxsl_AllocParam;
-hxsl_AllocParam.__name__ = true;
+hxsl_AllocParam.__name__ = ["hxsl","AllocParam"];
 hxsl_AllocParam.prototype = {
 	__class__: hxsl_AllocParam
 };
@@ -13923,14 +20480,14 @@ var hxsl_AllocGlobal = function(pos,path,type) {
 	this.type = type;
 };
 $hxClasses["hxsl.AllocGlobal"] = hxsl_AllocGlobal;
-hxsl_AllocGlobal.__name__ = true;
+hxsl_AllocGlobal.__name__ = ["hxsl","AllocGlobal"];
 hxsl_AllocGlobal.prototype = {
 	__class__: hxsl_AllocGlobal
 };
 var hxsl_RuntimeShaderData = function() {
 };
 $hxClasses["hxsl.RuntimeShaderData"] = hxsl_RuntimeShaderData;
-hxsl_RuntimeShaderData.__name__ = true;
+hxsl_RuntimeShaderData.__name__ = ["hxsl","RuntimeShaderData"];
 hxsl_RuntimeShaderData.prototype = {
 	__class__: hxsl_RuntimeShaderData
 };
@@ -13938,7 +20495,7 @@ var hxsl_RuntimeShader = function() {
 	this.id = hxsl_RuntimeShader.UID++;
 };
 $hxClasses["hxsl.RuntimeShader"] = hxsl_RuntimeShader;
-hxsl_RuntimeShader.__name__ = true;
+hxsl_RuntimeShader.__name__ = ["hxsl","RuntimeShader"];
 hxsl_RuntimeShader.prototype = {
 	__class__: hxsl_RuntimeShader
 };
@@ -13947,7 +20504,7 @@ var hxsl_ShaderList = function(s,n) {
 	this.next = n;
 };
 $hxClasses["hxsl.ShaderList"] = hxsl_ShaderList;
-hxsl_ShaderList.__name__ = true;
+hxsl_ShaderList.__name__ = ["hxsl","ShaderList"];
 hxsl_ShaderList.prototype = {
 	__class__: hxsl_ShaderList
 };
@@ -13955,7 +20512,7 @@ var hxsl__$ShaderList_ShaderIterator = function(l) {
 	this.l = l;
 };
 $hxClasses["hxsl._ShaderList.ShaderIterator"] = hxsl__$ShaderList_ShaderIterator;
-hxsl__$ShaderList_ShaderIterator.__name__ = true;
+hxsl__$ShaderList_ShaderIterator.__name__ = ["hxsl","_ShaderList","ShaderIterator"];
 hxsl__$ShaderList_ShaderIterator.prototype = {
 	hasNext: function() {
 		return this.l != null;
@@ -13973,7 +20530,7 @@ var hxsl_ShaderInstance = function(shader) {
 	this.params = new haxe_ds_IntMap();
 };
 $hxClasses["hxsl.ShaderInstance"] = hxsl_ShaderInstance;
-hxsl_ShaderInstance.__name__ = true;
+hxsl_ShaderInstance.__name__ = ["hxsl","ShaderInstance"];
 hxsl_ShaderInstance.prototype = {
 	__class__: hxsl_ShaderInstance
 };
@@ -13982,7 +20539,7 @@ var hxsl_ShaderGlobal = function(v,gid) {
 	this.globalId = gid;
 };
 $hxClasses["hxsl.ShaderGlobal"] = hxsl_ShaderGlobal;
-hxsl_ShaderGlobal.__name__ = true;
+hxsl_ShaderGlobal.__name__ = ["hxsl","ShaderGlobal"];
 hxsl_ShaderGlobal.prototype = {
 	__class__: hxsl_ShaderGlobal
 };
@@ -13992,7 +20549,7 @@ var hxsl_ShaderConst = function(v,pos,bits) {
 	this.bits = bits;
 };
 $hxClasses["hxsl.ShaderConst"] = hxsl_ShaderConst;
-hxsl_ShaderConst.__name__ = true;
+hxsl_ShaderConst.__name__ = ["hxsl","ShaderConst"];
 hxsl_ShaderConst.prototype = {
 	__class__: hxsl_ShaderConst
 };
@@ -14041,7 +20598,7 @@ var hxsl_SharedShader = function(src) {
 	}
 };
 $hxClasses["hxsl.SharedShader"] = hxsl_SharedShader;
-hxsl_SharedShader.__name__ = true;
+hxsl_SharedShader.__name__ = ["hxsl","SharedShader"];
 hxsl_SharedShader.prototype = {
 	getInstance: function(constBits) {
 		var i = this.instanceCache.h[constBits];
@@ -14173,14 +20730,14 @@ var hxsl__$Splitter_VarProps = function(v) {
 	this.write = 0;
 };
 $hxClasses["hxsl._Splitter.VarProps"] = hxsl__$Splitter_VarProps;
-hxsl__$Splitter_VarProps.__name__ = true;
+hxsl__$Splitter_VarProps.__name__ = ["hxsl","_Splitter","VarProps"];
 hxsl__$Splitter_VarProps.prototype = {
 	__class__: hxsl__$Splitter_VarProps
 };
 var hxsl_Splitter = function() {
 };
 $hxClasses["hxsl.Splitter"] = hxsl_Splitter;
-hxsl_Splitter.__name__ = true;
+hxsl_Splitter.__name__ = ["hxsl","Splitter"];
 hxsl_Splitter.prototype = {
 	split: function(s) {
 		var vfun = null;
@@ -14503,14 +21060,14 @@ var js__$Boot_HaxeError = function(val) {
 	if(Error.captureStackTrace) Error.captureStackTrace(this,js__$Boot_HaxeError);
 };
 $hxClasses["js._Boot.HaxeError"] = js__$Boot_HaxeError;
-js__$Boot_HaxeError.__name__ = true;
+js__$Boot_HaxeError.__name__ = ["js","_Boot","HaxeError"];
 js__$Boot_HaxeError.__super__ = Error;
 js__$Boot_HaxeError.prototype = $extend(Error.prototype,{
 	__class__: js__$Boot_HaxeError
 });
 var js_html__$CanvasElement_CanvasUtil = function() { };
 $hxClasses["js.html._CanvasElement.CanvasUtil"] = js_html__$CanvasElement_CanvasUtil;
-js_html__$CanvasElement_CanvasUtil.__name__ = true;
+js_html__$CanvasElement_CanvasUtil.__name__ = ["js","html","_CanvasElement","CanvasUtil"];
 js_html__$CanvasElement_CanvasUtil.getContextWebGL = function(canvas,attribs) {
 	var _g = 0;
 	var _g1 = ["webgl","experimental-webgl"];
@@ -14538,7 +21095,7 @@ var js_html_compat_ArrayBuffer = function(a) {
 	}
 };
 $hxClasses["js.html.compat.ArrayBuffer"] = js_html_compat_ArrayBuffer;
-js_html_compat_ArrayBuffer.__name__ = true;
+js_html_compat_ArrayBuffer.__name__ = ["js","html","compat","ArrayBuffer"];
 js_html_compat_ArrayBuffer.sliceImpl = function(begin,end) {
 	var u = new Uint8Array(this,begin,end == null?null:end - begin);
 	var result = new ArrayBuffer(u.byteLength);
@@ -14559,7 +21116,7 @@ var js_html_compat_DataView = function(buffer,byteOffset,byteLength) {
 	if(this.offset < 0 || this.length < 0 || this.offset + this.length > buffer.byteLength) throw new js__$Boot_HaxeError(haxe_io_Error.OutsideBounds);
 };
 $hxClasses["js.html.compat.DataView"] = js_html_compat_DataView;
-js_html_compat_DataView.__name__ = true;
+js_html_compat_DataView.__name__ = ["js","html","compat","DataView"];
 js_html_compat_DataView.prototype = {
 	getInt8: function(byteOffset) {
 		var v = this.buf.a[this.offset + byteOffset];
@@ -14648,7 +21205,7 @@ js_html_compat_DataView.prototype = {
 };
 var js_html_compat_Uint8Array = function() { };
 $hxClasses["js.html.compat.Uint8Array"] = js_html_compat_Uint8Array;
-js_html_compat_Uint8Array.__name__ = true;
+js_html_compat_Uint8Array.__name__ = ["js","html","compat","Uint8Array"];
 js_html_compat_Uint8Array._new = function(arg1,offset,length) {
 	var arr;
 	if(typeof(arg1) == "number") {
@@ -14715,9 +21272,9 @@ if(Array.prototype.indexOf) HxOverrides.indexOf = function(a,o,i) {
 };
 $hxClasses.Math = Math;
 String.prototype.__class__ = $hxClasses.String = String;
-String.__name__ = true;
+String.__name__ = ["String"];
 $hxClasses.Array = Array;
-Array.__name__ = true;
+Array.__name__ = ["Array"];
 Date.prototype.__class__ = $hxClasses.Date = Date;
 Date.__name__ = ["Date"];
 var Int = $hxClasses.Int = { __name__ : ["Int"]};
@@ -14728,11 +21285,43 @@ var Bool = $hxClasses.Bool = Boolean;
 Bool.__ename__ = ["Bool"];
 var Class = $hxClasses.Class = { __name__ : ["Class"]};
 var Enum = { };
+haxe_Resource.content = [];
 var __map_reserved = {}
+var hx__registerFont;
+hx__registerFont = function(name,data) {
+	var s;
+	var _this = window.document;
+	s = _this.createElement("style");
+	s.type = "text/css";
+	s.innerHTML = "@font-face{ font-family: " + name + "; src: url('data:font/ttf;base64," + data + "') format('truetype'); }";
+	window.document.getElementsByTagName("head")[0].appendChild(s);
+	var div;
+	var _this1 = window.document;
+	div = _this1.createElement("div");
+	div.style.fontFamily = name;
+	div.style.opacity = 0;
+	div.style.width = "1px";
+	div.style.height = "1px";
+	div.style.position = "fixed";
+	div.style.bottom = "0px";
+	div.style.right = "0px";
+	div.innerHTML = ".";
+	div.className = "hx__loadFont";
+	window.document.body.appendChild(div);
+};
+hx__registerFont("R_font_ttf","AAEAAAAMAIAAAwBAT1MvMkUHkm0AAAFIAAAAYGNtYXC8mLvZAAAFWAAAA1ZnYXNw//8AAwAANUwAAAAIZ2x5ZsNj/vkAAAqMAAAi7GhlYWQBsXbtAAAAzAAAADZoaGVhFXoNlQAAAQQAAAAkaG10eM9aWwQAAAGoAAADsGtlcm744/tUAAAteAAAAMZsb2NhRJI8pAAACLAAAAHabWF4cAD5AHMAAAEoAAAAIG5hbWUoC6SUAAAuQAAABMFwb3N0v6VKoAAAMwQAAAJFAAEAAAABAAAvfAdhXw889QALCAAAAAAAylDs8wAAAADKXD+UAGT+tQ2CBrYAAAAGAAEAAAAAAAAAAQAABrT+XgDeDeYAZABkDYIAAQAAAAAAAAAAAAAAAAAAAOwAAQAAAOwATQAEACQABQAAAAAAAAAAAAAAAAAAAAMAAgADBCYBkAAFAAgFmgUzAAABGwWaBTMAAAPRAGYCEgAAAgAFAAAAAAAAAIAAAKdQAABKAAAAAAAAAABITCAgAEAAIPsCBZr+ZgDNBrQBoiAAARFBAAAABAAFmgAAACAAAAQAAGQAAAAAAfwAAAH8AAAB3ABkAroAZASiAGQEogBkBhwAZASiAGQBjgBkAmUAZAJlAGQCQwBkA44AZAHcAGQC0QBkAdwAZAPVAGQEogBkAdwAZASiAGQEogBkBKIAZASiAGQEogBkBKIAZASiAGQEogBkAdwAZAHcAGQDjgBkA44AZAOOAGQEogBkBKIAZASiAGQEogBkBKIAZASiAGQEogBkBKIAZASiAGQEogBkAdwAZASiAGQEogBkBKIAZAUaAGQEogBkBKIAZASiAGQEogBkBKIAZASiAGQEogBkBKIAZASiAGQGPwBkBKYAZASiAGQEogBkAmQAZAPVAGQCZABkBKwAZARlAGQBxQBkBKIAZASiAGQEogBkBKIAZASiAGQEogBkBKIAZASiAGQB3ABkBKIAZASiAGQEogBkBRoAZASiAGQEogBkBKIAZASiAGQEogBkBKIAZASiAGQEogBkBKIAZAY/AGQEpgBkBKIAZASiAGQC1QBkAVgAZALVAGQDdQBkAdwAZASiAGQEogBkBAsAZASiAGQBWQBkBKMAZAN1AGQGmgBkArUAZAMYAGQDjwBkBlIAZALRAGQCtQBkA44AZAK1AGQCtQBkAcUAZASkAGQEVABkAdwAZAGhAGQBUgBkArUAZAMYAGQFvABkBgQAZAX4AGQEogBkBKIAZASiAGQEogBkBKIAZASiAGQEogBkB3MAZASiAGQEogBkBKIAZASiAGQEogBkAdwAZAHjAGQCbQBkA3UAZAUmAGQEogBkBKIAZASiAGQEogBkBKIAZASiAGQDdwBkBSwAZASiAGQEogBkBKIAZASiAGQEogBkBKIAZAlEAGQEogBkBKIAZASiAGQEogBkBKIAZASiAGQHcwBkBKIAZASiAGQEogBkBKIAZASiAGQB3ABkAeMAZAJtAGQDdQBkBSYAZASiAGQEogBkBKIAZASiAGQEogBkBKIAZAOOAGQFLABkBKIAZASiAGQEogBkBKIAZASiAGQEogBkBKIAZAHcAGQCbQBkAm0AZALRAGQCbQBkAdwAZAG+AGQB9ABkAvMAZALOAGQEmgBkBpgAZAHcAGQB3ABkAdwAZANRAGQDUQBkA1EAZAQjAGQEIwBkAq8AZAVJAGQBwQBkAcEAZAWGAGQJRABkBKIAZA3mAGQFOwBkCyAAZAUjAGQEogBkBKIAZAQjAGQEIwBkA44AZARvAGQF/gBkAqkAZAN1AGQDjgBkA44AZAZ+AGQJRABkAAAAAwAAAAMAAAAcAAEAAAAAAUwAAwABAAAAHAAEATAAAABGAEAABQAGAH4AoACsAK0A/wExAscCyQLdA34gFCAaIB4gIiAmIDogRCCkIKcgrCEWISIiAiIGIg8iEiIVIhoiHiIrIkgiZfAC+wL//wAAACAAoAChAK0ArgExAsYCyQLYA34gEyAYIBwgICAmIDkgRCCjIKcgrCEWISIiAiIGIg8iESIVIhkiHiIrIkgiZPAB+wH////jAAD/wQAA/8D/j/37/fr97Pyg4LfgtOCz4LLgr+Cd4JTgNuA04DDfx9+83t3e2t7S3tHewwAA3sfeu96f3oQQ6QXpAAEAAABEAAAAQgAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAFAAAAAAAAAAAAAAAAAAAAAMAEAB3AOQABgIKAAAAAAEAAAEAAAAAAAAAAAAAAAAAAAABAAIAAAAAAAAAAgAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAABAAAAAAADAAQABQAGAAcACAAJAAoACwAMAA0ADgAPABAAEQASABMAFAAVABYAFwAYABkAGgAbABwAHQAeAB8AIAAhACIAIwAkACUAJgAnACgAKQAqACsALAAtAC4ALwAwADEAMgAzADQANQA2ADcAOAA5ADoAOwA8AD0APgA/AEAAQQBCAEMARABFAEYARwBIAEkASgBLAEwATQBOAE8AUABRAFIAUwBUAFUAVgBXAFgAWQBaAFsAXABdAF4AXwBgAGEAAACEAIUAhwCJAJEAlgCcAKEAoACiAKQAowClAKcAqQCoAKoAqwCtAKwArgCvALEAswCyALQAtgC1ALoAuQC7ALwA0gBwAGMAZABoANQAdgCfAG4AagDeAHQAaQAAAIYAmADlAHEA6ADpAGYAdQDfAOIA4QAAAOYAawB6AAAApgC4AH8AYgBtAOQAAADnAOAAbAB7ANUAAwCAAIMAlQAAAAAAygDLAM8A0ADMAM0AtwAAAL8AAADYAGUA1gDXAOoA6wDTAHcAzgDRAAAAggCKAIEAiwCIAI0AjgCPAIwAkwCUAAAAkgCaAJsAmQDAAMEAyABvAMQAxQDGAHgAyQDHAMIAAAAAAFYAVgBWAFYAagB2AKYAyADYAPYBBAEaATABTgFkAXQBggGQAZ4BtAHCAdwB9AIMAiYCQgJUAnICjgKaAqYCvALKAuAC/AMcAzgDXANwA4gDogO4A9ID7AP6BA4EKgQ6BFgEcASGBJ4EvATeBPgFDAUgBTYFVgV4BZAFpgW4BcgF2gXwBf4GDAYUBhwGJAYsBjQGPAZEBkwGVAZcBmQGbAZ0BnwGhAaMBpQGnAakBqwGtAa8BsQGzAbUBtwG+gcIByYHOgdQB2wHjgfMB/IIBggoCD4IqAjCCM4I4AlaCWQJegmGCZ4JtgnECdwJ+goICiAKLgpEClAKdAqcCswK6gr2CwILDgsaCyYLMgtYC2QLcAt8C4gLlAugC6wLuAvEC+gL9AwADAwMGAwkDDAMSgxwDHwMiAyUDKAMrAzKDNYM3gzmDO4M9gz+DQYNDg0WDR4NJg0uDTYNPg1GDU4NVg1eDWYNbg12DX4Nhg2ODawNtA28DcQNzA3UDdwN5A3wDfgODA4gDigOOg5IDm4OgA6UDqAOrg68Ds4O4A7oDvQPAA8MDyQPSA9gD3APhA+WD6QPsA/YD+gQDBAcEEIQXhB2EIoQphC0EMoRGBE4EUYRUhFeEWoRdgAAAAQAZAAAA5wFmgADAAcAJAA4AAAzESERJSERIRc2NzYzMhYVFAYHDgEVFBcjJjU0EjU0JiMiBwYHEzc2MzIfARYVFA8BBiMiLwEmNTRkAzj8+gLU/SyvHxs1O1xwLkA/SBggI6NCOiYfGh5AOQsJCgw4CQo4DgcLCT0HBZr6ZjIFNuwcDx5fUDFjUFBoLyZfYTNMARxLOUIRDxn8/zoKCzwLCQsLPg4KRwkJCgACAGQAAAF4BZwAAwAHAAATESERFREhEWQBFP7sAYcEFfvrhf7+AQL//wBkBAoCVgWcACIACgAAAAMACgEsAAAAAgBkAAAEPgWcABsAHwAAASMRIREjNTM1IzUzESERMxEhETMVIxUzFSMRIQMzNSMCq7T+7H9/f38BFLQBFH9/f3/+7LS0tAF6/oYBeurl6gFp/pcBaf6X6uXq/oYCZOUAAQBk/1gEPgYyABMAACURIREhNTMVIRUhESERIRUjNSE1Azv9KQGbqAGX/ToCxv5pqP5l9gFjA0OWlvb+nfy9qKj2AP//AGQAAAW4BZwAIgBwAAAAIwBwA2f9NgACANhOAAAAAAIAZAAABD4FnAADAA0AAAERIRE1ESERIREhFSERAXgBwwED/CYD2v06Aln+nQFj6gEJ+7QFnPb+nQAAAAEAZAQKASoFnAADAAABESMRASrGBZz+bgGSAAABAGQAAAIBBZwACQAAKQEnETchFSMRMwIB/spnaAE1mpp+BKB+9vxQAAAAAAEAZAAAAgEFnAAJAAA3MxEjNSEXEQchZJqaATVoZ/7K9gOw9n77YH4AAAAAAQBkBCIB3wWcAA4AABMVJwcXBxc3FzcnNycHNftgN3NUSE5UQkJyKmAFnHgqVDxaPGZsPGYwVB5yAAAAAQBkAVsDKgQhAAsAAAEVIzUjNTM1MxUzFQJH6vn56uMCWf7+6t7e6gAAAAABAGT/EAF4AQIABgAAMyMRIREHI997ARRwnAEC/v7wAAEAZAJZAm0DQwADAAATIRUhZAIJ/fcDQ+oAAAABAGQAAAF4AQIAAwAAAREhEQF4/uwBAv7+AQIAAQBkAAADcQWcAAMAACkBASEBeP7sAfkBFAWcAAIAZAAABD4FnAADAAcAAAERIREFIREhBD78JgLX/j0BwwWc+mQFnPb8UAAAAQBkAAABeAWcAAMAACkBESEBeP7sARQFnAAAAAEAZAAABD4FnAALAAAlFSERIREhNSERIREEPvwmAtf9KQPa/Tr29gNDAWP2/L3+nQAAAAABAGQAAAQ+BZwACwAAEzUhESE1IREhNSERZAPa/CYC1/0pAtcEpvb6ZPYBY+oBYwABAGQAAAQ+BZwACQAAExEhESERIREhEWQBFAHDAQP+/QJZA0P9pwJZ+mQCWQAAAAABAGQAAAQ+BZwACwAAExEhFSERIREhNSERZAPa/ToCxvwmAtcCWQND9v6d/L32AWMAAAAAAgBkAAAEPgWcAAcACwAAAREhESERIRUBESERAXgCxvwmA9r9OgHDBKb+nfy9BZz2/bP+nQFjAAABAGQAAAQ+BZwABQAAASE1IREhAzv9KQPa/v0Epvb6ZAAAAAADAGQAAAQ+BZwAAwAHAAsAAAERIREBESERAREhEQQ+/CYBFAHD/j0BwwWc+mQFnPy9/p0BYwJN/p0BYwACAGQAAAQ+BZwABwALAAAlESERIREhNQERIREDO/0pA9r8JgEUAcP2AWMDQ/pk9gOw/p0BYwAA//8AZAAAAXgDowAiAHcAAAACABEAAAAA//8AZP8QAXgDowAiAHcAAAACAA8AAAAAAAEAZAEhAyoFBQAGAAATARUFARUBZALG/fUCC/06A/cBDurn/tfqAVwAAAD//wBkAckDKgRRACMA4wAAAQ4AAwDjAAD/cAAAAAEAZAEhAyoFBQAGAAAJATUBJTUBAyr9OgIL/fUCxgJ9/qTqASnn6v7yAAAAAgBkAAAEPgWcAAkADQAAExEhESE1IREhHQERIRFkAtf9KQPa/Tr+7AF1Ac4BY/b8veRz/v4BAgACAGQAAAQ+BZwAAwAPAAABNSMVEzUhESEVIREhESERAzumpv49Asb8JgPa/ZcCWdLSAZO6/FD2BZz8CQJHAAAAAgBkAAAEPgWcAAcACwAAASERIREhESEBESERAzv+Pf7sA9r+/f49AcMCWf2nBZz6ZASm/p0BYwADAGQAAAQ+BZwABgAKAA4AAAERBxcRIREBESERAREhEQQ+eXn8JgEUAcP+PQHDBZz94LO0/esFnPy9/p0BYwJN/p0BYwAAAAABAGQAAAQ+BZwABwAAJSEVIREhFSEBeALG/CYD2v069vYFnPYAAAAAAgBkAAAEPgWcAAUACQAAMxEhFxEHAyERIWQDcmhnnP49AcMFnH77YH4EpvxQAAAAAQBkAAAEPgWcAAsAAAERIRUhESEVIREhFQF4Asb9OgLG/CYD2gSm/p3q/p32BZz2AAAAAAEAZAAABD4FnAAJAAApAREhFSERIRUhAXj+7APa/ToCxv06BZz2/p3qAAAAAQBkAAAEPgWcAAsAAAEhESERIRUhESERIQIdAiH8JgPa/ToBw/7iA0P8vQWc9vxQAWMAAAEAZAAABD4FnAALAAApAREhESERIREhESEBeP7sARQBwwED/v3+PQWc/acCWfpkAlkAAAABAGQAAAF4BZwAAwAAKQERIQF4/uwBFAWcAAAAAQBkAAAEPgWcAAcAAAERIREhESERAXgBwwED/CYCa/6LBKb6ZAJrAAEAZAAABD4FnAAKAAApAREhEQEhCQEhAQF4/uwBFAHDAQP+HwHh/v3+PQWc/acCWf1E/SACWQAAAQBkAAAEPgWcAAUAACUhFSERIQF4Asb8JgEU9vYFnAABAGQAAAS2BZwADAAAKQERIQkBIREhEQMjAwF4/uwBFAEYASMBA/79yaLQBZz87QMT+mQCWf2nAlkAAAABAGQAAAQ+BZwACQAAKQERIQERIREhAQF4/uwBFAHDAQP+/f49BZz82wMl+mQDPQACAGQAAAQ+BZwAAwAHAAABESERBSERIQQ+/CYC1/49AcMFnPpkBZz2/FAAAAIAZAAABD4FnAAFAAkAACkBESERIRkBIREBeP7sA9r9OgHDBZz8vQJN/p0BYwAAAAIAZP8QBD4FnAAGAA4AAAERIREzJzMDIREhESMXIwM7/j3dXfIR/YsD2n953wEFA6H8UK/+WwWc+mTwAAIAZAAABD4FnAADAA0AAAERIREBESERIQEhASMRAXgBw/0pA9r+rwFR/v3+nmEEpv6dAWP7WgWc/L39pwJZ/acAAAAAAQBkAAAEPgWcAAsAABMRIRUhESERITUhEWQD2v06Asb8JgLXAlkDQ/b+nfy99gFjAAAAAAEAZAAABD4FnAAHAAABITUhFSERIQHZ/osD2v6v/uwEpvb2+1oAAAABAGQAAAQ+BZwABwAAASERIREhESEDOwED/CYBFAHDBZz6ZAWc+1oAAQBkAAAEPgWcAAYAAAEhASEBIRMDOwED/sf+sP6vARTYBZz6ZAWc+68AAAABAGQAAAXbBZwADAAAAQMhASEbASEbASEBIQMgdf65/wABGoiRARGRiAEa/wD+uQKQ/XAFnPxAA8D8QAPA+mQAAQBkAAEEQgWcAA0AAAEjASEbASEBMwEhCwEhAc0J/qQBFN/kAQP+lwkBXP7s3+T+/QLOAs7+OAHI/TP9MgHI/jgAAAABAGQAAAQ+BZwACAAAAREhEQEhGwEhAtT+7P6kARTf5AEDAs79MgLOAs7+OAHIAAABAGQAAAQ+BZwACQAAASE1IRUBIRUhNQLt/XcD2v2DAn38JgSm9vb8UPb2AAEAZAAAAgAFnAAHAAApARMhFSMRMwIA/mQBAZuamgWc9vxQAAEAZAAAA3EFnAADAAATIQEhZAEUAfn+7AWc+mQAAAAAAQBkAAACAAWcAAcAADczESM1IRMhZJqaAZsB/mT2A7D2+mQAAQBkAtYESAWcAAYAAAkBIwMBIwEDOgEO6uf+1+oBXAWc/ToCC/31AsYAAAABAGT/iAQBAAYAAwAAJRUhNQQB/GMGfn4AAAAAAQBkBcABYQaTAAMAABMXMydkZ5ZmBpPT0wAA//8AZAAABD4FnAACACQAAP//AGQAAAQ+BZwAAgAlAAD//wBkAAAEPgWcAAIAJgAA//8AZAAABD4FnAACACcAAP//AGQAAAQ+BZwAAgAoAAD//wBkAAAEPgWcAAIAKQAA//8AZAAABD4FnAACACoAAP//AGQAAAQ+BZwAAgArAAD//wBkAAABeAWcAAIALAAA//8AZAAABD4FnAACAC0AAP//AGQAAAQ+BZwAAgAuAAD//wBkAAAEPgWcAAIALwAA//8AZAAABLYFnAACADAAAP//AGQAAAQ+BZwAAgAxAAD//wBkAAAEPgWcAAIAMgAA//8AZAAABD4FnAACADMAAP//AGT/EAQ+BZwAAgA0AAD//wBkAAAEPgWcAAIANQAA//8AZAAABD4FnAACADYAAP//AGQAAAQ+BZwAAgA3AAD//wBkAAAEPgWcAAIAOAAA//8AZAAABD4FnAACADkAAP//AGQAAAXbBZwAAgA6AAD//wBkAAEEQgWcAAIAOwAA//8AZAAABD4FnAACADwAAP//AGQAAAQ+BZwAAgA9AAAAAQBkAAACcQWcAA8AABMRNyEVIxEHFxEzFSEnESfUaAE1mkNDmv7KZ3ADMwHrfvb+iF5M/nL2fgH8UQAAAQBk/2QA9AZ7AAMAABMRIxH0kAZ7+OkHFwAAAAEAZAAAAnEFnAAPAAABBxEHITUzETcnESM1IRcRAnFwZ/7KmkNDmgE1aALLUf4EfvYBjkxeAXj2fv4VAAEAZAI9AxEDtgAHAAATFzYENycGJmRSZwE7uWCJ8AMelnS/1HR7rAACAGQAAAF4BZwAAwAHAAABESERNREhEQF4/uwBFAQV++sEFYUBAv7+AAAAAAEAZACpBD4FMAAPAAABESEVIRUjNSERITUzFSEVAXgCxv5pqP5lAZuoAZcDpP6d6q6uA0OWlvYAAQBkAAAEPgWcABMAAAERITUhETMVIxEhFSE1MxEjNTMRBD7+/f7asbECKfwmnZqaBZz+RMb+ner+nfb2AWPqAlkAAAACAGQAxgOnBIIAGwAnAAABNxcHFhUUBxcHJwYjIicHJzcmNTQ3JzcXNjMyByIGFRQWMzI2NTQmAttyWnNGV11bYVZreFxxWnBJbGZacExcenpehYVeXYWFA9B5WnpigI9qelp/NkN4W3dkg55xhlqTJ5CJYWCJiWBhiQAAAQBkAAAEPgWcABYAAAkBIRsBIQEzFSMVMxUjFSE1IzUzNSM1Aa3+twEU3+QBA/6ql6urq/7suLi4AvUCp/44Acj9Wd5n3tLS3mfeAAIAZP9kAPUGewADAAcAABMRIxE1ETMR9ZGRApv8yQM3ugMm/NoAAAACAGT+vAQ/BqUACwAPAAATIRUhESERITUhESEBESERZQPa/ToCxfwmAtf9KgETAcQGpfb+qfpk9gFXAln+nQFjAAAAAAIAZAWoAxEGqwADAAcAAAERIRElESERAXj+7AKt/uwGqv7+AQIB/v4BAgAAAwBkAAcGNgXXAA8AHwBBAAABMgQSFRQCBCMiJAI1NBIkFyIEAhUUEgQzMiQSNTQCJBcTIy4BIyIGBw4BFRQWMzI3FwYjIgA1NAAzMhYXFjMyNjcDTbwBZcjF/p3Bwv6fxskBZbur/ru4tAFEsLABRLW4/rvEFikno3RXhisgKsCczHsnkv/T/uwBJuQyPlQZDBEYDAXXwP6bwsL+nMPDAWTCwgFlwECw/rqxsf69tbUBQ7GxAUawyf7afXtIOy6WUd/TqhTVARDCyQEcDBsJEx0AAAACAGQCzgJRBZwABwALAAABIxEjESERIwMVMzUB0OKKAe2B4uID+/7TAs79MgJTsbEAAAD//wBkAZ0CtASCACIA1gAAAAMA1gFXAAAAAQBkATIDKwNDAAUAAAEhNSETIwJ9/ecCxgGuAlnq/e8AAAAABABk/+EF7gVqAA8AHwBCAEwAAAEyBBIVFAIEIyIkAjU0EiQXIgQCFRQSBDMyJBI1NAIkBSEyFhUUBgcTFhcWFxUjASMRHgEzFSE1MjY3NjURNCcuASMTMj4BNTQmIyIHAye1AVLAvP6vurf+r7u+AVSxof7IrawBNKapATWqrf7K/dQBgpGXZnfRJh4TIrj+2kwGLUT+kDApCAcDByYs7XdsOnJWKC0Farb+qre6/q+7uwFRurcBVrY7qf7JqKn+zKurATSpqAE3qdWDXUt0H/7XNxIMBCIBlf7MIh0iIhYXEUwCCksOFhn+gy5UNFBvDwAA//8AZAW0Am0GngADABAAAANbAAAAAgBkAs4CUQWcAAMABwAAAREhEQUjETMCUf4TAWzi4gWc/TICznv+KAAAAP//AGQAAAMqBCEAIgAOAAAAAwDjAAD9pwABAGQCzgJRBZwACwAAARUhESE1ITUhESEVAlH+EwFs/pQB7f6dA0l7AaKxe/5fsgABAGQCzgJRBZwACwAAEzUhESE1ITUhNSE1ZAHt/hMBbP6UAWwFIXv9MnuydbEAAAABAGQFwAFhBpMAAwAAEwczN8pmlmcGk9PTAAAAAQBk/rUEQAPOAAkAAAEjEyERIREhESEBYf0CAQMBwwEU/SH+tQUZ/SgC2PwyAAAAAQBk/14D8AWoAA4AAAERIxEjESMRIAISPgEFFQOubU5+/rbHEp2WAkcFMfotAmv9lQJlAUQBV/xOEmUAAQBkAqEBeAOjAAMAAAERIREBeP7sA6P+/gECAAEAZP7IAT0AAAAMAAAXFTI+ASc3IwcVMhQGZE9sHmBIWklJGN5aHopISE5CMDAAAAEAZALOAO4FnAADAAATIxEz7oqKAs4CzgAAAAACAGQCzgJRBZwAAwAHAAABESERBSMRMwJR/hMBbOLiBZz9MgLOe/4oAAAA//8AZAGdArQEggAjANcBVwAAAAIA1wAAAAMAZP/9BVgFnAADAAcAEQAAKQEBIQEjETMBETMRMxEzESMRAXj+7AOqART8jYqKAbyK4oGBBZz9MgLO+44Bof7UASz9MgEtAAMAZAAABaAFnAADAAcAEwAAKQEBIQEjETMBFSERITUhNSERIRUBeP7sA6oBFPyNiooD8f4TAWz+lAHt/p0FnP0yAs764nsBorF7/l+yAAAAAwBk//0FlAWcAAMADQAZAAApAQEhAREzETMRMxEjEQE1IREhNSE1ITUhNQG0/uwDqgEU/kmK4oGB+1EB7f4TAWz+lAFsBZz7jgGh/tQBLP0yAS0D93v9MnuydbEAAAAAAgBkAAAEPgWcAAkADQAAAREhESEVIREhPQERIREEPv0pAtf8JgLGARQEJ/4y/p32A0PkcwEC/v4AAAD//wBkAAAEPgaTACIAJAAAAAMAQwFdAAD//wBkAAAEPgaTACIAJAAAAAMAdAGTAAD//wBkAAAEPgaUACIAJAAAAAMAwQEUAAD//wBkAAAEPga2ACIAJAAAAAMAyADYAAD//wBkAAAEPgarACIAJAAAAAMAaQCiAAD//wBkAAAEPgafACIAJAAAAAMAxgFXAAAAAgBkAAAHDwWcAA8AEwAAASERIREhFSERIRUhESEVIRkBIREDNf5D/uwGq/06Asb9OgLG/Cb+QwJZ/acFnPb+ner+nfYDQwFj/p0A//8AZP7IBD4FnAAiACYAAAADAHgBewAA//8AZAAABD4GkwAiACgAAAADAEMBbwAA//8AZAAABD4GkwAiACgAAAADAHQBkwAA//8AZAAABD4GlAAiACgAAAADAMEBIAAA//8AZAAABD4GqwAiACgAAAADAGkAnAAA//8AZAAAAXgGkwAiACwAAAACAEMAAAAA//8AZAAAAX8GkwAiACwAAAACAHQeAAAA//8AZAAAAgkGlAAiACxCAAACAMEAAAAA//8AZAAAAxEGqwAjACwAxgAAAAIAaQAAAAIAZAAABMIFnAAHABEAAAERIREhETMVJREhFxEHIREjNQH8AcP+PYP+aQNyaGf8jYQCWf6dA7D+nerqAll++2B+AlnqAAAA//8AZAAABD4GtgAiADEAAAADAMgA6gAA//8AZAAABD4GkwAiADIAAAADAEMBPwAA//8AZAAABD4GkwAiADIAAAADAHQBhwAA//8AZAAABD4GlAAiADIAAAADAMEBGgAA//8AZAAABD4GtgAiADIAAAADAMgAzAAA//8AZAAABD4GqwAiADIAAAADAGkAkAAAAAEAZAHsAxMEjAALAAABFwcnByc3JzcXNxcCX7Sms7GlsJ2mnaClA0a0prSwpbGdpZ2hpgADAGT/QATI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");
 var ArrayBuffer = typeof(window) != "undefined" && window.ArrayBuffer || typeof(global) != "undefined" && global.ArrayBuffer || js_html_compat_ArrayBuffer;
 if(ArrayBuffer.prototype.slice == null) ArrayBuffer.prototype.slice = js_html_compat_ArrayBuffer.sliceImpl;
 var DataView = typeof(window) != "undefined" && window.DataView || typeof(global) != "undefined" && global.DataView || js_html_compat_DataView;
 var Uint8Array = typeof(window) != "undefined" && window.Uint8Array || typeof(global) != "undefined" && global.Uint8Array || js_html_compat_Uint8Array._new;
+GameState._all = new haxe_ds_StringMap();
+format_tools_InflateImpl.LEN_EXTRA_BITS_TBL = [0,0,0,0,0,0,0,0,1,1,1,1,2,2,2,2,3,3,3,3,4,4,4,4,5,5,5,5,0,-1,-1];
+format_tools_InflateImpl.LEN_BASE_VAL_TBL = [3,4,5,6,7,8,9,10,11,13,15,17,19,23,27,31,35,43,51,59,67,83,99,115,131,163,195,227,258];
+format_tools_InflateImpl.DIST_EXTRA_BITS_TBL = [0,0,0,0,1,1,2,2,3,3,4,4,5,5,6,6,7,7,8,8,9,9,10,10,11,11,12,12,13,13,-1,-1];
+format_tools_InflateImpl.DIST_BASE_VAL_TBL = [1,2,3,4,5,7,9,13,17,25,33,49,65,97,129,193,257,385,513,769,1025,1537,2049,3073,4097,6145,8193,12289,16385,24577];
+format_tools_InflateImpl.CODE_LENGTHS_POS = [16,17,18,0,8,7,9,6,10,5,11,4,12,3,13,2,14,1,15];
+h2d_comp_Context.cachedIcons = new haxe_ds_ObjectMap();
+h2d_comp_Context.DEFAULT_CSS = "* {\r\n\tfont-family : \"Arial\";\r\n\tfont-size : 12px;\r\n\tcolor : white;\r\n\toffset : 0 0;\r\n\tborder : none;\r\n\tbackground-color : transparent;\r\n\ttext-align : left;\r\n\tpadding : 0;\r\n\tmargin : 0;\r\n}\r\n\r\ndiv.modal {\r\n\tlayout : dock;\r\n\tdock : full;\r\n\tbackground-color : rgba(0,0,0,0.8);\r\n}\r\n\r\nbutton, select {\r\n\tbackground-color : gradient(#434343, #4B4B4B, #383838, #3A3A3A);\r\n\tborder : 1px solid gradient(#A0A0A0,#909090,#707070,#606060);\r\n\tpadding : 2px 5px;\r\n}\r\n\r\nbutton:hover {\r\n\tbackground-color : gradient(#282828,#2A2A2A,#333333,#3B3B3B);\r\n\tborder : 1px solid gradient(#606060,#606060,#707070,#606060);\r\n\tmargin-top : 1px;\r\n\tpadding-bottom : 1px;\r\n}\r\n\r\n:disabled {\r\n\tcolor : #888;\r\n}\r\n\r\nbox {\r\n\tlayout : inline;\r\n\tspacing : 5 5;\r\n}\r\n\r\n:inline {\r\n\tlayout : inline;\r\n}\r\n\r\n:horizontal {\r\n\tlayout : horizontal;\r\n}\r\n\r\n:vertical {\r\n\tlayout : vertical;\r\n}\r\n\r\n:absolute {\r\n\tlayout : absolute;\r\n}\r\n\r\n:dock {\r\n\tlayout : dock;\r\n}\r\n\r\nbox.panel {\r\n\tbackground-color : gradient(#303030,#353535,#202020,#252525);\r\n}\r\n\r\nslider {\r\n\twidth : 100px;\r\n\theight : 3px;\r\n\tmargin : 7px 5px;\r\n\tbackground-color : #252525;\r\n\tborder : 1px solid gradient(#434343, #4B4B4B, #383838, #3A3A3A);\r\n}\r\n\r\nslider button, slider button:hover {\r\n\tmargin-top : -5px;\r\n\tpadding : 0px 2px;\r\n}\r\n\r\ncheckbox {\r\n\twidth : 9px;\r\n\theight : 9px;\r\n\tcolor : #fff;\r\n\tmargin-top : 3px;\r\n\ttick-spacing : 2px;\r\n\ttick-color : gradient(#C0C0C0,#B0B0B0,#888888,#707070);\r\n\tborder : 1px solid gradient(#A0A0A0,#909090,#707070,#606060);\r\n\tbackground-color : gradient(#303030,#252525,#252525,#252525);\r\n}\r\n\r\nitemlist {\r\n\tpadding : 5px;\r\n\tvertical-spacing : 3px;\r\n\tcursor-color : #333;\r\n\tselection-color : #000;\r\n\tborder : 1px solid gradient(#A0A0A0,#909090,#707070,#606060);\r\n\tbackground-color : gradient(#303030,#252525,#252525,#252525);\r\n\toverflow : hidden;\r\n}\r\n\r\ninput {\r\n\twidth : 80px;\r\n\theight : 14px;\r\n\tpadding : 2px 3px;\r\n\tborder : 1px solid gradient(#A0A0A0,#909090,#707070,#606060);\r\n\tbackground-color : gradient(#303030,#252525,#252525,#252525);\r\n\toverflow : hidden;\r\n}\r\n\r\ninput:focus {\r\n\tborder : 1px solid white;\r\n\tcursor-color : white;\r\n}\r\n\r\ncolor {\r\n\twidth : 16px;\r\n\theight : 14px;\r\n\tpadding : 1px;\r\n\tborder : 1px solid gradient(#A0A0A0,#909090,#707070,#606060);\r\n}\r\n\r\ncolor:hover {\r\n\tborder : 1px solid gradient(#C0C0C0,#B0B0B0,#888888,#707070);\r\n}\r\n\r\ncolorpicker {\r\n\twidth : 200px;\r\n\theight : 320px;\r\n\tlayout : absolute;\r\n\tborder : 1px solid gradient(#A0A0A0,#909090,#707070,#606060);\r\n\tbackground-color : gradient(#303030,#252525,#252525,#252525);\r\n}\r\n\r\ngradienteditor {\r\n\twidth : 450px;\r\n\theight : 200px;\r\n\tlayout : absolute;\r\n\tborder : 1px solid gradient(#A0A0A0,#909090,#707070,#606060);\r\n\tbackground-color : gradient(#303030,#252525,#252525,#252525);\r\n}\r\n\r\n:close {\r\n\ticon : url('data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAABAAAAAQCAIAAACQkWg2AAAAB3RJTUUH3QsICzInlD+yVAAAABd0RVh0U29mdHdhcmUAR0xEUE5HIHZlciAzLjRxhaThAAAACHRwTkdHTEQzAAAAAEqAKR8AAAAEZ0FNQQAAsY8L/GEFAAAABmJLR0QA/wD/AP+gvaeTAAAAOklEQVR4nGP4z/CfJMQw2DVAAJoiVEEMG9D0YBiBzUlwRdgsxOGH/9hVU0sDaU4izdPkBCuNY5oWGgC4sxwBPtUQzAAAAABJRU5ErkJggg=');\r\n\ticon-color : #999;\r\n}\r\n\r\nbutton:close {\r\n\twidth : 10px;\r\n\theight : 10px;\r\n\tpadding : 2px;\r\n\ticon-left : -1px;\r\n\ticon-top : -1px;\r\n}\r\n\r\nselect {\r\n\tpadding-left : 20px;\r\n\ticon : url('data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAA8AAAAPCAIAAAC0tAIdAAAAB3RJTUUH3QsGCg4t5gQ/sQAAABd0RVh0U29mdHdhcmUAR0xEUE5HIHZlciAzLjRxhaThAAAACHRwTkdHTEQzAAAAAEqAKR8AAAAEZ0FNQQAAsY8L/GEFAAAABmJLR0QA/wD/AP+gvaeTAAAAQElEQVR4nGP4z/CfeMSARRQOCKtGA/hUYwXYVeMBmKr34gZ4fUlamFBfNch9JPmSBNU4NeBxN7oGgr5EaKAwTABmAPc478+46wAAAABJRU5ErkJggg=');\r\n\ticon-left : 3px;\r\n\ticon-top : 3px;\r\n\ticon-color : #999;\r\n}\r\n\r\nselect:hover {\r\n\ticon-color : #FFF;\r\n}\r\n\r\nitemlist.popup {\r\n\tposition : absolute;\r\n}\r\n\r\nvalue input {\r\n\twidth : 40px;\r\n\ttext-align : center;\r\n}\r\n\r\nvalue input:focus {\r\n\ttext-align : left;\r\n}\r\n";
 h3d_Buffer.GUID = 0;
 h3d_impl_GlDriver.TFILTERS = [[[9728,9728],[9729,9729]],[[9728,9984],[9729,9985]],[[9728,9986],[9729,9987]]];
 h3d_impl_GlDriver.TWRAP = [33071,10497];
@@ -14743,23 +21332,29 @@ h3d_impl_GlDriver.OP = [32774,32778,32779];
 h3d_impl_MemoryManager.ALL_FLAGS = Type.allEnums(h3d_BufferFlag);
 h3d_mat_Texture.UID = 0;
 h3d_mat_Texture.COLOR_CACHE = new haxe_ds_IntMap();
-h3d_pass__$Border_BorderShader.SRC = "oy4:funsaoy4:argsahy4:exproy1:ejy13:hxsl.TExprDef:4:1aoR3jR4:5:3jy16:haxe.macro.Binop:4:0oR3jR4:1:1oy4:kindjy12:hxsl.VarKind:5:0y4:namey8:positiony4:typejy9:hxsl.Type:5:2i4jy12:hxsl.VecType:1:0y6:parentoR6r10R8y6:outputR10jR11:12:1ar9oR6r10R8y5:colorR10jR11:5:2i4r11R13r13y2:idi-128ghR16i-126gR16i-127gy1:poy4:filey72:%2Fhome%2Fwilliam%2Fdev%2Fhaxelib%2Fheaps%2Fgit%2Fh3d%2Fpass%2FBorder.hxy3:maxi295y3:mini280gy1:tr12goR3jR4:8:2oR3jR4:2:1jy12:hxsl.TGlobal:40:0R17oR18R19R20i302R21i298gR22jR11:13:1ahgaoR3jR4:1:1oR6jR7:1:0R8R9R10jR11:5:2i2r11R13oR6r30R8y5:inputR10jR11:12:1ar29hR16i-124gR16i-125gR17oR18R19R20i317R21i303gR22r31goR3jR4:0:1jy10:hxsl.Const:3:1zR17oR18R19R20i320R21i319gR22jR11:3:0goR3jR4:0:1jR25:3:1i1R17oR18R19R20i323R21i322gR22r41ghR17oR18R19R20i324R21i298gR22jR11:5:2i4r11gR17oR18R19R20i324R21i280gR22r12ghR17oR18R19R20i330R21i274gR22jR11:0:0gR6jy17:hxsl.FunctionKind:0:0y3:refoR6jR7:6:0R8y6:vertexR10jR11:13:1aoR1ahy3:retr53ghR16i-129gR29r53goR1ahR2oR3jR4:4:1aoR3jR4:5:3r7oR3jR4:1:1r15R17oR18R19R20i374R21i362gR22r16goR3jR4:1:1oR6jR7:2:0R8R15R10jR11:5:2i4r11R16i-123gR17oR18R19R20i382R21i377gR22r72gR17oR18R19R20i382R21i362gR22r16ghR17oR18R19R20i388R21i356gR22r53gR6jR26:1:0R27oR6r56R8y8:fragmentR10jR11:13:1aoR1ahR29r53ghR16i-130gR29r53ghR8y29:h3d.pass._Border.BorderShadery4:varsar55r80r13r32r70hg";
+h3d_pass__$Border_BorderShader.SRC = "oy4:funsaoy4:argsahy4:exproy1:ejy13:hxsl.TExprDef:4:1aoR3jR4:5:3jy16:haxe.macro.Binop:4:0oR3jR4:1:1oy4:kindjy12:hxsl.VarKind:5:0y4:namey8:positiony4:typejy9:hxsl.Type:5:2i4jy12:hxsl.VecType:1:0y6:parentoR6r10R8y6:outputR10jR11:12:1ar9oR6r10R8y5:colorR10jR11:5:2i4r11R13r13y2:idi-152ghR16i-150gR16i-151gy1:poy4:filey72:%2Fhome%2Fwilliam%2Fdev%2Fhaxelib%2Fheaps%2Fgit%2Fh3d%2Fpass%2FBorder.hxy3:maxi295y3:mini280gy1:tr12goR3jR4:8:2oR3jR4:2:1jy12:hxsl.TGlobal:40:0R17oR18R19R20i302R21i298gR22jR11:13:1ahgaoR3jR4:1:1oR6jR7:1:0R8R9R10jR11:5:2i2r11R13oR6r30R8y5:inputR10jR11:12:1ar29hR16i-148gR16i-149gR17oR18R19R20i317R21i303gR22r31goR3jR4:0:1jy10:hxsl.Const:3:1zR17oR18R19R20i320R21i319gR22jR11:3:0goR3jR4:0:1jR25:3:1i1R17oR18R19R20i323R21i322gR22r41ghR17oR18R19R20i324R21i298gR22jR11:5:2i4r11gR17oR18R19R20i324R21i280gR22r12ghR17oR18R19R20i330R21i274gR22jR11:0:0gR6jy17:hxsl.FunctionKind:0:0y3:refoR6jR7:6:0R8y6:vertexR10jR11:13:1aoR1ahy3:retr53ghR16i-153gR29r53goR1ahR2oR3jR4:4:1aoR3jR4:5:3r7oR3jR4:1:1r15R17oR18R19R20i374R21i362gR22r16goR3jR4:1:1oR6jR7:2:0R8R15R10jR11:5:2i4r11R16i-147gR17oR18R19R20i382R21i377gR22r72gR17oR18R19R20i382R21i362gR22r16ghR17oR18R19R20i388R21i356gR22r53gR6jR26:1:0R27oR6r56R8y8:fragmentR10jR11:13:1aoR1ahR29r53ghR16i-154gR29r53ghR8y29:h3d.pass._Border.BorderShadery4:varsar55r80r13r32r70hg";
+h3d_shader_ScreenShader.SRC = "oy4:funsaoy4:argsahy4:exproy1:ejy13:hxsl.TExprDef:4:1aoR3jR4:5:3jy16:haxe.macro.Binop:4:0oR3jR4:1:1oy4:kindjy12:hxsl.VarKind:5:0y4:namey8:positiony4:typejy9:hxsl.Type:5:2i4jy12:hxsl.VecType:1:0y6:parentoR6r10R8y6:outputR10jR11:12:1ar9oR6r10R8y5:colorR10jR11:5:2i4r11R13r13y2:idi-86ghR16i-84gR16i-85gy1:poy4:filey80:%2Fhome%2Fwilliam%2Fdev%2Fhaxelib%2Fheaps%2Fgit%2Fh3d%2Fshader%2FScreenShader.hxy3:maxi262y3:mini247gy1:tr12goR3jR4:8:2oR3jR4:2:1jy12:hxsl.TGlobal:40:0R17oR18R19R20i269R21i265gR22jR11:13:1ahgaoR3jR4:1:1oR6jR7:1:0R8R9R10jR11:5:2i2r11R13oR6r30R8y5:inputR10jR11:12:1ar29oR6r30R8y2:uvR10jR11:5:2i2r11R13r32R16i-83ghR16i-81gR16i-82gR17oR18R19R20i284R21i270gR22r31goR3jR4:0:1jy10:hxsl.Const:3:1zR17oR18R19R20i287R21i286gR22jR11:3:0goR3jR4:0:1jR26:3:1i1R17oR18R19R20i290R21i289gR22r43ghR17oR18R19R20i291R21i265gR22jR11:5:2i4r11gR17oR18R19R20i291R21i247gR22r12ghR17oR18R19R20i297R21i241gR22jR11:0:0gR6jy17:hxsl.FunctionKind:0:0y3:refoR6jR7:6:0R8y6:vertexR10jR11:13:1aoR1ahy3:retr55ghR16i-87gR30r55ghR8y23:h3d.shader.ScreenShadery4:varsar57r13r32hg";
+h3d_pass_ColorMatrixShader.SRC = "oy4:funsaoy4:argsahy4:exproy1:ejy13:hxsl.TExprDef:4:1aoR3jR4:5:3jy16:haxe.macro.Binop:4:0oR3jR4:1:1oy4:kindjy12:hxsl.VarKind:5:0y4:namey8:positiony4:typejy9:hxsl.Type:5:2i4jy12:hxsl.VecType:1:0y6:parentoR6r10R8y6:outputR10jR11:12:1ar9oR6r10R8y5:colorR10jR11:5:2i4r11R13r13y2:idi-112ghR16i-110gR16i-111gy1:poy4:filey80:%2Fhome%2Fwilliam%2Fdev%2Fhaxelib%2Fheaps%2Fgit%2Fh3d%2Fshader%2FScreenShader.hxy3:maxi262y3:mini247gy1:tr12goR3jR4:8:2oR3jR4:2:1jy12:hxsl.TGlobal:40:0R17oR18R19R20i269R21i265gR22jR11:13:1ahgaoR3jR4:1:1oR6jR7:1:0R8R9R10jR11:5:2i2r11R13oR6r30R8y5:inputR10jR11:12:1ar29oR6r30R8y2:uvR10jR11:5:2i2r11R13r32R16i-109ghR16i-107gR16i-108gR17oR18R19R20i284R21i270gR22r31goR3jR4:0:1jy10:hxsl.Const:3:1zR17oR18R19R20i287R21i286gR22jR11:3:0goR3jR4:0:1jR26:3:1i1R17oR18R19R20i290R21i289gR22r43ghR17oR18R19R20i291R21i265gR22jR11:5:2i4r11gR17oR18R19R20i291R21i247gR22r12ghR17oR18R19R20i297R21i241gR22jR11:0:0gR6jy17:hxsl.FunctionKind:0:0y3:refoR6jR7:6:0R8y6:vertexR10jR11:13:1aoR1ahy3:retr55ghR16i-124gR30r55goR1ahR2oR3jR4:4:1aoR3jR4:10:3oR3jR4:1:1oR6jR7:2:0R8y7:useMaskR10jR11:2:0y10:qualifiersajy17:hxsl.VarQualifier:0:1nhR16i-115gR17oR18y77:%2Fhome%2Fwilliam%2Fdev%2Fhaxelib%2Fheaps%2Fgit%2Fh3d%2Fpass%2FColorMatrix.hxR20i504R21i497gR22r71goR3jR4:4:1aoR3jR4:7:2oR6jR7:4:0R8R15R10jR11:5:2i4r11R16i-126goR3jR4:8:2oR3jR4:2:1jR23:33:0R17oR18R34R20i533R21i526gR22jR11:13:1aoR1aoR8y1:_R10jR11:10:0goR8y1:bR10jR11:5:2i2r11ghR30r81ghgaoR3jR4:1:1oR6r70R8y7:textureR10r91R16i-113gR17oR18R34R20i533R21i526gR22r91goR3jR4:1:1r34R17oR18R34R20i546R21i538gR22r35ghR17oR18R34R20i547R21i526gR22r81gR17oR18R34R20i548R21i514gR22r55goR3jR4:7:2oR6r80R8R25R10jR11:5:2i3r11R16i-127goR3jR4:8:2oR3jR4:2:1jR23:39:0R17oR18R34R20i567R21i563gR22jR11:13:1ahgaoR3jR4:1:1r34R17oR18R34R20i576R21i568gR22r35goR3jR4:0:1jR26:3:1i1R17oR18R34R20i579R21i578gR22r43ghR17oR18R34R20i580R21i563gR22r109gR17oR18R34R20i581R21i554gR22r55goR3jR4:7:2oR6r80R8y1:kR10r43R16i-128goR3jR4:8:2oR3jR4:2:1jR23:8:0R17oR18R34R20i598R21i595gR22jR11:13:1aoR1aoR8y1:aR10r43goR8R36R10r43ghR30r43ghgaoR3jR4:8:2oR3jR4:2:1jR23:29:0R17oR18R34R20i651R21i599gR22jR11:13:1aoR1aoR8R35R10r81goR8R36R10r81ghR30r43ghgaoR3jR4:8:2oR3jR4:2:1r84R17oR18R34R20i603R21i599gR22jR11:13:1aoR1aoR8R35R10r91gr92hR30r81ghgaoR3jR4:1:1oR6r70R8y4:maskR10r91R16i-119gR17oR18R34R20i603R21i599gR22r91goR3jR4:8:2oR3jR4:2:1jR23:38:0R17oR18R34R20i613R21i609gR22jR11:13:1ahgaoR3jR4:8:2oR3jR4:2:1r145R17oR18R34R20i616R21i614gR22jR11:13:1aoR1aoR8R35R10r109goR8R36R10jR11:5:2i3r11ghR30r43ghgaoR3jR4:1:1r108R17oR18R34R20i616R21i614gR22r109goR3jR4:1:1oR6r70R8y8:maskMatAR10jR11:5:2i3r11R16i-120gR17oR18R34R20i629R21i621gR22r194ghR17oR18R34R20i630R21i614gR22r43goR3jR4:8:2oR3jR4:2:1r145R17oR18R34R20i634R21i632gR22jR11:13:1aoR1aoR8R35R10r109gr185hR30r43ghgaoR3jR4:1:1r108R17oR18R34R20i634R21i632gR22r109goR3jR4:1:1oR6r70R8y8:maskMatBR10jR11:5:2i3r11R16i-121gR17oR18R34R20i647R21i639gR22r214ghR17oR18R34R20i648R21i632gR22r43ghR17oR18R34R20i649R21i609gR22jR11:5:2i2r11ghR17oR18R34R20i651R21i599gR22r81goR3jR4:1:1oR6r70R8y11:maskChannelR10jR11:5:2i4r11R16i-123gR17oR18R34R20i667R21i656gR22r226ghR17oR18R34R20i668R21i599gR22r43goR3jR4:1:1oR6r70R8y9:maskPowerR10r43R16i-122gR17oR18R34R20i679R21i670gR22r43ghR17oR18R34R20i680R21i595gR22r43gR17oR18R34R20i681R21i587gR22r55goR3jR4:7:2oR6r80R8y6:color2R10r81R16i-129goR3jR4:10:3oR3jR4:1:1oR6r70R8y15:hasSecondMatrixR10r71R32ajR33:0:1nhR16i-117gR17oR18R34R20i715R21i700gR22r71goR3jR4:5:3jR5:1:0oR3jR4:1:1r79R17oR18R34R20i723R21i718gR22r81goR3jR4:1:1oR6r70R8y7:matrix2R10jR11:7:0R16i-118gR17oR18R34R20i733R21i726gR22r255gR17oR18R34R20i733R21i718gR22r81goR3jR4:1:1r79R17oR18R34R20i741R21i736gR22r81gR17oR18R34R20i741R21i700gR22r81gR17oR18R34R20i742R21i687gR22r55goR3jR4:5:3r7oR3jR4:1:1r15R17oR18R34R20i760R21i748gR22r16goR3jR4:10:3oR3jR4:1:1oR6r70R8y10:maskInvertR10r71R32ajR33:0:1nhR16i-116gR17oR18R34R20i773R21i763gR22r71goR3jR4:8:2oR3jR4:2:1jR23:24:0R17oR18R34R20i779R21i776gR22jR11:13:1aoR1aoR8y1:xR10r81goR8y1:yR10r81goR8R39R10r43ghR30r81ghgaoR3jR4:1:1r240R17oR18R34R20i786R21i780gR22r81goR3jR4:5:3r249oR3jR4:1:1r79R17oR18R34R20i793R21i788gR22r81goR3jR4:1:1oR6r70R8y6:matrixR10r255R16i-114gR17oR18R34R20i802R21i796gR22r255gR17oR18R34R20i802R21i788gR22r81goR3jR4:1:1r130R17oR18R34R20i805R21i804gR22r43ghR17oR18R34R20i806R21i776gR22r81goR3jR4:8:2oR3jR4:2:1r280R17oR18R34R20i812R21i809gR22jR11:13:1ar284hgaoR3jR4:5:3r249oR3jR4:1:1r79R17oR18R34R20i818R21i813gR22r81goR3jR4:1:1r299R17oR18R34R20i827R21i821gR22r255gR17oR18R34R20i827R21i813gR22r81goR3jR4:1:1r240R17oR18R34R20i835R21i829gR22r81goR3jR4:1:1r130R17oR18R34R20i838R21i837gR22r43ghR17oR18R34R20i839R21i809gR22r81gR17oR18R34R20i839R21i763gR22r81gR17oR18R34R20i839R21i748gR22r16ghR17oR18R34R20i846R21i507gR22r55goR3jR4:5:3r7oR3jR4:1:1r15R17oR18R34R20i869R21i857gR22r16goR3jR4:5:3r249oR3jR4:8:2oR3jR4:2:1r84R17oR18R34R20i879R21i872gR22jR11:13:1aoR1aoR8R35R10r91gr92hR30r81ghgaoR3jR4:1:1r97R17oR18R34R20i879R21i872gR22r91goR3jR4:1:1r34R17oR18R34R20i892R21i884gR22r35ghR17oR18R34R20i893R21i872gR22r81goR3jR4:1:1r299R17oR18R34R20i902R21i896gR22r255gR17oR18R34R20i902R21i872gR22r81gR17oR18R34R20i902R21i857gR22r16gR17oR18R34R20i902R21i493gR22r55ghR17oR18R34R20i908R21i487gR22r55gR6jR27:1:0R28oR6r58R8y8:fragmentR10jR11:13:1aoR1ahR30r55ghR16i-125gR30r55ghR8y26:h3d.pass.ColorMatrixShadery4:varsar273r57r166r213r374r97r243r299r13r254r32r69r225r232r193hg";
+h3d_pass__$Copy_CopyShader.SRC = "oy4:funsaoy4:argsahy4:exproy1:ejy13:hxsl.TExprDef:4:1aoR3jR4:5:3jy16:haxe.macro.Binop:4:0oR3jR4:1:1oy4:kindjy12:hxsl.VarKind:5:0y4:namey8:positiony4:typejy9:hxsl.Type:5:2i4jy12:hxsl.VecType:1:0y6:parentoR6r10R8y6:outputR10jR11:12:1ar9oR6r10R8y5:colorR10jR11:5:2i4r11R13r13y2:idi-168ghR16i-166gR16i-167gy1:poy4:filey80:%2Fhome%2Fwilliam%2Fdev%2Fhaxelib%2Fheaps%2Fgit%2Fh3d%2Fshader%2FScreenShader.hxy3:maxi262y3:mini247gy1:tr12goR3jR4:8:2oR3jR4:2:1jy12:hxsl.TGlobal:40:0R17oR18R19R20i269R21i265gR22jR11:13:1ahgaoR3jR4:1:1oR6jR7:1:0R8R9R10jR11:5:2i2r11R13oR6r30R8y5:inputR10jR11:12:1ar29oR6r30R8y2:uvR10jR11:5:2i2r11R13r32R16i-165ghR16i-163gR16i-164gR17oR18R19R20i284R21i270gR22r31goR3jR4:0:1jy10:hxsl.Const:3:1zR17oR18R19R20i287R21i286gR22jR11:3:0goR3jR4:0:1jR26:3:1i1R17oR18R19R20i290R21i289gR22r43ghR17oR18R19R20i291R21i265gR22jR11:5:2i4r11gR17oR18R19R20i291R21i247gR22r12ghR17oR18R19R20i297R21i241gR22jR11:0:0gR6jy17:hxsl.FunctionKind:0:0y3:refoR6jR7:6:0R8y6:vertexR10jR11:13:1aoR1ahy3:retr55ghR16i-171gR30r55goR1ahR2oR3jR4:4:1aoR3jR4:5:3r7oR3jR4:1:1r15R17oR18y70:%2Fhome%2Fwilliam%2Fdev%2Fhaxelib%2Fheaps%2Fgit%2Fh3d%2Fpass%2FCopy.hxR20i211R21i199gR22r16goR3jR4:8:2oR3jR4:2:1jR23:33:0R17oR18R31R20i221R21i214gR22jR11:13:1aoR1aoR8y1:_R10jR11:10:0goR8y1:bR10jR11:5:2i2r11ghR30jR11:5:2i4r11ghgaoR3jR4:1:1oR6jR7:2:0R8y7:textureR10r80R16i-169gR17oR18R31R20i221R21i214gR22r80goR3jR4:5:3jR5:0:0oR3jR4:1:1r34R17oR18R31R20i234R21i226gR22r35goR3jR4:1:1oR6r88R8y7:uvDeltaR10jR11:5:2i2r11R16i-170gR17oR18R31R20i244R21i237gR22r98gR17oR18R31R20i244R21i226gR22jR11:5:2i2r11ghR17oR18R31R20i245R21i214gR22r83gR17oR18R31R20i245R21i199gR22r16ghR17oR18R31R20i251R21i193gR22r55gR6jR27:1:0R28oR6r58R8y8:fragmentR10jR11:13:1aoR1ahR30r55ghR16i-172gR30r55ghR8y25:h3d.pass._Copy.CopyShadery4:varsar57r111r87r13r32r97hg";
 h3d_pass_Default.__meta__ = { fields : { cameraView : { global : ["camera.view"]}, cameraProj : { global : ["camera.proj"]}, cameraPos : { global : ["camera.position"]}, cameraProjDiag : { global : ["camera.projDiag"]}, cameraViewProj : { global : ["camera.viewProj"]}, cameraInverseViewProj : { global : ["camera.inverseViewProj"]}, globalTime : { global : ["global.time"]}, pixelSize : { global : ["global.pixelSize"]}, globalModelView : { global : ["global.modelView"]}, globalModelViewInverse : { global : ["global.modelViewInverse"]}}};
-h3d_pass_Params.defaultKillAlphaThreshold = 0.5;
-h3d_shader_AmbientLight.SRC = "oy4:funsaoy4:argsahy4:exproy1:ejy13:hxsl.TExprDef:4:1aoR3jR4:5:3jy16:haxe.macro.Binop:4:0oR3jR4:1:1oy4:kindjy12:hxsl.VarKind:4:0y4:namey10:lightColory4:typejy9:hxsl.Type:5:2i3jy12:hxsl.VecType:1:0y2:idi-111gy1:poy4:filey80:%2Fhome%2Fwilliam%2Fdev%2Fhaxelib%2Fheaps%2Fgit%2Fh3d%2Fshader%2FAmbientLight.hxy3:maxi316y3:mini306gy1:tr12goR3jR4:1:1oR6jR7:0:0R8y12:ambientLightR10jR11:5:2i3r11y6:parentoR6r17R8y6:globalR10jR11:12:1ar16oR6r17R8y16:perPixelLightingR10jR11:2:0R21r19y10:qualifiersajy17:hxsl.VarQualifier:0:1nhR13i-108ghR13i-106gR13i-107gR14oR15R16R17i338R18i319gR19r18gR14oR15R16R17i338R18i306gR19r12ghR14oR15R16R17i344R18i300gR19jR11:0:0gR6jy17:hxsl.FunctionKind:2:0y3:refoR6jR7:6:0R8y8:__init__R10jR11:13:1aoR1ahy3:retr32ghR13i-112gR29r32goR1ahR2oR3jR4:4:1aoR3jR4:5:3r7oR3jR4:1:1oR6r10R8y15:lightPixelColorR10jR11:5:2i3r11R13i-110gR14oR15R16R17i399R18i384gR19r47goR3jR4:1:1r16R14oR15R16R17i421R18i402gR19r18gR14oR15R16R17i421R18i384gR19r47ghR14oR15R16R17i427R18i378gR19r32gR6jR26:1:0R27oR6r35R8y16:__init__fragmentR10jR11:13:1aoR1ahR29r32ghR13i-113gR29r32goR1ahR2oR3jR4:4:1aoR3jR4:10:3oR3jR4:6:2jy15:haxe.macro.Unop:2:0oR3jR4:1:1r21R14oR15R16R17i485R18i462gR19r22gR14oR15R16R17i485R18i461gR19r22goR3jR4:5:3jR5:20:1jR5:1:0oR3jR4:9:2oR3jR4:1:1oR6r10R8y10:pixelColorR10jR11:5:2i4r11R13i-109gR14oR15R16R17i498R18i488gR19r81gajy14:hxsl.Component:0:0jR34:1:0jR34:2:0hR14oR15R16R17i502R18i488gR19jR11:5:2i3r11goR3jR4:1:1r9R14oR15R16R17i516R18i506gR19r12gR14oR15R16R17i516R18i488gR19r90gnR14oR15R16R17i516R18i457gR19r32ghR14oR15R16R17i522R18i451gR19r32gR6jR26:0:0R27oR6r35R8y6:vertexR10jR11:13:1aoR1ahR29r32ghR13i-114gR29r32goR1ahR2oR3jR4:4:1aoR3jR4:10:3oR3jR4:1:1r21R14oR15R16R17i581R18i558gR19r22goR3jR4:5:3jR5:20:1r76oR3jR4:9:2oR3jR4:1:1r80R14oR15R16R17i594R18i584gR19r81gar85r86r87hR14oR15R16R17i598R18i584gR19jR11:5:2i3r11goR3jR4:1:1r46R14oR15R16R17i617R18i602gR19r47gR14oR15R16R17i617R18i584gR19r123gnR14oR15R16R17i617R18i554gR19r32ghR14oR15R16R17i623R18i548gR19r32gR6r57R27oR6r35R8y8:fragmentR10jR11:13:1aoR1ahR29r32ghR13i-115gR29r32ghR8y23:h3d.shader.AmbientLighty4:varsar101r9r34r133r58r19r80r46hg";
-h3d_shader_Base2d.SRC = "oy4:funsaoy4:argsahy4:exproy1:ejy13:hxsl.TExprDef:4:1aoR3jR4:5:3jy16:haxe.macro.Binop:4:0oR3jR4:1:1oy4:kindjy12:hxsl.VarKind:4:0y4:namey14:spritePositiony4:typejy9:hxsl.Type:5:2i4jy12:hxsl.VecType:1:0y2:idi-10gy1:poy4:filey74:%2Fhome%2Fwilliam%2Fdev%2Fhaxelib%2Fheaps%2Fgit%2Fh3d%2Fshader%2FBase2d.hxy3:maxi818y3:mini804gy1:tr12goR3jR4:8:2oR3jR4:2:1jy12:hxsl.TGlobal:40:0R14oR15R16R17i825R18i821gR19jR11:13:1ahgaoR3jR4:1:1oR6jR7:1:0R8y8:positionR10jR11:5:2i2r11y6:parentoR6r25R8y5:inputR10jR11:12:1ar24oR6r25R8y2:uvR10jR11:5:2i2r11R22r27R13i-3goR6r25R8y5:colorR10jR11:5:2i4r11R22r27R13i-4ghR13i-1gR13i-2gR14oR15R16R17i840R18i826gR19r26goR3jR4:1:1oR6jR7:2:0R8y6:zValueR10jR11:3:0R13i-8gR14oR15R16R17i848R18i842gR19r39goR3jR4:0:1jy10:hxsl.Const:3:1i1R14oR15R16R17i851R18i850gR19r39ghR14oR15R16R17i852R18i821gR19jR11:5:2i4r11gR14oR15R16R17i852R18i804gR19r12goR3jR4:10:3oR3jR4:1:1oR6r38R8y10:isRelativeR10jR11:2:0y10:qualifiersajy17:hxsl.VarQualifier:0:1nhR13i-15gR14oR15R16R17i872R18i862gR19r54goR3jR4:4:1aoR3jR4:5:3r7oR3jR4:9:2oR3jR4:1:1oR6r10R8y16:absolutePositionR10jR11:5:2i4r11R13i-11gR14oR15R16R17i898R18i882gR19r65gajy14:hxsl.Component:0:0hR14oR15R16R17i900R18i882gR19r39goR3jR4:8:2oR3jR4:2:1jR20:29:0R14oR15R16R17i928R18i903gR19jR11:13:1aoR1aoR8y1:_R10jR11:5:2i3r11goR8y1:bR10jR11:5:2i3r11ghy3:retr39ghgaoR3jR4:8:2oR3jR4:2:1jR20:39:0R14oR15R16R17i907R18i903gR19jR11:13:1ahgaoR3jR4:9:2oR3jR4:1:1r9R14oR15R16R17i922R18i908gR19r12gar69jR32:1:0hR14oR15R16R17i925R18i908gR19jR11:5:2i2r11goR3jR4:0:1jR27:3:1i1R14oR15R16R17i927R18i926gR19r39ghR14oR15R16R17i928R18i903gR19r81goR3jR4:1:1oR6r38R8y15:absoluteMatrixAR10jR11:5:2i3r11R13i-17gR14oR15R16R17i948R18i933gR19r111ghR14oR15R16R17i949R18i903gR19r39gR14oR15R16R17i949R18i882gR19r39goR3jR4:5:3r7oR3jR4:9:2oR3jR4:1:1r64R14oR15R16R17i972R18i956gR19r65gar99hR14oR15R16R17i974R18i956gR19r39goR3jR4:8:2oR3jR4:2:1r74R14oR15R16R17i1002R18i977gR19jR11:13:1aoR1aoR8R33R10jR11:5:2i3r11gr82hR35r39ghgaoR3jR4:8:2oR3jR4:2:1r88R14oR15R16R17i981R18i977gR19r92gaoR3jR4:9:2oR3jR4:1:1r9R14oR15R16R17i996R18i982gR19r12gar69r99hR14oR15R16R17i999R18i982gR19jR11:5:2i2r11goR3jR4:0:1jR27:3:1i1R14oR15R16R17i1001R18i1000gR19r39ghR14oR15R16R17i1002R18i977gR19r134goR3jR4:1:1oR6r38R8y15:absoluteMatrixBR10jR11:5:2i3r11R13i-18gR14oR15R16R17i1022R18i1007gR19r158ghR14oR15R16R17i1023R18i977gR19r39gR14oR15R16R17i1023R18i956gR19r39goR3jR4:5:3r7oR3jR4:9:2oR3jR4:1:1r64R14oR15R16R17i1046R18i1030gR19r65gajR32:2:0jR32:3:0hR14oR15R16R17i1049R18i1030gR19jR11:5:2i2r11goR3jR4:9:2oR3jR4:1:1r9R14oR15R16R17i1066R18i1052gR19r12gar171r172hR14oR15R16R17i1069R18i1052gR19jR11:5:2i2r11gR14oR15R16R17i1069R18i1030gR19r175ghR14oR15R16R17i1076R18i875gR19jR11:0:0goR3jR4:5:3r7oR3jR4:1:1r64R14oR15R16R17i1103R18i1087gR19r65goR3jR4:1:1r9R14oR15R16R17i1120R18i1106gR19r12gR14oR15R16R17i1120R18i1087gR19r65gR14oR15R16R17i1120R18i858gR19r188goR3jR4:5:3r7oR3jR4:1:1oR6jR7:3:0R8y12:calculatedUVR10jR11:5:2i2r11R13i-14gR14oR15R16R17i1138R18i1126gR19r204goR3jR4:10:3oR3jR4:1:1oR6r38R8y8:hasUVPosR10r54R29ajR30:0:1nhR13i-19gR14oR15R16R17i1149R18i1141gR19r54goR3jR4:5:3jR5:0:0oR3jR4:5:3jR5:1:0oR3jR4:1:1r29R14oR15R16R17i1160R18i1152gR19r30goR3jR4:9:2oR3jR4:1:1oR6r38R8y5:uvPosR10jR11:5:2i4r11R13i-20gR14oR15R16R17i1168R18i1163gR19r224gar171r172hR14oR15R16R17i1171R18i1163gR19jR11:5:2i2r11gR14oR15R16R17i1171R18i1152gR19jR11:5:2i2r11goR3jR4:9:2oR3jR4:1:1r223R14oR15R16R17i1179R18i1174gR19r224gar69r99hR14oR15R16R17i1182R18i1174gR19jR11:5:2i2r11gR14oR15R16R17i1182R18i1152gR19jR11:5:2i2r11goR3jR4:1:1r29R14oR15R16R17i1193R18i1185gR19r30gR14oR15R16R17i1193R18i1141gR19r244gR14oR15R16R17i1193R18i1126gR19r204goR3jR4:5:3r7oR3jR4:1:1oR6r10R8y10:pixelColorR10jR11:5:2i4r11R13i-12gR14oR15R16R17i1209R18i1199gR19r255goR3jR4:10:3oR3jR4:1:1r53R14oR15R16R17i1222R18i1212gR19r54goR3jR4:5:3r217oR3jR4:1:1oR6r38R8R25R10jR11:5:2i4r11R13i-16gR14oR15R16R17i1230R18i1225gR19r265goR3jR4:1:1r31R14oR15R16R17i1244R18i1233gR19r32gR14oR15R16R17i1244R18i1225gR19jR11:5:2i4r11goR3jR4:1:1r31R14oR15R16R17i1258R18i1247gR19r32gR14oR15R16R17i1258R18i1212gR19r273gR14oR15R16R17i1258R18i1199gR19r255goR3jR4:5:3r7oR3jR4:1:1oR6r10R8y12:textureColorR10jR11:5:2i4r11R13i-13gR14oR15R16R17i1276R18i1264gR19r284goR3jR4:8:2oR3jR4:2:1jR20:33:0R14oR15R16R17i1286R18i1279gR19jR11:13:1aoR1aoR8R33R10jR11:10:0goR8R34R10jR11:5:2i2r11ghR35jR11:5:2i4r11ghgaoR3jR4:1:1oR6r38R8y7:textureR10r296R13i-9gR14oR15R16R17i1286R18i1279gR19r296goR3jR4:1:1r202R14oR15R16R17i1303R18i1291gR19r204ghR14oR15R16R17i1304R18i1279gR19r299gR14oR15R16R17i1304R18i1264gR19r284goR3jR4:5:3jR5:20:1r217oR3jR4:1:1r254R14oR15R16R17i1320R18i1310gR19r255goR3jR4:1:1r283R14oR15R16R17i1336R18i1324gR19r284gR14oR15R16R17i1336R18i1310gR19r255ghR14oR15R16R17i1342R18i798gR19r188gR6jy17:hxsl.FunctionKind:2:0y3:refoR6jR7:6:0R8y8:__init__R10jR11:13:1aoR1ahR35r188ghR13i-24gR35r188goR1ahR2oR3jR4:4:1aoR3jR4:5:3r7oR3jR4:9:2oR3jR4:1:1r64R14oR15R16R17i1388R18i1372gR19r65gar69r99hR14oR15R16R17i1391R18i1372gR19jR11:5:2i2r11goR3jR4:5:3r217oR3jR4:3:1oR3jR4:5:3r215oR3jR4:9:2oR3jR4:1:1r64R14oR15R16R17i1411R18i1395gR19r65gar69r99hR14oR15R16R17i1414R18i1395gR19jR11:5:2i2r11goR3jR4:9:2oR3jR4:1:1oR6r38R8y8:viewportR10jR11:5:2i4r11R13i-23gR14oR15R16R17i1425R18i1417gR19r359gar69r99hR14oR15R16R17i1428R18i1417gR19jR11:5:2i2r11gR14oR15R16R17i1428R18i1395gR19jR11:5:2i2r11gR14oR15R16R17i1429R18i1394gR19r368goR3jR4:9:2oR3jR4:1:1r358R14oR15R16R17i1440R18i1432gR19r359gar171r172hR14oR15R16R17i1443R18i1432gR19jR11:5:2i2r11gR14oR15R16R17i1443R18i1394gR19jR11:5:2i2r11gR14oR15R16R17i1443R18i1372gR19r344goR3jR4:10:3oR3jR4:1:1oR6r38R8y10:pixelAlignR10r54R29ajR30:0:1nhR13i-21gR14oR15R16R17i1549R18i1539gR19r54goR3jR4:5:3jR5:20:1jR5:3:0oR3jR4:9:2oR3jR4:1:1r64R14oR15R16R17i1568R18i1552gR19r65gar69r99hR14oR15R16R17i1571R18i1552gR19jR11:5:2i2r11goR3jR4:1:1oR6r38R8y16:halfPixelInverseR10jR11:5:2i2r11R13i-22gR14oR15R16R17i1591R18i1575gR19r404gR14oR15R16R17i1591R18i1552gR19r401gnR14oR15R16R17i1591R18i1535gR19r188goR3jR4:5:3r7oR3jR4:1:1oR6jR7:5:0R8R21R10jR11:5:2i4r11R22oR6r414R8y6:outputR10jR11:12:1ar413oR6r414R8R25R10jR11:5:2i4r11R22r416R13i-7ghR13i-5gR13i-6gR14oR15R16R17i1612R18i1597gR19r415goR3jR4:1:1r64R14oR15R16R17i1631R18i1615gR19r65gR14oR15R16R17i1631R18i1597gR19r415ghR14oR15R16R17i1637R18i1366gR19r188gR6jR44:0:0R45oR6r327R8y6:vertexR10jR11:13:1aoR1ahR35r188ghR13i-25gR35r188goR1ahR2oR3jR4:4:1aoR3jR4:5:3r7oR3jR4:1:1r418R14oR15R16R17i1681R18i1669gR19r419goR3jR4:1:1r254R14oR15R16R17i1694R18i1684gR19r255gR14oR15R16R17i1694R18i1669gR19r419ghR14oR15R16R17i1700R18i1663gR19r188gR6jR44:1:0R45oR6r327R8y8:fragmentR10jR11:13:1aoR1ahR35r188ghR13i-26gR35r188ghR8y17:h3d.shader.Base2dy4:varsar202r431r37r110r209r326r64r452r303r386r403r283r223r9r416r53r157r27r264r254r358hg";
-h3d_shader_BaseMesh.SRC = "oy4:funsaoy4:argsahy4:exproy1:ejy13:hxsl.TExprDef:4:1aoR3jR4:5:3jy16:haxe.macro.Binop:4:0oR3jR4:1:1oy4:kindjy12:hxsl.VarKind:4:0y4:namey16:relativePositiony4:typejy9:hxsl.Type:5:2i3jy12:hxsl.VecType:1:0y2:idi-69gy1:poy4:filey76:%2Fhome%2Fwilliam%2Fdev%2Fhaxelib%2Fheaps%2Fgit%2Fh3d%2Fshader%2FBaseMesh.hxy3:maxi1010y3:mini994gy1:tr12goR3jR4:1:1oR6jR7:1:0R8y8:positionR10jR11:5:2i3r11y6:parentoR6r17R8y5:inputR10jR11:12:1ar16oR6r17R8y6:normalR10jR11:5:2i3r11R21r19R13i-63ghR13i-61gR13i-62gR14oR15R16R17i1027R18i1013gR19r18gR14oR15R16R17i1027R18i994gR19r12goR3jR4:5:3r7oR3jR4:1:1oR6r10R8y19:transformedPositionR10jR11:5:2i3r11R13i-70gR14oR15R16R17i1052R18i1033gR19r31goR3jR4:5:3jR5:1:0oR3jR4:1:1r9R14oR15R16R17i1071R18i1055gR19r12goR3jR4:8:2oR3jR4:2:1jy12:hxsl.TGlobal:50:0R14oR15R16R17i1090R18i1074gR19jR11:13:1ahgaoR3jR4:1:1oR6jR7:0:0R8y9:modelViewR10jR11:7:0R21oR6r49R8y6:globalR10jR11:12:1aoR6r49R8y4:timeR10jR11:3:0R21r51R13i-57goR6r49R8y9:pixelSizeR10jR11:5:2i2r11R21r51R13i-58gr48oR6r49R8y16:modelViewInverseR10r50R21r51y10:qualifiersajy17:hxsl.VarQualifier:3:0hR13i-60ghR13i-56gR31ar59hR13i-59gR14oR15R16R17i1090R18i1074gR19r50ghR14oR15R16R17i1099R18i1074gR19jR11:8:0gR14oR15R16R17i1099R18i1055gR19jR11:5:2i3r11gR14oR15R16R17i1099R18i1033gR19r31goR3jR4:5:3r7oR3jR4:1:1oR6r10R8y17:projectedPositionR10jR11:5:2i4r11R13i-73gR14oR15R16R17i1122R18i1105gR19r75goR3jR4:5:3r35oR3jR4:8:2oR3jR4:2:1jR25:40:0R14oR15R16R17i1129R18i1125gR19jR11:13:1ahgaoR3jR4:1:1r30R14oR15R16R17i1149R18i1130gR19r31goR3jR4:0:1jy10:hxsl.Const:3:1i1R14oR15R16R17i1152R18i1151gR19r54ghR14oR15R16R17i1153R18i1125gR19jR11:5:2i4r11goR3jR4:1:1oR6r49R8y8:viewProjR10r50R21oR6r49R8y6:cameraR10jR11:12:1aoR6r49R8y4:viewR10r50R21r99R13i-49goR6r49R8y4:projR10r50R21r99R13i-50goR6r49R8R20R10jR11:5:2i3r11R21r99R13i-51goR6r49R8y8:projDiagR10jR11:5:2i3r11R21r99R13i-52gr98oR6r49R8y15:inverseViewProjR10r50R21r99R13i-54goR6jR7:3:0R8y3:dirR10jR11:5:2i3r11R21r99R13i-55ghR13i-48gR13i-53gR14oR15R16R17i1171R18i1156gR19r50gR14oR15R16R17i1171R18i1125gR19jR11:5:2i4r11gR14oR15R16R17i1171R18i1105gR19r75goR3jR4:5:3r7oR3jR4:1:1oR6r10R8y17:transformedNormalR10jR11:5:2i3r11R13i-72gR14oR15R16R17i1194R18i1177gR19r122goR3jR4:8:2oR3jR4:2:1jR25:31:0R14oR15R16R17i1237R18i1197gR19jR11:13:1aoR1aoR8y1:_R10r69ghy3:retr69ghgaoR3jR4:3:1oR3jR4:5:3r35oR3jR4:1:1r21R14oR15R16R17i1210R18i1198gR19r22goR3jR4:8:2oR3jR4:2:1jR25:48:0R14oR15R16R17i1229R18i1213gR19jR11:13:1ahgaoR3jR4:1:1r48R14oR15R16R17i1229R18i1213gR19r50ghR14oR15R16R17i1236R18i1213gR19jR11:6:0gR14oR15R16R17i1236R18i1198gR19r69gR14oR15R16R17i1237R18i1197gR19r69ghR14oR15R16R17i1249R18i1197gR19r69gR14oR15R16R17i1249R18i1177gR19r122goR3jR4:5:3r7oR3jR4:1:1r108R14oR15R16R17i1265R18i1255gR19r110goR3jR4:8:2oR3jR4:2:1r127R14oR15R16R17i1307R18i1268gR19jR11:13:1aoR1aoR8R43R10jR11:5:2i3r11ghR44r69ghgaoR3jR4:3:1oR3jR4:5:3jR5:3:0oR3jR4:1:1r103R14oR15R16R17i1284R18i1269gR19r104goR3jR4:1:1r30R14oR15R16R17i1306R18i1287gR19r31gR14oR15R16R17i1306R18i1269gR19r175gR14oR15R16R17i1307R18i1268gR19r175ghR14oR15R16R17i1319R18i1268gR19r69gR14oR15R16R17i1319R18i1255gR19r110goR3jR4:5:3r7oR3jR4:1:1oR6r10R8y10:pixelColorR10jR11:5:2i4r11R13i-74gR14oR15R16R17i1335R18i1325gR19r198goR3jR4:1:1oR6jR7:2:0R8y5:colorR10jR11:5:2i4r11R13i-76gR14oR15R16R17i1343R18i1338gR19r204gR14oR15R16R17i1343R18i1325gR19r198goR3jR4:5:3r7oR3jR4:1:1oR6r10R8y5:depthR10r54R13i-75gR14oR15R16R17i1354R18i1349gR19r54goR3jR4:5:3jR5:2:0oR3jR4:9:2oR3jR4:1:1r74R14oR15R16R17i1374R18i1357gR19r75gajy14:hxsl.Component:2:0hR14oR15R16R17i1376R18i1357gR19r54goR3jR4:9:2oR3jR4:1:1r74R14oR15R16R17i1396R18i1379gR19r75gajR48:3:0hR14oR15R16R17i1398R18i1379gR19r54gR14oR15R16R17i1398R18i1357gR19r54gR14oR15R16R17i1398R18i1349gR19r54ghR14oR15R16R17i1404R18i988gR19jR11:0:0gR6jy17:hxsl.FunctionKind:2:0y3:refoR6jR7:6:0R8y8:__init__R10jR11:13:1aoR1ahR44r238ghR13i-77gR44r238goR1ahR2oR3jR4:4:1aoR3jR4:5:3r7oR3jR4:1:1r121R14oR15R16R17i1461R18i1444gR19r122goR3jR4:8:2oR3jR4:2:1r127R14oR15R16R17i1481R18i1464gR19jR11:13:1aoR1aoR8R43R10r122ghR44r69ghgaoR3jR4:1:1r121R14oR15R16R17i1481R18i1464gR19r122ghR14oR15R16R17i1493R18i1464gR19r69gR14oR15R16R17i1493R18i1444gR19r122ghR14oR15R16R17i1499R18i1438gR19r238gR6jR49:1:0R50oR6r241R8y16:__init__fragmentR10jR11:13:1aoR1ahR44r238ghR13i-78gR44r238goR1ahR2oR3jR4:4:1aoR3jR4:5:3r7oR3jR4:1:1oR6jR7:5:0R8R20R10jR11:5:2i4r11R21oR6r286R8y6:outputR10jR11:12:1ar285oR6r286R8R46R10jR11:5:2i4r11R21r288R13i-66goR6r286R8R47R10jR11:5:2i4r11R21r288R13i-67goR6r286R8R23R10jR11:5:2i4r11R21r288R13i-68ghR13i-64gR13i-65gR14oR15R16R17i1544R18i1529gR19r287goR3jR4:1:1r74R14oR15R16R17i1564R18i1547gR19r75gR14oR15R16R17i1564R18i1529gR19r287goR3jR4:5:3r7oR3jR4:1:1oR6r10R8y24:pixelTransformedPositionR10jR11:5:2i3r11R13i-71gR14oR15R16R17i1594R18i1570gR19r307goR3jR4:1:1r30R14oR15R16R17i1616R18i1597gR19r31gR14oR15R16R17i1616R18i1570gR19r307ghR14oR15R16R17i1622R18i1523gR19r238gR6jR49:0:0R50oR6r241R8y6:vertexR10jR11:13:1aoR1ahR44r238ghR13i-79gR44r238goR1ahR2oR3jR4:4:1aoR3jR4:5:3r7oR3jR4:1:1r290R14oR15R16R17i1666R18i1654gR19r291goR3jR4:1:1r197R14oR15R16R17i1679R18i1669gR19r198gR14oR15R16R17i1679R18i1654gR19r291goR3jR4:5:3r7oR3jR4:1:1r292R14oR15R16R17i1697R18i1685gR19r293goR3jR4:8:2oR3jR4:2:1jR25:52:0R14oR15R16R17i1704R18i1700gR19jR11:13:1aoR1aoR8y5:valueR10r54ghR44jR11:5:2i4r11ghgaoR3jR4:1:1r211R14oR15R16R17i1710R18i1705gR19r54ghR14oR15R16R17i1711R18i1700gR19r349gR14oR15R16R17i1711R18i1685gR19r293goR3jR4:5:3r7oR3jR4:1:1r294R14oR15R16R17i1730R18i1717gR19r295goR3jR4:8:2oR3jR4:2:1jR25:54:0R14oR15R16R17i1743R18i1733gR19jR11:13:1aoR1aoR8R56R10jR11:5:2i3r11ghR44jR11:5:2i4r11ghgaoR3jR4:1:1r121R14oR15R16R17i1761R18i1744gR19r122ghR14oR15R16R17i1762R18i1733gR19r373gR14oR15R16R17i1762R18i1717gR19r295ghR14oR15R16R17i1768R18i1648gR19r238gR6r273R50oR6r241R8y8:fragmentR10jR11:13:1aoR1ahR44r238ghR13i-80gR44r238ghR8y19:h3d.shader.BaseMeshy4:varsar74r211r318r121r240r385r274r9r99r288r51r19r30r202r306r197hg";
-h3d_shader_ScreenShader.SRC = "oy4:funsaoy4:argsahy4:exproy1:ejy13:hxsl.TExprDef:4:1aoR3jR4:5:3jy16:haxe.macro.Binop:4:0oR3jR4:1:1oy4:kindjy12:hxsl.VarKind:5:0y4:namey8:positiony4:typejy9:hxsl.Type:5:2i4jy12:hxsl.VecType:1:0y6:parentoR6r10R8y6:outputR10jR11:12:1ar9oR6r10R8y5:colorR10jR11:5:2i4r11R13r13y2:idi-121ghR16i-119gR16i-120gy1:poy4:filey80:%2Fhome%2Fwilliam%2Fdev%2Fhaxelib%2Fheaps%2Fgit%2Fh3d%2Fshader%2FScreenShader.hxy3:maxi262y3:mini247gy1:tr12goR3jR4:8:2oR3jR4:2:1jy12:hxsl.TGlobal:40:0R17oR18R19R20i269R21i265gR22jR11:13:1ahgaoR3jR4:1:1oR6jR7:1:0R8R9R10jR11:5:2i2r11R13oR6r30R8y5:inputR10jR11:12:1ar29oR6r30R8y2:uvR10jR11:5:2i2r11R13r32R16i-118ghR16i-116gR16i-117gR17oR18R19R20i284R21i270gR22r31goR3jR4:0:1jy10:hxsl.Const:3:1zR17oR18R19R20i287R21i286gR22jR11:3:0goR3jR4:0:1jR26:3:1i1R17oR18R19R20i290R21i289gR22r43ghR17oR18R19R20i291R21i265gR22jR11:5:2i4r11gR17oR18R19R20i291R21i247gR22r12ghR17oR18R19R20i297R21i241gR22jR11:0:0gR6jy17:hxsl.FunctionKind:0:0y3:refoR6jR7:6:0R8y6:vertexR10jR11:13:1aoR1ahy3:retr55ghR16i-122gR30r55ghR8y23:h3d.shader.ScreenShadery4:varsar57r13r32hg";
-h3d_shader_Blur.SRC = "oy4:funsaoy4:argsahy4:exproy1:ejy13:hxsl.TExprDef:4:1aoR3jR4:5:3jy16:haxe.macro.Binop:4:0oR3jR4:1:1oy4:kindjy12:hxsl.VarKind:5:0y4:namey8:positiony4:typejy9:hxsl.Type:5:2i4jy12:hxsl.VecType:1:0y6:parentoR6r10R8y6:outputR10jR11:12:1ar9oR6r10R8y5:colorR10jR11:5:2i4r11R13r13y2:idi-136ghR16i-134gR16i-135gy1:poy4:filey80:%2Fhome%2Fwilliam%2Fdev%2Fhaxelib%2Fheaps%2Fgit%2Fh3d%2Fshader%2FScreenShader.hxy3:maxi262y3:mini247gy1:tr12goR3jR4:8:2oR3jR4:2:1jy12:hxsl.TGlobal:40:0R17oR18R19R20i269R21i265gR22jR11:13:1ahgaoR3jR4:1:1oR6jR7:1:0R8R9R10jR11:5:2i2r11R13oR6r30R8y5:inputR10jR11:12:1ar29oR6r30R8y2:uvR10jR11:5:2i2r11R13r32R16i-133ghR16i-131gR16i-132gR17oR18R19R20i284R21i270gR22r31goR3jR4:0:1jy10:hxsl.Const:3:1zR17oR18R19R20i287R21i286gR22jR11:3:0goR3jR4:0:1jR26:3:1i1R17oR18R19R20i290R21i289gR22r43ghR17oR18R19R20i291R21i265gR22jR11:5:2i4r11gR17oR18R19R20i291R21i247gR22r12ghR17oR18R19R20i297R21i241gR22jR11:0:0gR6jy17:hxsl.FunctionKind:0:0y3:refoR6jR7:6:0R8y6:vertexR10jR11:13:1aoR1ahy3:retr55ghR16i-144gR30r55goR1ahR2oR3jR4:4:1aoR3jR4:10:3oR3jR4:1:1oR6jR7:2:0R8y7:isDepthR10jR11:2:0y10:qualifiersajy17:hxsl.VarQualifier:0:1nhR16i-139gR17oR18y72:%2Fhome%2Fwilliam%2Fdev%2Fhaxelib%2Fheaps%2Fgit%2Fh3d%2Fshader%2FBlur.hxR20i376R21i369gR22r71goR3jR4:4:1aoR3jR4:7:2oR6jR7:4:0R8y3:valR10r43R16i-146goR3jR4:0:1jR26:3:1d0R17oR18R34R20i398R21i396gR22r43gR17oR18R34R20i399R21i386gR22r55goR3jR4:13:3oR6r80R8y1:iR10jR11:1:0R16i-147goR3jR4:5:3jR5:21:0oR3jR4:5:3jR5:0:0oR3jR4:6:2jy15:haxe.macro.Unop:3:0oR3jR4:1:1oR6r70R8y7:QualityR10r89R32ajR33:0:1nhR16i-138gR17oR18R34R20i423R21i416gR22r89gR17oR18R34R20i423R21i415gR22r89goR3jR4:0:1jR26:2:1i1R17oR18R34R20i428R21i424gR22r89gR17oR18R34R20i428R21i415gR22r89goR3jR4:1:1r97R17oR18R34R20i435R21i428gR22r89gR17oR18R34R20i435R21i415gR22jR11:14:2r89jy13:hxsl.SizeDecl:0:1zgoR3jR4:5:3jR5:20:1r93oR3jR4:1:1r79R17oR18R34R20i447R21i444gR22r43goR3jR4:5:3jR5:1:0oR3jR4:8:2oR3jR4:2:1jR23:53:0R17oR18R34R20i457R21i451gR22jR11:13:1aoR1aoR8y5:valueR10jR11:5:2i4r11ghR30r43ghgaoR3jR4:8:2oR3jR4:2:1jR23:33:0R17oR18R34R20i465R21i458gR22jR11:13:1aoR1aoR8y1:_R10jR11:10:0goR8y1:bR10jR11:5:2i2r11ghR30jR11:5:2i4r11ghgaoR3jR4:1:1oR6r70R8y7:textureR10r145R16i-137gR17oR18R34R20i465R21i458gR22r145goR3jR4:5:3r93oR3jR4:1:1r34R17oR18R34R20i478R21i470gR22r35goR3jR4:5:3r123oR3jR4:1:1oR6r70R8y5:pixelR10jR11:5:2i2r11R16i-141gR17oR18R34R20i486R21i481gR22r162goR3jR4:8:2oR3jR4:2:1jR23:36:0R17oR18R34R20i494R21i489gR22jR11:13:1aoR1aoR8R40R10r89ghR30r43ghgaoR3jR4:1:1r88R17oR18R34R20i496R21i495gR22r89ghR17oR18R34R20i497R21i489gR22r43gR17oR18R34R20i497R21i481gR22r162gR17oR18R34R20i497R21i470gR22jR11:5:2i2r11ghR17oR18R34R20i498R21i458gR22r148ghR17oR18R34R20i499R21i451gR22r43goR3jR4:16:2oR3jR4:1:1oR6r70R8y6:valuesR10jR11:14:2r43jR39:1:1r97R16i-140gR17oR18R34R20i508R21i502gR22r194goR3jR4:10:3oR3jR4:5:3jR5:9:0oR3jR4:1:1r88R17oR18R34R20i510R21i509gR22r89goR3jR4:0:1jR26:2:1zR17oR18R34R20i514R21i513gR22r89gR17oR18R34R20i514R21i509gR22r71goR3jR4:6:2r95oR3jR4:1:1r88R17oR18R34R20i519R21i518gR22r89gR17oR18R34R20i519R21i517gR22r89goR3jR4:1:1r88R17oR18R34R20i523R21i522gR22r89gR17oR18R34R20i523R21i509gR22r89gR17oR18R34R20i524R21i502gR22r43gR17oR18R34R20i524R21i451gR22r43gR17oR18R34R20i524R21i444gR22r43gR17oR18R34R20i524R21i405gR22r55goR3jR4:5:3r7oR3jR4:1:1r15R17oR18R34R20i543R21i531gR22r16goR3jR4:8:2oR3jR4:2:1jR23:52:0R17oR18R34R20i550R21i546gR22jR11:13:1aoR1aoR8R40R10r43ghR30jR11:5:2i4r11ghgaoR3jR4:8:2oR3jR4:2:1jR23:21:0R17oR18R34R20i554R21i551gR22jR11:13:1aoR1aoR8R41R10r43goR8R42R10r43ghR30r43ghgaoR3jR4:1:1r79R17oR18R34R20i554R21i551gR22r43goR3jR4:0:1jR26:3:1d0.9999999R17oR18R34R20i568R21i559gR22r43ghR17oR18R34R20i569R21i551gR22r43ghR17oR18R34R20i570R21i546gR22r241gR17oR18R34R20i570R21i531gR22r16ghR17oR18R34R20i577R21i379gR22r55goR3jR4:4:1aoR3jR4:7:2oR6r80R8R15R10jR11:5:2i4r11R16i-148goR3jR4:8:2oR3jR4:2:1r22R17oR18R34R20i606R21i602gR22r26gaoR3jR4:0:1jR26:3:1zR17oR18R34R20i608R21i607gR22r43goR3jR4:0:1jR26:3:1zR17oR18R34R20i611R21i610gR22r43goR3jR4:0:1jR26:3:1zR17oR18R34R20i614R21i613gR22r43goR3jR4:0:1jR26:3:1zR17oR18R34R20i617R21i616gR22r43ghR17oR18R34R20i618R21i602gR22r275gR17oR18R34R20i619R21i590gR22r55goR3jR4:13:3oR6r80R8R36R10r89R16i-149goR3jR4:5:3r91oR3jR4:5:3r93oR3jR4:6:2r95oR3jR4:1:1r97R17oR18R34R20i643R21i636gR22r89gR17oR18R34R20i643R21i635gR22r89goR3jR4:0:1jR26:2:1i1R17oR18R34R20i648R21i644gR22r89gR17oR18R34R20i648R21i635gR22r89goR3jR4:1:1r97R17oR18R34R20i655R21i648gR22r89gR17oR18R34R20i655R21i635gR22jR11:14:2r89jR39:0:1zgoR3jR4:5:3jR5:20:1r93oR3jR4:1:1r274R17oR18R34R20i669R21i664gR22r275goR3jR4:5:3r123oR3jR4:8:2oR3jR4:2:1r138R17oR18R34R20i680R21i673gR22jR11:13:1aoR1aoR8R41R10r145gr146hR30r148ghgaoR3jR4:1:1r152R17oR18R34R20i680R21i673gR22r145goR3jR4:5:3r93oR3jR4:1:1r34R17oR18R34R20i693R21i685gR22r35goR3jR4:5:3r123oR3jR4:1:1r161R17oR18R34R20i701R21i696gR22r162goR3jR4:8:2oR3jR4:2:1r167R17oR18R34R20i709R21i704gR22jR11:13:1ar171hgaoR3jR4:1:1r302R17oR18R34R20i711R21i710gR22r89ghR17oR18R34R20i712R21i704gR22r43gR17oR18R34R20i712R21i696gR22r162gR17oR18R34R20i712R21i685gR22jR11:5:2i2r11ghR17oR18R34R20i713R21i673gR22r148goR3jR4:16:2oR3jR4:1:1r192R17oR18R34R20i722R21i716gR22r194goR3jR4:10:3oR3jR4:5:3r199oR3jR4:1:1r302R17oR18R34R20i724R21i723gR22r89goR3jR4:0:1jR26:2:1zR17oR18R34R20i728R21i727gR22r89gR17oR18R34R20i728R21i723gR22r71goR3jR4:6:2r95oR3jR4:1:1r302R17oR18R34R20i733R21i732gR22r89gR17oR18R34R20i733R21i731gR22r89goR3jR4:1:1r302R17oR18R34R20i737R21i736gR22r89gR17oR18R34R20i737R21i723gR22r89gR17oR18R34R20i738R21i716gR22r43gR17oR18R34R20i738R21i673gR22r148gR17oR18R34R20i738R21i664gR22r275gR17oR18R34R20i738R21i625gR22r55goR3jR4:5:3r7oR3jR4:1:1r15R17oR18R34R20i757R21i745gR22r16goR3jR4:1:1r274R17oR18R34R20i765R21i760gR22r275gR17oR18R34R20i765R21i745gR22r16ghR17oR18R34R20i772R21i583gR22r55gR17oR18R34R20i772R21i365gR22r55goR3jR4:10:3oR3jR4:1:1oR6r70R8y13:hasFixedColorR10r71R32ajR33:0:1nhR16i-142gR17oR18R34R20i794R21i781gR22r71goR3jR4:4:1aoR3jR4:5:3r7oR3jR4:9:2oR3jR4:1:1r15R17oR18R34R20i816R21i804gR22r16gajy14:hxsl.Component:0:0jR47:1:0jR47:2:0hR17oR18R34R20i820R21i804gR22jR11:5:2i3r11goR3jR4:9:2oR3jR4:1:1oR6r70R8y10:fixedColorR10jR11:5:2i4r11R16i-143gR17oR18R34R20i833R21i823gR22r441gar432r433r434hR17oR18R34R20i837R21i823gR22jR11:5:2i3r11gR17oR18R34R20i837R21i804gR22r437goR3jR4:5:3jR5:20:1r123oR3jR4:9:2oR3jR4:1:1r15R17oR18R34R20i856R21i844gR22r16gajR47:3:0hR17oR18R34R20i858R21i844gR22r43goR3jR4:9:2oR3jR4:1:1r440R17oR18R34R20i872R21i862gR22r441gar457hR17oR18R34R20i874R21i862gR22r43gR17oR18R34R20i874R21i844gR22r43ghR17oR18R34R20i881R21i797gR22r55gnR17oR18R34R20i881R21i777gR22r55ghR17oR18R34R20i886R21i359gR22r55gR6jR27:1:0R28oR6r58R8y8:fragmentR10jR11:13:1aoR1ahR30r55ghR16i-145gR30r55ghR8y15:h3d.shader.Blury4:varsar57r97r161r419r440r192r476r152r69r13r32hg";
-h3d_shader_ColorAdd.SRC = "oy4:funsaoy4:argsahy4:exproy1:ejy13:hxsl.TExprDef:4:1aoR3jR4:5:3jy16:haxe.macro.Binop:20:1jR5:0:0oR3jR4:9:2oR3jR4:1:1oy4:kindjy12:hxsl.VarKind:4:0y4:namey10:pixelColory4:typejy9:hxsl.Type:5:2i4jy12:hxsl.VecType:1:0y2:idi-150gy1:poy4:filey76:%2Fhome%2Fwilliam%2Fdev%2Fhaxelib%2Fheaps%2Fgit%2Fh3d%2Fshader%2FColorAdd.hxy3:maxi180y3:mini170gy1:tr14gajy14:hxsl.Component:0:0jR20:1:0jR20:2:0hR14oR15R16R17i184R18i170gR19jR11:5:2i3r13goR3jR4:1:1oR6jR7:2:0R8y5:colorR10jR11:5:2i3r13R13i-151gR14oR15R16R17i193R18i188gR19r27gR14oR15R16R17i193R18i170gR19r23ghR14oR15R16R17i199R18i164gR19jR11:0:0gR6jy17:hxsl.FunctionKind:1:0y3:refoR6jR7:6:0R8y8:fragmentR10jR11:13:1aoR1ahy3:retr34ghR13i-152gR25r34ghR8y19:h3d.shader.ColorAddy4:varsar36r25r11hg";
-h3d_shader_ColorKey.SRC = "oy4:funsaoy4:argsahy4:exproy1:ejy13:hxsl.TExprDef:4:1aoR3jR4:7:2oy4:kindjy12:hxsl.VarKind:4:0y4:namey5:cdiffy4:typejy9:hxsl.Type:5:2i4jy12:hxsl.VecType:1:0y2:idi-156goR3jR4:5:3jy16:haxe.macro.Binop:3:0oR3jR4:1:1oR5r8R7y12:textureColorR9jR10:5:2i4r9R12i-154gy1:poy4:filey76:%2Fhome%2Fwilliam%2Fdev%2Fhaxelib%2Fheaps%2Fgit%2Fh3d%2Fshader%2FColorKey.hxy3:maxi197y3:mini185gy1:tr15goR3jR4:1:1oR5jR6:2:0R7y8:colorKeyR9jR10:5:2i4r9R12i-153gR15oR16R17R18i208R19i200gR20r21gR15oR16R17R18i208R19i185gR20r10gR15oR16R17R18i209R19i173gR20jR10:0:0goR3jR4:10:3oR3jR4:5:3jR13:9:0oR3jR4:8:2oR3jR4:2:1jy12:hxsl.TGlobal:29:0R15oR16R17R18i223R19i218gR20jR10:13:1aoR1aoR7y1:_R9r10goR7y1:bR9jR10:5:2i4r9ghy3:retjR10:3:0ghgaoR3jR4:1:1r7R15oR16R17R18i223R19i218gR20r10goR3jR4:1:1r7R15oR16R17R18i233R19i228gR20r10ghR15oR16R17R18i234R19i218gR20r43goR3jR4:0:1jy10:hxsl.Const:3:1d1e-05R15oR16R17R18i244R19i237gR20r43gR15oR16R17R18i244R19i218gR20jR10:2:0goR3jR4:11:0R15oR16R17R18i254R19i247gR20r28gnR15oR16R17R18i254R19i214gR20r28ghR15oR16R17R18i260R19i167gR20r28gR5jy17:hxsl.FunctionKind:1:0y3:refoR5jR6:6:0R7y8:fragmentR9jR10:13:1aoR1ahR25r28ghR12i-155gR25r28ghR7y19:h3d.shader.ColorKeyy4:varsar69r19r14hg";
-h3d_shader_ColorMatrix.SRC = "oy4:funsaoy4:argsahy4:exproy1:ejy13:hxsl.TExprDef:4:1aoR3jR4:7:2oy4:kindjy12:hxsl.VarKind:4:0y4:namey3:rgby4:typejy9:hxsl.Type:5:2i3jy12:hxsl.VecType:1:0y2:idi-160goR3jR4:5:3jy16:haxe.macro.Binop:1:0oR3jR4:9:2oR3jR4:1:1oR5r8R7y10:pixelColorR9jR10:5:2i4r9R12i-157gy1:poy4:filey79:%2Fhome%2Fwilliam%2Fdev%2Fhaxelib%2Fheaps%2Fgit%2Fh3d%2Fshader%2FColorMatrix.hxy3:maxi194y3:mini184gy1:tr16gajy14:hxsl.Component:0:0jR21:1:0jR21:2:0hR15oR16R17R18i198R19i184gR20jR10:5:2i3r9goR3jR4:8:2oR3jR4:2:1jy12:hxsl.TGlobal:50:0R15oR16R17R18i207R19i201gR20jR10:13:1ahgaoR3jR4:1:1oR5jR6:2:0R7y6:matrixR9jR10:7:0R12i-158gR15oR16R17R18i207R19i201gR20r37ghR15oR16R17R18i216R19i201gR20jR10:8:0gR15oR16R17R18i216R19i184gR20r10gR15oR16R17R18i217R19i174gR20jR10:0:0goR3jR4:5:3jR13:4:0oR3jR4:9:2oR3jR4:1:1r15R15oR16R17R18i232R19i222gR20r16gajR21:3:0hR15oR16R17R18i234R19i222gR20jR10:3:0goR3jR4:9:2oR3jR4:3:1oR3jR4:5:3r12oR3jR4:1:1r15R15oR16R17R18i248R19i238gR20r16goR3jR4:1:1r35R15oR16R17R18i257R19i251gR20r37gR15oR16R17R18i257R19i238gR20jR10:5:2i4r9gR15oR16R17R18i258R19i237gR20r70gar55hR15oR16R17R18i260R19i237gR20r58gR15oR16R17R18i260R19i222gR20r58goR3jR4:5:3r49oR3jR4:9:2oR3jR4:1:1r15R15oR16R17R18i276R19i266gR20r16gar20r21r22hR15oR16R17R18i280R19i266gR20jR10:5:2i3r9goR3jR4:1:1r7R15oR16R17R18i286R19i283gR20r10gR15oR16R17R18i286R19i266gR20r86ghR15oR16R17R18i292R19i168gR20r47gR5jy17:hxsl.FunctionKind:1:0y3:refoR5jR6:6:0R7y8:fragmentR9jR10:13:1aoR1ahy3:retr47ghR12i-159gR27r47ghR7y22:h3d.shader.ColorMatrixy4:varsar95r35r15hg";
-h3d_shader_DirLight.SRC = "oy4:funsaoy4:argsahy4:exproy1:ejy13:hxsl.TExprDef:4:1aoR3jR4:5:3jy16:haxe.macro.Binop:20:1jR5:0:0oR3jR4:9:2oR3jR4:1:1oy4:kindjy12:hxsl.VarKind:4:0y4:namey10:lightColory4:typejy9:hxsl.Type:5:2i3jy12:hxsl.VecType:1:0y2:idi-83gy1:poy4:filey76:%2Fhome%2Fwilliam%2Fdev%2Fhaxelib%2Fheaps%2Fgit%2Fh3d%2Fshader%2FDirLight.hxy3:maxi274y3:mini264gy1:tr14gajy14:hxsl.Component:0:0jR20:1:0jR20:2:0hR14oR15R16R17i278R18i264gR19jR11:5:2i3r13goR3jR4:5:3jR5:1:0oR3jR4:1:1oR6jR7:2:0R8y5:colorR10jR11:5:2i3r13R13i-81gR14oR15R16R17i287R18i282gR19r29goR3jR4:8:2oR3jR4:2:1jy12:hxsl.TGlobal:22:0R14oR15R16R17i322R18i290gR19jR11:13:1aoR1aoR8y1:_R10jR11:3:0goR8y1:bR10r41ghy3:retr41ghgaoR3jR4:8:2oR3jR4:2:1jR22:29:0R14oR15R16R17i307R18i290gR19jR11:13:1aoR1aoR8R23R10jR11:5:2i3r13goR8R24R10jR11:5:2i3r13ghR25r41ghgaoR3jR4:1:1oR6r12R8y17:transformedNormalR10r54R13i-85gR14oR15R16R17i307R18i290gR19r54goR3jR4:1:1oR6r28R8y9:directionR10jR11:5:2i3r13R13i-82gR14oR15R16R17i321R18i312gR19r65ghR14oR15R16R17i322R18i290gR19r41goR3jR4:0:1jy10:hxsl.Const:3:1d0R14oR15R16R17i329R18i327gR19r41ghR14oR15R16R17i330R18i290gR19r41gR14oR15R16R17i330R18i282gR19r29gR14oR15R16R17i330R18i264gR19r23ghR14oR15R16R17i336R18i258gR19jR11:0:0gR6jy17:hxsl.FunctionKind:0:0y3:refoR6jR7:6:0R8y6:vertexR10jR11:13:1aoR1ahR25r82ghR13i-86gR25r82goR1ahR2oR3jR4:4:1aoR3jR4:5:3jR5:20:1r7oR3jR4:9:2oR3jR4:1:1oR6r12R8y15:lightPixelColorR10jR11:5:2i3r13R13i-84gR14oR15R16R17i383R18i368gR19r99gar18r19r20hR14oR15R16R17i387R18i368gR19jR11:5:2i3r13goR3jR4:5:3r25oR3jR4:1:1r27R14oR15R16R17i396R18i391gR19r29goR3jR4:8:2oR3jR4:2:1r34R14oR15R16R17i431R18i399gR19jR11:13:1aoR1aoR8R23R10r41gr42hR25r41ghgaoR3jR4:8:2oR3jR4:2:1r47R14oR15R16R17i416R18i399gR19jR11:13:1aoR1aoR8R23R10r54gr55hR25r41ghgaoR3jR4:1:1r60R14oR15R16R17i416R18i399gR19r54goR3jR4:1:1r64R14oR15R16R17i430R18i421gR19r65ghR14oR15R16R17i431R18i399gR19r41goR3jR4:0:1jR28:3:1d0R14oR15R16R17i438R18i436gR19r41ghR14oR15R16R17i439R18i399gR19r41gR14oR15R16R17i439R18i391gR19r29gR14oR15R16R17i439R18i368gR19r105ghR14oR15R16R17i445R18i362gR19r82gR6jR29:1:0R30oR6r85R8y8:fragmentR10jR11:13:1aoR1ahR25r82ghR13i-87gR25r82ghR8y19:h3d.shader.DirLighty4:varsar84r60r11r151r27r64r98hg";
-h3d_shader_Shadow.SRC = "oy4:funsaoy4:argsahy4:exproy1:ejy13:hxsl.TExprDef:4:1aoR3jR4:10:3oR3jR4:6:2jy15:haxe.macro.Unop:2:0oR3jR4:1:1oy4:kindjy12:hxsl.VarKind:2:0y4:namey8:perPixely4:typejy9:hxsl.Type:2:0y10:qualifiersajy17:hxsl.VarQualifier:0:1nhy2:idi-98gy1:poy4:filey74:%2Fhome%2Fwilliam%2Fdev%2Fhaxelib%2Fheaps%2Fgit%2Fh3d%2Fshader%2FShadow.hxy3:maxi416y3:mini408gy1:tr12gR15oR16R17R18i416R19i407gR20r12goR3jR4:5:3jy16:haxe.macro.Binop:4:0oR3jR4:1:1oR6jR7:3:0R8y9:shadowPosR10jR11:5:2i3jy12:hxsl.VecType:1:0R12ajR13:1:0hR14i-97gR15oR16R17R18i428R19i419gR20r25goR3jR4:5:3jR21:0:0oR3jR4:5:3jR21:1:0oR3jR4:5:3r33oR3jR4:1:1oR6jR7:4:0R8y19:transformedPositionR10jR11:5:2i3r24R14i-95gR15oR16R17R18i450R19i431gR20r38goR3jR4:1:1oR6jR7:0:0R8y4:projR10jR11:8:0y6:parentoR6r43R8y6:shadowR10jR11:12:1aoR6r43R8y3:mapR10jR11:10:0R26r45R14i-89gr42oR6r43R8y5:colorR10jR11:5:2i3r24R26r45R14i-91goR6r43R8y5:powerR10jR11:3:0R26r45R14i-92goR6r43R8y4:biasR10r52R26r45R14i-93ghR14i-88gR14i-90gR15oR16R17R18i464R19i453gR20r44gR15oR16R17R18i464R19i431gR20jR11:5:2i3r24goR3jR4:8:2oR3jR4:2:1jy12:hxsl.TGlobal:39:0R15oR16R17R18i471R19i467gR20jR11:13:1ahgaoR3jR4:0:1jy10:hxsl.Const:3:1d0.5R15oR16R17R18i475R19i472gR20r52goR3jR4:0:1jR33:3:1d-0.5R15oR16R17R18i481R19i477gR20r52goR3jR4:0:1jR33:3:1i1R15oR16R17R18i484R19i483gR20r52ghR15oR16R17R18i485R19i467gR20jR11:5:2i3r24gR15oR16R17R18i485R19i431gR20jR11:5:2i3r24goR3jR4:8:2oR3jR4:2:1r62R15oR16R17R18i492R19i488gR20r66gaoR3jR4:0:1jR33:3:1d0.5R15oR16R17R18i496R19i493gR20r52goR3jR4:0:1jR33:3:1d0.5R15oR16R17R18i501R19i498gR20r52goR3jR4:0:1jR33:3:1zR15oR16R17R18i504R19i503gR20r52ghR15oR16R17R18i505R19i488gR20jR11:5:2i3r24gR15oR16R17R18i505R19i431gR20jR11:5:2i3r24gR15oR16R17R18i505R19i419gR20r25gnR15oR16R17R18i505R19i403gR20jR11:0:0ghR15oR16R17R18i511R19i397gR20r113gR6jy17:hxsl.FunctionKind:0:0y3:refoR6jR7:6:0R8y6:vertexR10jR11:13:1aoR1ahy3:retr113ghR14i-99gR37r113goR1ahR2oR3jR4:4:1aoR3jR4:7:2oR6r37R8R22R10jR11:5:2i3r24R14i-101goR3jR4:10:3oR3jR4:1:1r10R15oR16R17R18i573R19i565gR20r12goR3jR4:5:3r31oR3jR4:5:3r33oR3jR4:5:3r33oR3jR4:1:1oR6r37R8y24:pixelTransformedPositionR10jR11:5:2i3r24R14i-96gR15oR16R17R18i600R19i576gR20r139goR3jR4:1:1r42R15oR16R17R18i614R19i603gR20r44gR15oR16R17R18i614R19i576gR20r59goR3jR4:8:2oR3jR4:2:1r62R15oR16R17R18i621R19i617gR20r66gaoR3jR4:0:1jR33:3:1d0.5R15oR16R17R18i625R19i622gR20r52goR3jR4:0:1jR33:3:1d-0.5R15oR16R17R18i631R19i627gR20r52goR3jR4:0:1jR33:3:1i1R15oR16R17R18i634R19i633gR20r52ghR15oR16R17R18i635R19i617gR20jR11:5:2i3r24gR15oR16R17R18i635R19i576gR20jR11:5:2i3r24goR3jR4:8:2oR3jR4:2:1r62R15oR16R17R18i642R19i638gR20r66gaoR3jR4:0:1jR33:3:1d0.5R15oR16R17R18i646R19i643gR20r52goR3jR4:0:1jR33:3:1d0.5R15oR16R17R18i651R19i648gR20r52goR3jR4:0:1jR33:3:1zR15oR16R17R18i654R19i653gR20r52ghR15oR16R17R18i655R19i638gR20jR11:5:2i3r24gR15oR16R17R18i655R19i576gR20r129goR3jR4:1:1r22R15oR16R17R18i670R19i661gR20r25gR15oR16R17R18i670R19i561gR20r129gR15oR16R17R18i671R19i545gR20r113goR3jR4:7:2oR6r37R8y5:depthR10r52R14i-102goR3jR4:8:2oR3jR4:2:1jR32:53:0R15oR16R17R18i696R19i690gR20jR11:13:1aoR1aoR8y5:valueR10jR11:5:2i4r24ghR37r52ghgaoR3jR4:8:2oR3jR4:2:1jR32:33:0R15oR16R17R18i707R19i697gR20jR11:13:1aoR1aoR8y1:_R10r48goR8y1:bR10jR11:5:2i2r24ghR37jR11:5:2i4r24ghgaoR3jR4:1:1r47R15oR16R17R18i707R19i697gR20r48goR3jR4:9:2oR3jR4:1:1r128R15oR16R17R18i721R19i712gR20r129gajy14:hxsl.Component:0:0jR43:1:0hR15oR16R17R18i724R19i712gR20jR11:5:2i2r24ghR15oR16R17R18i725R19i697gR20r224ghR15oR16R17R18i726R19i690gR20r52gR15oR16R17R18i727R19i678gR20r113goR3jR4:7:2oR6r37R8y4:zMaxR10r52R14i-103goR3jR4:8:2oR3jR4:2:1jR32:51:0R15oR16R17R18i919R19i908gR20jR11:13:1aoR1aoR8R41R10r52ghR37r52ghgaoR3jR4:9:2oR3jR4:1:1r128R15oR16R17R18i917R19i908gR20r129gajR43:2:0hR15oR16R17R18i919R19i908gR20r52ghR15oR16R17R18i930R19i908gR20r52gR15oR16R17R18i931R19i897gR20r113goR3jR4:7:2oR6r37R8y5:deltaR10r52R14i-104goR3jR4:5:3jR21:3:0oR3jR4:8:2oR3jR4:2:1jR32:21:0R15oR16R17R18i969R19i948gR20jR11:13:1aoR1aoR8R41R10r52goR8R42R10r52ghR37r52ghgaoR3jR4:3:1oR3jR4:5:3r31oR3jR4:1:1r200R15oR16R17R18i954R19i949gR20r52goR3jR4:1:1r53R15oR16R17R18i968R19i957gR20r52gR15oR16R17R18i968R19i949gR20r52gR15oR16R17R18i969R19i948gR20r52goR3jR4:1:1r247R15oR16R17R18i978R19i974gR20r52ghR15oR16R17R18i979R19i948gR20r52goR3jR4:1:1r247R15oR16R17R18i986R19i982gR20r52gR15oR16R17R18i986R19i948gR20r52gR15oR16R17R18i987R19i936gR20r113goR3jR4:7:2oR6r37R8y5:shadeR10r52R14i-105goR3jR4:8:2oR3jR4:2:1r250R15oR16R17R18i1032R19i1004gR20jR11:13:1aoR1aoR8R41R10r52ghR37r52ghgaoR3jR4:8:2oR3jR4:2:1jR32:9:0R15oR16R17R18i1007R19i1004gR20jR11:13:1aoR1aoR8R40R10r52ghR37r52ghgaoR3jR4:5:3r33oR3jR4:1:1r51R15oR16R17R18i1021R19i1009gR20r52goR3jR4:1:1r272R15oR16R17R18i1029R19i1024gR20r52gR15oR16R17R18i1029R19i1009gR20r52ghR15oR16R17R18i1032R19i1004gR20r52ghR15oR16R17R18i1043R19i1004gR20r52gR15oR16R17R18i1044R19i992gR20r113goR3jR4:5:3jR21:20:1r33oR3jR4:9:2oR3jR4:1:1oR6r37R8y10:pixelColorR10jR11:5:2i4r24R14i-94gR15oR16R17R18i1059R19i1049gR20r354gar235r236r264hR15oR16R17R18i1063R19i1049gR20jR11:5:2i3r24goR3jR4:5:3r31oR3jR4:5:3r33oR3jR4:3:1oR3jR4:5:3r274oR3jR4:0:1jR33:3:1i1R15oR16R17R18i1069R19i1068gR20r52goR3jR4:1:1r312R15oR16R17R18i1077R19i1072gR20r52gR15oR16R17R18i1077R19i1068gR20r52gR15oR16R17R18i1078R19i1067gR20r52goR3jR4:9:2oR3jR4:1:1r49R15oR16R17R18i1093R19i1081gR20r50gar235r236r264hR15oR16R17R18i1097R19i1081gR20jR11:5:2i3r24gR15oR16R17R18i1097R19i1067gR20r383goR3jR4:1:1r312R15oR16R17R18i1105R19i1100gR20r52gR15oR16R17R18i1105R19i1067gR20r383gR15oR16R17R18i1105R19i1049gR20r360ghR15oR16R17R18i1111R19i537gR20r113gR6jR34:1:0R35oR6r118R8y8:fragmentR10jR11:13:1aoR1ahR37r113ghR14i-100gR37r113ghR8y17:h3d.shader.Shadowy4:varsar117r396r45r22r36r353r138r10hg";
-h3d_shader_Skin.SRC = "oy4:funsaoy4:argsahy4:exproy1:ejy13:hxsl.TExprDef:4:1aoR3jR4:5:3jy16:haxe.macro.Binop:4:0oR3jR4:1:1oy4:kindjy12:hxsl.VarKind:4:0y4:namey19:transformedPositiony4:typejy9:hxsl.Type:5:2i3jy12:hxsl.VecType:1:0y2:idi-32gy1:poy4:filey72:%2Fhome%2Fwilliam%2Fdev%2Fhaxelib%2Fheaps%2Fgit%2Fh3d%2Fshader%2FSkin.hxy3:maxi506y3:mini487gy1:tr12goR3jR4:5:3jR5:0:0oR3jR4:5:3r16oR3jR4:5:3jR5:1:0oR3jR4:3:1oR3jR4:5:3r19oR3jR4:1:1oR6jR7:1:0R8y8:positionR10jR11:5:2i3r11y6:parentoR6r24R8y5:inputR10jR11:12:1ar23oR6r24R8y6:normalR10jR11:5:2i3r11R21r26R13i-29goR6r24R8y7:weightsR10jR11:5:2i3r11R21r26R13i-30goR6r24R8y7:indexesR10jR11:9:1i4R21r26R13i-31ghR13i-27gR13i-28gR14oR15R16R17i529R18i515gR19r25goR3jR4:16:2oR3jR4:1:1oR6jR7:2:0R8y13:bonesMatrixesR10jR11:14:2jR11:8:0jy13:hxsl.SizeDecl:1:1oR6r40R8y8:MaxBonesR10jR11:1:0y10:qualifiersajy17:hxsl.VarQualifier:0:1nhR13i-34gR13i-35gR14oR15R16R17i545R18i532gR19r47goR3jR4:9:2oR3jR4:1:1r32R14oR15R16R17i559R18i546gR19r33gajy14:hxsl.Component:0:0hR14oR15R16R17i561R18i546gR19r43gR14oR15R16R17i562R18i532gR19r41gR14oR15R16R17i562R18i515gR19jR11:5:2i3r11gR14oR15R16R17i563R18i514gR19r62goR3jR4:9:2oR3jR4:1:1r30R14oR15R16R17i579R18i566gR19r31gar55hR14oR15R16R17i581R18i566gR19jR11:3:0gR14oR15R16R17i581R18i514gR19r62goR3jR4:5:3r19oR3jR4:3:1oR3jR4:5:3r19oR3jR4:1:1r23R14oR15R16R17i604R18i590gR19r25goR3jR4:16:2oR3jR4:1:1r39R14oR15R16R17i620R18i607gR19r47goR3jR4:9:2oR3jR4:1:1r32R14oR15R16R17i634R18i621gR19r33gajR31:1:0hR14oR15R16R17i636R18i621gR19r43gR14oR15R16R17i637R18i607gR19r41gR14oR15R16R17i637R18i590gR19r62gR14oR15R16R17i638R18i589gR19r62goR3jR4:9:2oR3jR4:1:1r30R14oR15R16R17i654R18i641gR19r31gar90hR14oR15R16R17i656R18i641gR19r72gR14oR15R16R17i656R18i589gR19r62gR14oR15R16R17i656R18i514gR19jR11:5:2i3r11goR3jR4:5:3r19oR3jR4:3:1oR3jR4:5:3r19oR3jR4:1:1r23R14oR15R16R17i679R18i665gR19r25goR3jR4:16:2oR3jR4:1:1r39R14oR15R16R17i695R18i682gR19r47goR3jR4:9:2oR3jR4:1:1r32R14oR15R16R17i709R18i696gR19r33gajR31:2:0hR14oR15R16R17i711R18i696gR19r43gR14oR15R16R17i712R18i682gR19r41gR14oR15R16R17i712R18i665gR19r62gR14oR15R16R17i713R18i664gR19r62goR3jR4:9:2oR3jR4:1:1r30R14oR15R16R17i729R18i716gR19r31gar126hR14oR15R16R17i731R18i716gR19r72gR14oR15R16R17i731R18i664gR19r62gR14oR15R16R17i731R18i514gR19jR11:5:2i3r11gR14oR15R16R17i731R18i487gR19r12goR3jR4:5:3r7oR3jR4:1:1oR6r10R8y17:transformedNormalR10jR11:5:2i3r11R13i-33gR14oR15R16R17i754R18i737gR19r152goR3jR4:8:2oR3jR4:2:1jy12:hxsl.TGlobal:31:0R14oR15R16R17i766R18i757gR19jR11:13:1aoR1aoR8y5:valueR10r62ghy3:retr62ghgaoR3jR4:5:3r16oR3jR4:5:3r16oR3jR4:5:3r19oR3jR4:3:1oR3jR4:5:3r19oR3jR4:1:1r28R14oR15R16R17i786R18i774gR19r29goR3jR4:8:2oR3jR4:2:1jR33:48:0R14oR15R16R17i793R18i789gR19jR11:13:1ahgaoR3jR4:16:2oR3jR4:1:1r39R14oR15R16R17i807R18i794gR19r47goR3jR4:9:2oR3jR4:1:1r32R14oR15R16R17i821R18i808gR19r33gar55hR14oR15R16R17i823R18i808gR19r43gR14oR15R16R17i824R18i794gR19r41ghR14oR15R16R17i825R18i789gR19jR11:6:0gR14oR15R16R17i825R18i774gR19r62gR14oR15R16R17i826R18i773gR19r62goR3jR4:9:2oR3jR4:1:1r30R14oR15R16R17i842R18i829gR19r31gar55hR14oR15R16R17i844R18i829gR19r72gR14oR15R16R17i844R18i773gR19r62goR3jR4:5:3r19oR3jR4:3:1oR3jR4:5:3r19oR3jR4:1:1r28R14oR15R16R17i865R18i853gR19r29goR3jR4:8:2oR3jR4:2:1r176R14oR15R16R17i872R18i868gR19r180gaoR3jR4:16:2oR3jR4:1:1r39R14oR15R16R17i886R18i873gR19r47goR3jR4:9:2oR3jR4:1:1r32R14oR15R16R17i900R18i887gR19r33gar90hR14oR15R16R17i902R18i887gR19r43gR14oR15R16R17i903R18i873gR19r41ghR14oR15R16R17i904R18i868gR19r197gR14oR15R16R17i904R18i853gR19r62gR14oR15R16R17i905R18i852gR19r62goR3jR4:9:2oR3jR4:1:1r30R14oR15R16R17i921R18i908gR19r31gar90hR14oR15R16R17i923R18i908gR19r72gR14oR15R16R17i923R18i852gR19r62gR14oR15R16R17i923R18i773gR19jR11:5:2i3r11goR3jR4:5:3r19oR3jR4:3:1oR3jR4:5:3r19oR3jR4:1:1r28R14oR15R16R17i944R18i932gR19r29goR3jR4:8:2oR3jR4:2:1r176R14oR15R16R17i951R18i947gR19r180gaoR3jR4:16:2oR3jR4:1:1r39R14oR15R16R17i965R18i952gR19r47goR3jR4:9:2oR3jR4:1:1r32R14oR15R16R17i979R18i966gR19r33gar126hR14oR15R16R17i981R18i966gR19r43gR14oR15R16R17i982R18i952gR19r41ghR14oR15R16R17i983R18i947gR19r197gR14oR15R16R17i983R18i932gR19r62gR14oR15R16R17i984R18i931gR19r62goR3jR4:9:2oR3jR4:1:1r30R14oR15R16R17i1000R18i987gR19r31gar126hR14oR15R16R17i1002R18i987gR19r72gR14oR15R16R17i1002R18i931gR19r62gR14oR15R16R17i1002R18i773gR19jR11:5:2i3r11ghR14oR15R16R17i1003R18i757gR19r62gR14oR15R16R17i1003R18i737gR19r152ghR14oR15R16R17i1018R18i388gR19jR11:0:0gR6jy17:hxsl.FunctionKind:0:0y3:refoR6jR7:6:0R8y6:vertexR10jR11:13:1aoR1ahR35r301ghR13i-36gR35r301ghR8y15:h3d.shader.Skiny4:varsar303r151r39r26r9r42hg";
-h3d_shader_Texture.SRC = "oy4:funsaoy4:argsahy4:exproy1:ejy13:hxsl.TExprDef:4:1aoR3jR4:5:3jy16:haxe.macro.Binop:4:0oR3jR4:1:1oy4:kindjy12:hxsl.VarKind:4:0y4:namey12:calculatedUVy4:typejy9:hxsl.Type:5:2i2jy12:hxsl.VecType:1:0y2:idi-43gy1:poy4:filey75:%2Fhome%2Fwilliam%2Fdev%2Fhaxelib%2Fheaps%2Fgit%2Fh3d%2Fshader%2FTexture.hxy3:maxi370y3:mini358gy1:tr12goR3jR4:1:1oR6jR7:1:0R8y2:uvR10jR11:5:2i2r11y6:parentoR6r17R8y5:inputR10jR11:12:1ar16hR13i-37gR13i-38gR14oR15R16R17i381R18i373gR19r18gR14oR15R16R17i381R18i358gR19r12ghR14oR15R16R17i387R18i352gR19jR11:0:0gR6jy17:hxsl.FunctionKind:0:0y3:refoR6jR7:6:0R8y6:vertexR10jR11:13:1aoR1ahy3:retr28ghR13i-45gR26r28goR1ahR2oR3jR4:4:1aoR3jR4:7:2oR6r10R8y1:cR10jR11:5:2i4r11R13i-47goR3jR4:8:2oR3jR4:2:1jy12:hxsl.TGlobal:33:0R14oR15R16R17i434R18i427gR19jR11:13:1aoR1aoR8y1:_R10jR11:10:0goR8y1:bR10jR11:5:2i2r11ghR26r42ghgaoR3jR4:1:1oR6jR7:2:0R8y7:textureR10r52R13i-42gR14oR15R16R17i434R18i427gR19r52goR3jR4:1:1r9R14oR15R16R17i451R18i439gR19r12ghR14oR15R16R17i452R18i427gR19r42gR14oR15R16R17i453R18i419gR19r28goR3jR4:10:3oR3jR4:5:3jR5:14:0oR3jR4:1:1oR6r59R8y9:killAlphaR10jR11:2:0y10:qualifiersajy17:hxsl.VarQualifier:0:1nhR13i-40gR14oR15R16R17i471R18i462gR19r74goR3jR4:5:3jR5:9:0oR3jR4:5:3jR5:3:0oR3jR4:9:2oR3jR4:1:1r41R14oR15R16R17i476R18i475gR19r42gajy14:hxsl.Component:3:0hR14oR15R16R17i478R18i475gR19jR11:3:0goR3jR4:1:1oR6r59R8y18:killAlphaThresholdR10r91R13i-41gR14oR15R16R17i499R18i481gR19r91gR14oR15R16R17i499R18i475gR19r91goR3jR4:0:1jy10:hxsl.Const:3:1zR14oR15R16R17i503R18i502gR19r91gR14oR15R16R17i503R18i475gR19r74gR14oR15R16R17i503R18i462gR19r74goR3jR4:11:0R14oR15R16R17i513R18i506gR19r28gnR14oR15R16R17i513R18i458gR19r28goR3jR4:10:3oR3jR4:1:1oR6r59R8y8:additiveR10r74R33ajR34:0:1nhR13i-39gR14oR15R16R17i531R18i523gR19r74goR3jR4:5:3jR5:20:1jR5:0:0oR3jR4:1:1oR6r10R8y10:pixelColorR10jR11:5:2i4r11R13i-44gR14oR15R16R17i549R18i539gR19r123goR3jR4:1:1r41R14oR15R16R17i554R18i553gR19r42gR14oR15R16R17i554R18i539gR19r123goR3jR4:5:3jR5:20:1jR5:1:0oR3jR4:1:1r122R14oR15R16R17i580R18i570gR19r123goR3jR4:1:1r41R14oR15R16R17i585R18i584gR19r42gR14oR15R16R17i585R18i570gR19r123gR14oR15R16R17i585R18i519gR19r28ghR14oR15R16R17i591R18i413gR19r28gR6jR23:1:0R24oR6r31R8y8:fragmentR10jR11:13:1aoR1ahR26r28ghR13i-46gR26r28ghR8y18:h3d.shader.Texturey4:varsar9r30r147r113r58r93r19r73r122hg";
+h3d_shader_AmbientLight.SRC = "oy4:funsaoy4:argsahy4:exproy1:ejy13:hxsl.TExprDef:4:1aoR3jR4:5:3jy16:haxe.macro.Binop:4:0oR3jR4:1:1oy4:kindjy12:hxsl.VarKind:4:0y4:namey10:lightColory4:typejy9:hxsl.Type:5:2i3jy12:hxsl.VecType:1:0y2:idi-142gy1:poy4:filey80:%2Fhome%2Fwilliam%2Fdev%2Fhaxelib%2Fheaps%2Fgit%2Fh3d%2Fshader%2FAmbientLight.hxy3:maxi316y3:mini306gy1:tr12goR3jR4:1:1oR6jR7:0:0R8y12:ambientLightR10jR11:5:2i3r11y6:parentoR6r17R8y6:globalR10jR11:12:1ar16oR6r17R8y16:perPixelLightingR10jR11:2:0R21r19y10:qualifiersajy17:hxsl.VarQualifier:0:1nhR13i-139ghR13i-137gR13i-138gR14oR15R16R17i338R18i319gR19r18gR14oR15R16R17i338R18i306gR19r12ghR14oR15R16R17i344R18i300gR19jR11:0:0gR6jy17:hxsl.FunctionKind:2:0y3:refoR6jR7:6:0R8y8:__init__R10jR11:13:1aoR1ahy3:retr32ghR13i-143gR29r32goR1ahR2oR3jR4:4:1aoR3jR4:5:3r7oR3jR4:1:1oR6r10R8y15:lightPixelColorR10jR11:5:2i3r11R13i-141gR14oR15R16R17i399R18i384gR19r47goR3jR4:1:1r16R14oR15R16R17i421R18i402gR19r18gR14oR15R16R17i421R18i384gR19r47ghR14oR15R16R17i427R18i378gR19r32gR6jR26:1:0R27oR6r35R8y16:__init__fragmentR10jR11:13:1aoR1ahR29r32ghR13i-144gR29r32goR1ahR2oR3jR4:4:1aoR3jR4:10:3oR3jR4:6:2jy15:haxe.macro.Unop:2:0oR3jR4:1:1r21R14oR15R16R17i485R18i462gR19r22gR14oR15R16R17i485R18i461gR19r22goR3jR4:5:3jR5:20:1jR5:1:0oR3jR4:9:2oR3jR4:1:1oR6r10R8y10:pixelColorR10jR11:5:2i4r11R13i-140gR14oR15R16R17i498R18i488gR19r81gajy14:hxsl.Component:0:0jR34:1:0jR34:2:0hR14oR15R16R17i502R18i488gR19jR11:5:2i3r11goR3jR4:1:1r9R14oR15R16R17i516R18i506gR19r12gR14oR15R16R17i516R18i488gR19r90gnR14oR15R16R17i516R18i457gR19r32ghR14oR15R16R17i522R18i451gR19r32gR6jR26:0:0R27oR6r35R8y6:vertexR10jR11:13:1aoR1ahR29r32ghR13i-145gR29r32goR1ahR2oR3jR4:4:1aoR3jR4:10:3oR3jR4:1:1r21R14oR15R16R17i581R18i558gR19r22goR3jR4:5:3jR5:20:1r76oR3jR4:9:2oR3jR4:1:1r80R14oR15R16R17i594R18i584gR19r81gar85r86r87hR14oR15R16R17i598R18i584gR19jR11:5:2i3r11goR3jR4:1:1r46R14oR15R16R17i617R18i602gR19r47gR14oR15R16R17i617R18i584gR19r123gnR14oR15R16R17i617R18i554gR19r32ghR14oR15R16R17i623R18i548gR19r32gR6r57R27oR6r35R8y8:fragmentR10jR11:13:1aoR1ahR29r32ghR13i-146gR29r32ghR8y23:h3d.shader.AmbientLighty4:varsar101r9r34r133r58r19r80r46hg";
+h3d_shader_Base2d.SRC = "oy4:funsaoy4:argsahy4:exproy1:ejy13:hxsl.TExprDef:4:1aoR3jR4:5:3jy16:haxe.macro.Binop:4:0oR3jR4:1:1oy4:kindjy12:hxsl.VarKind:4:0y4:namey14:spritePositiony4:typejy9:hxsl.Type:5:2i4jy12:hxsl.VecType:1:0y2:idi-64gy1:poy4:filey74:%2Fhome%2Fwilliam%2Fdev%2Fhaxelib%2Fheaps%2Fgit%2Fh3d%2Fshader%2FBase2d.hxy3:maxi818y3:mini804gy1:tr12goR3jR4:8:2oR3jR4:2:1jy12:hxsl.TGlobal:40:0R14oR15R16R17i825R18i821gR19jR11:13:1ahgaoR3jR4:1:1oR6jR7:1:0R8y8:positionR10jR11:5:2i2r11y6:parentoR6r25R8y5:inputR10jR11:12:1ar24oR6r25R8y2:uvR10jR11:5:2i2r11R22r27R13i-57goR6r25R8y5:colorR10jR11:5:2i4r11R22r27R13i-58ghR13i-55gR13i-56gR14oR15R16R17i840R18i826gR19r26goR3jR4:1:1oR6jR7:2:0R8y6:zValueR10jR11:3:0R13i-62gR14oR15R16R17i848R18i842gR19r39goR3jR4:0:1jy10:hxsl.Const:3:1i1R14oR15R16R17i851R18i850gR19r39ghR14oR15R16R17i852R18i821gR19jR11:5:2i4r11gR14oR15R16R17i852R18i804gR19r12goR3jR4:10:3oR3jR4:1:1oR6r38R8y10:isRelativeR10jR11:2:0y10:qualifiersajy17:hxsl.VarQualifier:0:1nhR13i-69gR14oR15R16R17i872R18i862gR19r54goR3jR4:4:1aoR3jR4:5:3r7oR3jR4:9:2oR3jR4:1:1oR6r10R8y16:absolutePositionR10jR11:5:2i4r11R13i-65gR14oR15R16R17i898R18i882gR19r65gajy14:hxsl.Component:0:0hR14oR15R16R17i900R18i882gR19r39goR3jR4:8:2oR3jR4:2:1jR20:29:0R14oR15R16R17i928R18i903gR19jR11:13:1aoR1aoR8y1:_R10jR11:5:2i3r11goR8y1:bR10jR11:5:2i3r11ghy3:retr39ghgaoR3jR4:8:2oR3jR4:2:1jR20:39:0R14oR15R16R17i907R18i903gR19jR11:13:1ahgaoR3jR4:9:2oR3jR4:1:1r9R14oR15R16R17i922R18i908gR19r12gar69jR32:1:0hR14oR15R16R17i925R18i908gR19jR11:5:2i2r11goR3jR4:0:1jR27:3:1i1R14oR15R16R17i927R18i926gR19r39ghR14oR15R16R17i928R18i903gR19r81goR3jR4:1:1oR6r38R8y15:absoluteMatrixAR10jR11:5:2i3r11R13i-71gR14oR15R16R17i948R18i933gR19r111ghR14oR15R16R17i949R18i903gR19r39gR14oR15R16R17i949R18i882gR19r39goR3jR4:5:3r7oR3jR4:9:2oR3jR4:1:1r64R14oR15R16R17i972R18i956gR19r65gar99hR14oR15R16R17i974R18i956gR19r39goR3jR4:8:2oR3jR4:2:1r74R14oR15R16R17i1002R18i977gR19jR11:13:1aoR1aoR8R33R10jR11:5:2i3r11gr82hR35r39ghgaoR3jR4:8:2oR3jR4:2:1r88R14oR15R16R17i981R18i977gR19r92gaoR3jR4:9:2oR3jR4:1:1r9R14oR15R16R17i996R18i982gR19r12gar69r99hR14oR15R16R17i999R18i982gR19jR11:5:2i2r11goR3jR4:0:1jR27:3:1i1R14oR15R16R17i1001R18i1000gR19r39ghR14oR15R16R17i1002R18i977gR19r134goR3jR4:1:1oR6r38R8y15:absoluteMatrixBR10jR11:5:2i3r11R13i-72gR14oR15R16R17i1022R18i1007gR19r158ghR14oR15R16R17i1023R18i977gR19r39gR14oR15R16R17i1023R18i956gR19r39goR3jR4:5:3r7oR3jR4:9:2oR3jR4:1:1r64R14oR15R16R17i1046R18i1030gR19r65gajR32:2:0jR32:3:0hR14oR15R16R17i1049R18i1030gR19jR11:5:2i2r11goR3jR4:9:2oR3jR4:1:1r9R14oR15R16R17i1066R18i1052gR19r12gar171r172hR14oR15R16R17i1069R18i1052gR19jR11:5:2i2r11gR14oR15R16R17i1069R18i1030gR19r175ghR14oR15R16R17i1076R18i875gR19jR11:0:0goR3jR4:5:3r7oR3jR4:1:1r64R14oR15R16R17i1103R18i1087gR19r65goR3jR4:1:1r9R14oR15R16R17i1120R18i1106gR19r12gR14oR15R16R17i1120R18i1087gR19r65gR14oR15R16R17i1120R18i858gR19r188goR3jR4:5:3r7oR3jR4:1:1oR6jR7:3:0R8y12:calculatedUVR10jR11:5:2i2r11R13i-68gR14oR15R16R17i1138R18i1126gR19r204goR3jR4:10:3oR3jR4:1:1oR6r38R8y8:hasUVPosR10r54R29ajR30:0:1nhR13i-73gR14oR15R16R17i1149R18i1141gR19r54goR3jR4:5:3jR5:0:0oR3jR4:5:3jR5:1:0oR3jR4:1:1r29R14oR15R16R17i1160R18i1152gR19r30goR3jR4:9:2oR3jR4:1:1oR6r38R8y5:uvPosR10jR11:5:2i4r11R13i-74gR14oR15R16R17i1168R18i1163gR19r224gar171r172hR14oR15R16R17i1171R18i1163gR19jR11:5:2i2r11gR14oR15R16R17i1171R18i1152gR19jR11:5:2i2r11goR3jR4:9:2oR3jR4:1:1r223R14oR15R16R17i1179R18i1174gR19r224gar69r99hR14oR15R16R17i1182R18i1174gR19jR11:5:2i2r11gR14oR15R16R17i1182R18i1152gR19jR11:5:2i2r11goR3jR4:1:1r29R14oR15R16R17i1193R18i1185gR19r30gR14oR15R16R17i1193R18i1141gR19r244gR14oR15R16R17i1193R18i1126gR19r204goR3jR4:5:3r7oR3jR4:1:1oR6r10R8y10:pixelColorR10jR11:5:2i4r11R13i-66gR14oR15R16R17i1209R18i1199gR19r255goR3jR4:10:3oR3jR4:1:1r53R14oR15R16R17i1222R18i1212gR19r54goR3jR4:5:3r217oR3jR4:1:1oR6r38R8R25R10jR11:5:2i4r11R13i-70gR14oR15R16R17i1230R18i1225gR19r265goR3jR4:1:1r31R14oR15R16R17i1244R18i1233gR19r32gR14oR15R16R17i1244R18i1225gR19jR11:5:2i4r11goR3jR4:1:1r31R14oR15R16R17i1258R18i1247gR19r32gR14oR15R16R17i1258R18i1212gR19r273gR14oR15R16R17i1258R18i1199gR19r255goR3jR4:5:3r7oR3jR4:1:1oR6r10R8y12:textureColorR10jR11:5:2i4r11R13i-67gR14oR15R16R17i1276R18i1264gR19r284goR3jR4:8:2oR3jR4:2:1jR20:33:0R14oR15R16R17i1286R18i1279gR19jR11:13:1aoR1aoR8R33R10jR11:10:0goR8R34R10jR11:5:2i2r11ghR35jR11:5:2i4r11ghgaoR3jR4:1:1oR6r38R8y7:textureR10r296R13i-63gR14oR15R16R17i1286R18i1279gR19r296goR3jR4:1:1r202R14oR15R16R17i1303R18i1291gR19r204ghR14oR15R16R17i1304R18i1279gR19r299gR14oR15R16R17i1304R18i1264gR19r284goR3jR4:5:3jR5:20:1r217oR3jR4:1:1r254R14oR15R16R17i1320R18i1310gR19r255goR3jR4:1:1r283R14oR15R16R17i1336R18i1324gR19r284gR14oR15R16R17i1336R18i1310gR19r255ghR14oR15R16R17i1342R18i798gR19r188gR6jy17:hxsl.FunctionKind:2:0y3:refoR6jR7:6:0R8y8:__init__R10jR11:13:1aoR1ahR35r188ghR13i-78gR35r188goR1ahR2oR3jR4:4:1aoR3jR4:5:3r7oR3jR4:9:2oR3jR4:1:1r64R14oR15R16R17i1388R18i1372gR19r65gar69r99hR14oR15R16R17i1391R18i1372gR19jR11:5:2i2r11goR3jR4:5:3r217oR3jR4:3:1oR3jR4:5:3r215oR3jR4:9:2oR3jR4:1:1r64R14oR15R16R17i1411R18i1395gR19r65gar69r99hR14oR15R16R17i1414R18i1395gR19jR11:5:2i2r11goR3jR4:9:2oR3jR4:1:1oR6r38R8y8:viewportR10jR11:5:2i4r11R13i-77gR14oR15R16R17i1425R18i1417gR19r359gar69r99hR14oR15R16R17i1428R18i1417gR19jR11:5:2i2r11gR14oR15R16R17i1428R18i1395gR19jR11:5:2i2r11gR14oR15R16R17i1429R18i1394gR19r368goR3jR4:9:2oR3jR4:1:1r358R14oR15R16R17i1440R18i1432gR19r359gar171r172hR14oR15R16R17i1443R18i1432gR19jR11:5:2i2r11gR14oR15R16R17i1443R18i1394gR19jR11:5:2i2r11gR14oR15R16R17i1443R18i1372gR19r344goR3jR4:10:3oR3jR4:1:1oR6r38R8y10:pixelAlignR10r54R29ajR30:0:1nhR13i-75gR14oR15R16R17i1549R18i1539gR19r54goR3jR4:5:3jR5:20:1jR5:3:0oR3jR4:9:2oR3jR4:1:1r64R14oR15R16R17i1568R18i1552gR19r65gar69r99hR14oR15R16R17i1571R18i1552gR19jR11:5:2i2r11goR3jR4:1:1oR6r38R8y16:halfPixelInverseR10jR11:5:2i2r11R13i-76gR14oR15R16R17i1591R18i1575gR19r404gR14oR15R16R17i1591R18i1552gR19r401gnR14oR15R16R17i1591R18i1535gR19r188goR3jR4:5:3r7oR3jR4:1:1oR6jR7:5:0R8R21R10jR11:5:2i4r11R22oR6r414R8y6:outputR10jR11:12:1ar413oR6r414R8R25R10jR11:5:2i4r11R22r416R13i-61ghR13i-59gR13i-60gR14oR15R16R17i1612R18i1597gR19r415goR3jR4:1:1r64R14oR15R16R17i1631R18i1615gR19r65gR14oR15R16R17i1631R18i1597gR19r415ghR14oR15R16R17i1637R18i1366gR19r188gR6jR44:0:0R45oR6r327R8y6:vertexR10jR11:13:1aoR1ahR35r188ghR13i-79gR35r188goR1ahR2oR3jR4:4:1aoR3jR4:5:3r7oR3jR4:1:1r418R14oR15R16R17i1681R18i1669gR19r419goR3jR4:1:1r254R14oR15R16R17i1694R18i1684gR19r255gR14oR15R16R17i1694R18i1669gR19r419ghR14oR15R16R17i1700R18i1663gR19r188gR6jR44:1:0R45oR6r327R8y8:fragmentR10jR11:13:1aoR1ahR35r188ghR13i-80gR35r188ghR8y17:h3d.shader.Base2dy4:varsar202r431r37r110r209r326r64r452r303r386r403r283r223r9r416r53r157r27r264r254r358hg";
+h3d_shader_BaseMesh.SRC = "oy4:funsaoy4:argsahy4:exproy1:ejy13:hxsl.TExprDef:4:1aoR3jR4:5:3jy16:haxe.macro.Binop:4:0oR3jR4:1:1oy4:kindjy12:hxsl.VarKind:4:0y4:namey16:relativePositiony4:typejy9:hxsl.Type:5:2i3jy12:hxsl.VecType:1:0y2:idi-33gy1:poy4:filey76:%2Fhome%2Fwilliam%2Fdev%2Fhaxelib%2Fheaps%2Fgit%2Fh3d%2Fshader%2FBaseMesh.hxy3:maxi1010y3:mini994gy1:tr12goR3jR4:1:1oR6jR7:1:0R8y8:positionR10jR11:5:2i3r11y6:parentoR6r17R8y5:inputR10jR11:12:1ar16oR6r17R8y6:normalR10jR11:5:2i3r11R21r19R13i-27ghR13i-25gR13i-26gR14oR15R16R17i1027R18i1013gR19r18gR14oR15R16R17i1027R18i994gR19r12goR3jR4:5:3r7oR3jR4:1:1oR6r10R8y19:transformedPositionR10jR11:5:2i3r11R13i-34gR14oR15R16R17i1052R18i1033gR19r31goR3jR4:5:3jR5:1:0oR3jR4:1:1r9R14oR15R16R17i1071R18i1055gR19r12goR3jR4:8:2oR3jR4:2:1jy12:hxsl.TGlobal:50:0R14oR15R16R17i1090R18i1074gR19jR11:13:1ahgaoR3jR4:1:1oR6jR7:0:0R8y9:modelViewR10jR11:7:0R21oR6r49R8y6:globalR10jR11:12:1aoR6r49R8y4:timeR10jR11:3:0R21r51R13i-21goR6r49R8y9:pixelSizeR10jR11:5:2i2r11R21r51R13i-22gr48oR6r49R8y16:modelViewInverseR10r50R21r51y10:qualifiersajy17:hxsl.VarQualifier:3:0hR13i-24ghR13i-20gR31ar59hR13i-23gR14oR15R16R17i1090R18i1074gR19r50ghR14oR15R16R17i1099R18i1074gR19jR11:8:0gR14oR15R16R17i1099R18i1055gR19jR11:5:2i3r11gR14oR15R16R17i1099R18i1033gR19r31goR3jR4:5:3r7oR3jR4:1:1oR6r10R8y17:projectedPositionR10jR11:5:2i4r11R13i-37gR14oR15R16R17i1122R18i1105gR19r75goR3jR4:5:3r35oR3jR4:8:2oR3jR4:2:1jR25:40:0R14oR15R16R17i1129R18i1125gR19jR11:13:1ahgaoR3jR4:1:1r30R14oR15R16R17i1149R18i1130gR19r31goR3jR4:0:1jy10:hxsl.Const:3:1i1R14oR15R16R17i1152R18i1151gR19r54ghR14oR15R16R17i1153R18i1125gR19jR11:5:2i4r11goR3jR4:1:1oR6r49R8y8:viewProjR10r50R21oR6r49R8y6:cameraR10jR11:12:1aoR6r49R8y4:viewR10r50R21r99R13i-13goR6r49R8y4:projR10r50R21r99R13i-14goR6r49R8R20R10jR11:5:2i3r11R21r99R13i-15goR6r49R8y8:projDiagR10jR11:5:2i3r11R21r99R13i-16gr98oR6r49R8y15:inverseViewProjR10r50R21r99R13i-18goR6jR7:3:0R8y3:dirR10jR11:5:2i3r11R21r99R13i-19ghR13i-12gR13i-17gR14oR15R16R17i1171R18i1156gR19r50gR14oR15R16R17i1171R18i1125gR19jR11:5:2i4r11gR14oR15R16R17i1171R18i1105gR19r75goR3jR4:5:3r7oR3jR4:1:1oR6r10R8y17:transformedNormalR10jR11:5:2i3r11R13i-36gR14oR15R16R17i1194R18i1177gR19r122goR3jR4:8:2oR3jR4:2:1jR25:31:0R14oR15R16R17i1237R18i1197gR19jR11:13:1aoR1aoR8y1:_R10r69ghy3:retr69ghgaoR3jR4:3:1oR3jR4:5:3r35oR3jR4:1:1r21R14oR15R16R17i1210R18i1198gR19r22goR3jR4:8:2oR3jR4:2:1jR25:48:0R14oR15R16R17i1229R18i1213gR19jR11:13:1ahgaoR3jR4:1:1r48R14oR15R16R17i1229R18i1213gR19r50ghR14oR15R16R17i1236R18i1213gR19jR11:6:0gR14oR15R16R17i1236R18i1198gR19r69gR14oR15R16R17i1237R18i1197gR19r69ghR14oR15R16R17i1249R18i1197gR19r69gR14oR15R16R17i1249R18i1177gR19r122goR3jR4:5:3r7oR3jR4:1:1r108R14oR15R16R17i1265R18i1255gR19r110goR3jR4:8:2oR3jR4:2:1r127R14oR15R16R17i1307R18i1268gR19jR11:13:1aoR1aoR8R43R10jR11:5:2i3r11ghR44r69ghgaoR3jR4:3:1oR3jR4:5:3jR5:3:0oR3jR4:1:1r103R14oR15R16R17i1284R18i1269gR19r104goR3jR4:1:1r30R14oR15R16R17i1306R18i1287gR19r31gR14oR15R16R17i1306R18i1269gR19r175gR14oR15R16R17i1307R18i1268gR19r175ghR14oR15R16R17i1319R18i1268gR19r69gR14oR15R16R17i1319R18i1255gR19r110goR3jR4:5:3r7oR3jR4:1:1oR6r10R8y10:pixelColorR10jR11:5:2i4r11R13i-38gR14oR15R16R17i1335R18i1325gR19r198goR3jR4:1:1oR6jR7:2:0R8y5:colorR10jR11:5:2i4r11R13i-40gR14oR15R16R17i1343R18i1338gR19r204gR14oR15R16R17i1343R18i1325gR19r198goR3jR4:5:3r7oR3jR4:1:1oR6r10R8y5:depthR10r54R13i-39gR14oR15R16R17i1354R18i1349gR19r54goR3jR4:5:3jR5:2:0oR3jR4:9:2oR3jR4:1:1r74R14oR15R16R17i1374R18i1357gR19r75gajy14:hxsl.Component:2:0hR14oR15R16R17i1376R18i1357gR19r54goR3jR4:9:2oR3jR4:1:1r74R14oR15R16R17i1396R18i1379gR19r75gajR48:3:0hR14oR15R16R17i1398R18i1379gR19r54gR14oR15R16R17i1398R18i1357gR19r54gR14oR15R16R17i1398R18i1349gR19r54ghR14oR15R16R17i1404R18i988gR19jR11:0:0gR6jy17:hxsl.FunctionKind:2:0y3:refoR6jR7:6:0R8y8:__init__R10jR11:13:1aoR1ahR44r238ghR13i-41gR44r238goR1ahR2oR3jR4:4:1aoR3jR4:5:3r7oR3jR4:1:1r121R14oR15R16R17i1461R18i1444gR19r122goR3jR4:8:2oR3jR4:2:1r127R14oR15R16R17i1481R18i1464gR19jR11:13:1aoR1aoR8R43R10r122ghR44r69ghgaoR3jR4:1:1r121R14oR15R16R17i1481R18i1464gR19r122ghR14oR15R16R17i1493R18i1464gR19r69gR14oR15R16R17i1493R18i1444gR19r122ghR14oR15R16R17i1499R18i1438gR19r238gR6jR49:1:0R50oR6r241R8y16:__init__fragmentR10jR11:13:1aoR1ahR44r238ghR13i-42gR44r238goR1ahR2oR3jR4:4:1aoR3jR4:5:3r7oR3jR4:1:1oR6jR7:5:0R8R20R10jR11:5:2i4r11R21oR6r286R8y6:outputR10jR11:12:1ar285oR6r286R8R46R10jR11:5:2i4r11R21r288R13i-30goR6r286R8R47R10jR11:5:2i4r11R21r288R13i-31goR6r286R8R23R10jR11:5:2i4r11R21r288R13i-32ghR13i-28gR13i-29gR14oR15R16R17i1544R18i1529gR19r287goR3jR4:1:1r74R14oR15R16R17i1564R18i1547gR19r75gR14oR15R16R17i1564R18i1529gR19r287goR3jR4:5:3r7oR3jR4:1:1oR6r10R8y24:pixelTransformedPositionR10jR11:5:2i3r11R13i-35gR14oR15R16R17i1594R18i1570gR19r307goR3jR4:1:1r30R14oR15R16R17i1616R18i1597gR19r31gR14oR15R16R17i1616R18i1570gR19r307ghR14oR15R16R17i1622R18i1523gR19r238gR6jR49:0:0R50oR6r241R8y6:vertexR10jR11:13:1aoR1ahR44r238ghR13i-43gR44r238goR1ahR2oR3jR4:4:1aoR3jR4:5:3r7oR3jR4:1:1r290R14oR15R16R17i1666R18i1654gR19r291goR3jR4:1:1r197R14oR15R16R17i1679R18i1669gR19r198gR14oR15R16R17i1679R18i1654gR19r291goR3jR4:5:3r7oR3jR4:1:1r292R14oR15R16R17i1697R18i1685gR19r293goR3jR4:8:2oR3jR4:2:1jR25:52:0R14oR15R16R17i1704R18i1700gR19jR11:13:1aoR1aoR8y5:valueR10r54ghR44jR11:5:2i4r11ghgaoR3jR4:1:1r211R14oR15R16R17i1710R18i1705gR19r54ghR14oR15R16R17i1711R18i1700gR19r349gR14oR15R16R17i1711R18i1685gR19r293goR3jR4:5:3r7oR3jR4:1:1r294R14oR15R16R17i1730R18i1717gR19r295goR3jR4:8:2oR3jR4:2:1jR25:54:0R14oR15R16R17i1743R18i1733gR19jR11:13:1aoR1aoR8R56R10jR11:5:2i3r11ghR44jR11:5:2i4r11ghgaoR3jR4:1:1r121R14oR15R16R17i1761R18i1744gR19r122ghR14oR15R16R17i1762R18i1733gR19r373gR14oR15R16R17i1762R18i1717gR19r295ghR14oR15R16R17i1768R18i1648gR19r238gR6r273R50oR6r241R8y8:fragmentR10jR11:13:1aoR1ahR44r238ghR13i-44gR44r238ghR8y19:h3d.shader.BaseMeshy4:varsar74r211r318r121r240r385r274r9r99r288r51r19r30r202r306r197hg";
+h3d_shader_Blur.SRC = "oy4:funsaoy4:argsahy4:exproy1:ejy13:hxsl.TExprDef:4:1aoR3jR4:5:3jy16:haxe.macro.Binop:4:0oR3jR4:1:1oy4:kindjy12:hxsl.VarKind:5:0y4:namey8:positiony4:typejy9:hxsl.Type:5:2i4jy12:hxsl.VecType:1:0y6:parentoR6r10R8y6:outputR10jR11:12:1ar9oR6r10R8y5:colorR10jR11:5:2i4r11R13r13y2:idi-93ghR16i-91gR16i-92gy1:poy4:filey80:%2Fhome%2Fwilliam%2Fdev%2Fhaxelib%2Fheaps%2Fgit%2Fh3d%2Fshader%2FScreenShader.hxy3:maxi262y3:mini247gy1:tr12goR3jR4:8:2oR3jR4:2:1jy12:hxsl.TGlobal:40:0R17oR18R19R20i269R21i265gR22jR11:13:1ahgaoR3jR4:1:1oR6jR7:1:0R8R9R10jR11:5:2i2r11R13oR6r30R8y5:inputR10jR11:12:1ar29oR6r30R8y2:uvR10jR11:5:2i2r11R13r32R16i-90ghR16i-88gR16i-89gR17oR18R19R20i284R21i270gR22r31goR3jR4:0:1jy10:hxsl.Const:3:1zR17oR18R19R20i287R21i286gR22jR11:3:0goR3jR4:0:1jR26:3:1i1R17oR18R19R20i290R21i289gR22r43ghR17oR18R19R20i291R21i265gR22jR11:5:2i4r11gR17oR18R19R20i291R21i247gR22r12ghR17oR18R19R20i297R21i241gR22jR11:0:0gR6jy17:hxsl.FunctionKind:0:0y3:refoR6jR7:6:0R8y6:vertexR10jR11:13:1aoR1ahy3:retr55ghR16i-101gR30r55goR1ahR2oR3jR4:4:1aoR3jR4:10:3oR3jR4:1:1oR6jR7:2:0R8y7:isDepthR10jR11:2:0y10:qualifiersajy17:hxsl.VarQualifier:0:1nhR16i-96gR17oR18y72:%2Fhome%2Fwilliam%2Fdev%2Fhaxelib%2Fheaps%2Fgit%2Fh3d%2Fshader%2FBlur.hxR20i376R21i369gR22r71goR3jR4:4:1aoR3jR4:7:2oR6jR7:4:0R8y3:valR10r43R16i-103goR3jR4:0:1jR26:3:1d0R17oR18R34R20i398R21i396gR22r43gR17oR18R34R20i399R21i386gR22r55goR3jR4:13:3oR6r80R8y1:iR10jR11:1:0R16i-104goR3jR4:5:3jR5:21:0oR3jR4:5:3jR5:0:0oR3jR4:6:2jy15:haxe.macro.Unop:3:0oR3jR4:1:1oR6r70R8y7:QualityR10r89R32ajR33:0:1nhR16i-95gR17oR18R34R20i423R21i416gR22r89gR17oR18R34R20i423R21i415gR22r89goR3jR4:0:1jR26:2:1i1R17oR18R34R20i428R21i424gR22r89gR17oR18R34R20i428R21i415gR22r89goR3jR4:1:1r97R17oR18R34R20i435R21i428gR22r89gR17oR18R34R20i435R21i415gR22jR11:14:2r89jy13:hxsl.SizeDecl:0:1zgoR3jR4:5:3jR5:20:1r93oR3jR4:1:1r79R17oR18R34R20i447R21i444gR22r43goR3jR4:5:3jR5:1:0oR3jR4:8:2oR3jR4:2:1jR23:53:0R17oR18R34R20i457R21i451gR22jR11:13:1aoR1aoR8y5:valueR10jR11:5:2i4r11ghR30r43ghgaoR3jR4:8:2oR3jR4:2:1jR23:33:0R17oR18R34R20i465R21i458gR22jR11:13:1aoR1aoR8y1:_R10jR11:10:0goR8y1:bR10jR11:5:2i2r11ghR30jR11:5:2i4r11ghgaoR3jR4:1:1oR6r70R8y7:textureR10r145R16i-94gR17oR18R34R20i465R21i458gR22r145goR3jR4:5:3r93oR3jR4:1:1r34R17oR18R34R20i478R21i470gR22r35goR3jR4:5:3r123oR3jR4:1:1oR6r70R8y5:pixelR10jR11:5:2i2r11R16i-98gR17oR18R34R20i486R21i481gR22r162goR3jR4:8:2oR3jR4:2:1jR23:36:0R17oR18R34R20i494R21i489gR22jR11:13:1aoR1aoR8R40R10r89ghR30r43ghgaoR3jR4:1:1r88R17oR18R34R20i496R21i495gR22r89ghR17oR18R34R20i497R21i489gR22r43gR17oR18R34R20i497R21i481gR22r162gR17oR18R34R20i497R21i470gR22jR11:5:2i2r11ghR17oR18R34R20i498R21i458gR22r148ghR17oR18R34R20i499R21i451gR22r43goR3jR4:16:2oR3jR4:1:1oR6r70R8y6:valuesR10jR11:14:2r43jR39:1:1r97R16i-97gR17oR18R34R20i508R21i502gR22r194goR3jR4:10:3oR3jR4:5:3jR5:9:0oR3jR4:1:1r88R17oR18R34R20i510R21i509gR22r89goR3jR4:0:1jR26:2:1zR17oR18R34R20i514R21i513gR22r89gR17oR18R34R20i514R21i509gR22r71goR3jR4:6:2r95oR3jR4:1:1r88R17oR18R34R20i519R21i518gR22r89gR17oR18R34R20i519R21i517gR22r89goR3jR4:1:1r88R17oR18R34R20i523R21i522gR22r89gR17oR18R34R20i523R21i509gR22r89gR17oR18R34R20i524R21i502gR22r43gR17oR18R34R20i524R21i451gR22r43gR17oR18R34R20i524R21i444gR22r43gR17oR18R34R20i524R21i405gR22r55goR3jR4:5:3r7oR3jR4:1:1r15R17oR18R34R20i543R21i531gR22r16goR3jR4:8:2oR3jR4:2:1jR23:52:0R17oR18R34R20i550R21i546gR22jR11:13:1aoR1aoR8R40R10r43ghR30jR11:5:2i4r11ghgaoR3jR4:8:2oR3jR4:2:1jR23:21:0R17oR18R34R20i554R21i551gR22jR11:13:1aoR1aoR8R41R10r43goR8R42R10r43ghR30r43ghgaoR3jR4:1:1r79R17oR18R34R20i554R21i551gR22r43goR3jR4:0:1jR26:3:1d0.9999999R17oR18R34R20i568R21i559gR22r43ghR17oR18R34R20i569R21i551gR22r43ghR17oR18R34R20i570R21i546gR22r241gR17oR18R34R20i570R21i531gR22r16ghR17oR18R34R20i577R21i379gR22r55goR3jR4:4:1aoR3jR4:7:2oR6r80R8R15R10jR11:5:2i4r11R16i-105goR3jR4:8:2oR3jR4:2:1r22R17oR18R34R20i606R21i602gR22r26gaoR3jR4:0:1jR26:3:1zR17oR18R34R20i608R21i607gR22r43goR3jR4:0:1jR26:3:1zR17oR18R34R20i611R21i610gR22r43goR3jR4:0:1jR26:3:1zR17oR18R34R20i614R21i613gR22r43goR3jR4:0:1jR26:3:1zR17oR18R34R20i617R21i616gR22r43ghR17oR18R34R20i618R21i602gR22r275gR17oR18R34R20i619R21i590gR22r55goR3jR4:13:3oR6r80R8R36R10r89R16i-106goR3jR4:5:3r91oR3jR4:5:3r93oR3jR4:6:2r95oR3jR4:1:1r97R17oR18R34R20i643R21i636gR22r89gR17oR18R34R20i643R21i635gR22r89goR3jR4:0:1jR26:2:1i1R17oR18R34R20i648R21i644gR22r89gR17oR18R34R20i648R21i635gR22r89goR3jR4:1:1r97R17oR18R34R20i655R21i648gR22r89gR17oR18R34R20i655R21i635gR22jR11:14:2r89jR39:0:1zgoR3jR4:5:3jR5:20:1r93oR3jR4:1:1r274R17oR18R34R20i669R21i664gR22r275goR3jR4:5:3r123oR3jR4:8:2oR3jR4:2:1r138R17oR18R34R20i680R21i673gR22jR11:13:1aoR1aoR8R41R10r145gr146hR30r148ghgaoR3jR4:1:1r152R17oR18R34R20i680R21i673gR22r145goR3jR4:5:3r93oR3jR4:1:1r34R17oR18R34R20i693R21i685gR22r35goR3jR4:5:3r123oR3jR4:1:1r161R17oR18R34R20i701R21i696gR22r162goR3jR4:8:2oR3jR4:2:1r167R17oR18R34R20i709R21i704gR22jR11:13:1ar171hgaoR3jR4:1:1r302R17oR18R34R20i711R21i710gR22r89ghR17oR18R34R20i712R21i704gR22r43gR17oR18R34R20i712R21i696gR22r162gR17oR18R34R20i712R21i685gR22jR11:5:2i2r11ghR17oR18R34R20i713R21i673gR22r148goR3jR4:16:2oR3jR4:1:1r192R17oR18R34R20i722R21i716gR22r194goR3jR4:10:3oR3jR4:5:3r199oR3jR4:1:1r302R17oR18R34R20i724R21i723gR22r89goR3jR4:0:1jR26:2:1zR17oR18R34R20i728R21i727gR22r89gR17oR18R34R20i728R21i723gR22r71goR3jR4:6:2r95oR3jR4:1:1r302R17oR18R34R20i733R21i732gR22r89gR17oR18R34R20i733R21i731gR22r89goR3jR4:1:1r302R17oR18R34R20i737R21i736gR22r89gR17oR18R34R20i737R21i723gR22r89gR17oR18R34R20i738R21i716gR22r43gR17oR18R34R20i738R21i673gR22r148gR17oR18R34R20i738R21i664gR22r275gR17oR18R34R20i738R21i625gR22r55goR3jR4:5:3r7oR3jR4:1:1r15R17oR18R34R20i757R21i745gR22r16goR3jR4:1:1r274R17oR18R34R20i765R21i760gR22r275gR17oR18R34R20i765R21i745gR22r16ghR17oR18R34R20i772R21i583gR22r55gR17oR18R34R20i772R21i365gR22r55goR3jR4:10:3oR3jR4:1:1oR6r70R8y13:hasFixedColorR10r71R32ajR33:0:1nhR16i-99gR17oR18R34R20i794R21i781gR22r71goR3jR4:4:1aoR3jR4:5:3r7oR3jR4:9:2oR3jR4:1:1r15R17oR18R34R20i816R21i804gR22r16gajy14:hxsl.Component:0:0jR47:1:0jR47:2:0hR17oR18R34R20i820R21i804gR22jR11:5:2i3r11goR3jR4:9:2oR3jR4:1:1oR6r70R8y10:fixedColorR10jR11:5:2i4r11R16i-100gR17oR18R34R20i833R21i823gR22r441gar432r433r434hR17oR18R34R20i837R21i823gR22jR11:5:2i3r11gR17oR18R34R20i837R21i804gR22r437goR3jR4:5:3jR5:20:1r123oR3jR4:9:2oR3jR4:1:1r15R17oR18R34R20i856R21i844gR22r16gajR47:3:0hR17oR18R34R20i858R21i844gR22r43goR3jR4:9:2oR3jR4:1:1r440R17oR18R34R20i872R21i862gR22r441gar457hR17oR18R34R20i874R21i862gR22r43gR17oR18R34R20i874R21i844gR22r43ghR17oR18R34R20i881R21i797gR22r55gnR17oR18R34R20i881R21i777gR22r55ghR17oR18R34R20i886R21i359gR22r55gR6jR27:1:0R28oR6r58R8y8:fragmentR10jR11:13:1aoR1ahR30r55ghR16i-102gR30r55ghR8y15:h3d.shader.Blury4:varsar57r97r161r419r440r192r476r152r69r13r32hg";
+h3d_shader_ColorAdd.SRC = "oy4:funsaoy4:argsahy4:exproy1:ejy13:hxsl.TExprDef:4:1aoR3jR4:5:3jy16:haxe.macro.Binop:20:1jR5:0:0oR3jR4:9:2oR3jR4:1:1oy4:kindjy12:hxsl.VarKind:4:0y4:namey10:pixelColory4:typejy9:hxsl.Type:5:2i4jy12:hxsl.VecType:1:0y2:idi-205gy1:poy4:filey76:%2Fhome%2Fwilliam%2Fdev%2Fhaxelib%2Fheaps%2Fgit%2Fh3d%2Fshader%2FColorAdd.hxy3:maxi180y3:mini170gy1:tr14gajy14:hxsl.Component:0:0jR20:1:0jR20:2:0hR14oR15R16R17i184R18i170gR19jR11:5:2i3r13goR3jR4:1:1oR6jR7:2:0R8y5:colorR10jR11:5:2i3r13R13i-206gR14oR15R16R17i193R18i188gR19r27gR14oR15R16R17i193R18i170gR19r23ghR14oR15R16R17i199R18i164gR19jR11:0:0gR6jy17:hxsl.FunctionKind:1:0y3:refoR6jR7:6:0R8y8:fragmentR10jR11:13:1aoR1ahy3:retr34ghR13i-207gR25r34ghR8y19:h3d.shader.ColorAddy4:varsar36r25r11hg";
+h3d_shader_ColorKey.SRC = "oy4:funsaoy4:argsahy4:exproy1:ejy13:hxsl.TExprDef:4:1aoR3jR4:7:2oy4:kindjy12:hxsl.VarKind:4:0y4:namey5:cdiffy4:typejy9:hxsl.Type:5:2i4jy12:hxsl.VecType:1:0y2:idi-211goR3jR4:5:3jy16:haxe.macro.Binop:3:0oR3jR4:1:1oR5r8R7y12:textureColorR9jR10:5:2i4r9R12i-209gy1:poy4:filey76:%2Fhome%2Fwilliam%2Fdev%2Fhaxelib%2Fheaps%2Fgit%2Fh3d%2Fshader%2FColorKey.hxy3:maxi197y3:mini185gy1:tr15goR3jR4:1:1oR5jR6:2:0R7y8:colorKeyR9jR10:5:2i4r9R12i-208gR15oR16R17R18i208R19i200gR20r21gR15oR16R17R18i208R19i185gR20r10gR15oR16R17R18i209R19i173gR20jR10:0:0goR3jR4:10:3oR3jR4:5:3jR13:9:0oR3jR4:8:2oR3jR4:2:1jy12:hxsl.TGlobal:29:0R15oR16R17R18i223R19i218gR20jR10:13:1aoR1aoR7y1:_R9r10goR7y1:bR9jR10:5:2i4r9ghy3:retjR10:3:0ghgaoR3jR4:1:1r7R15oR16R17R18i223R19i218gR20r10goR3jR4:1:1r7R15oR16R17R18i233R19i228gR20r10ghR15oR16R17R18i234R19i218gR20r43goR3jR4:0:1jy10:hxsl.Const:3:1d1e-05R15oR16R17R18i244R19i237gR20r43gR15oR16R17R18i244R19i218gR20jR10:2:0goR3jR4:11:0R15oR16R17R18i254R19i247gR20r28gnR15oR16R17R18i254R19i214gR20r28ghR15oR16R17R18i260R19i167gR20r28gR5jy17:hxsl.FunctionKind:1:0y3:refoR5jR6:6:0R7y8:fragmentR9jR10:13:1aoR1ahR25r28ghR12i-210gR25r28ghR7y19:h3d.shader.ColorKeyy4:varsar69r19r14hg";
+h3d_shader_ColorMatrix.SRC = "oy4:funsaoy4:argsahy4:exproy1:ejy13:hxsl.TExprDef:4:1aoR3jR4:7:2oy4:kindjy12:hxsl.VarKind:4:0y4:namey3:rgby4:typejy9:hxsl.Type:5:2i3jy12:hxsl.VecType:1:0y2:idi-215goR3jR4:5:3jy16:haxe.macro.Binop:1:0oR3jR4:9:2oR3jR4:1:1oR5r8R7y10:pixelColorR9jR10:5:2i4r9R12i-212gy1:poy4:filey79:%2Fhome%2Fwilliam%2Fdev%2Fhaxelib%2Fheaps%2Fgit%2Fh3d%2Fshader%2FColorMatrix.hxy3:maxi194y3:mini184gy1:tr16gajy14:hxsl.Component:0:0jR21:1:0jR21:2:0hR15oR16R17R18i198R19i184gR20jR10:5:2i3r9goR3jR4:8:2oR3jR4:2:1jy12:hxsl.TGlobal:50:0R15oR16R17R18i207R19i201gR20jR10:13:1ahgaoR3jR4:1:1oR5jR6:2:0R7y6:matrixR9jR10:7:0R12i-213gR15oR16R17R18i207R19i201gR20r37ghR15oR16R17R18i216R19i201gR20jR10:8:0gR15oR16R17R18i216R19i184gR20r10gR15oR16R17R18i217R19i174gR20jR10:0:0goR3jR4:5:3jR13:4:0oR3jR4:9:2oR3jR4:1:1r15R15oR16R17R18i232R19i222gR20r16gajR21:3:0hR15oR16R17R18i234R19i222gR20jR10:3:0goR3jR4:9:2oR3jR4:3:1oR3jR4:5:3r12oR3jR4:1:1r15R15oR16R17R18i248R19i238gR20r16goR3jR4:1:1r35R15oR16R17R18i257R19i251gR20r37gR15oR16R17R18i257R19i238gR20jR10:5:2i4r9gR15oR16R17R18i258R19i237gR20r70gar55hR15oR16R17R18i260R19i237gR20r58gR15oR16R17R18i260R19i222gR20r58goR3jR4:5:3r49oR3jR4:9:2oR3jR4:1:1r15R15oR16R17R18i276R19i266gR20r16gar20r21r22hR15oR16R17R18i280R19i266gR20jR10:5:2i3r9goR3jR4:1:1r7R15oR16R17R18i286R19i283gR20r10gR15oR16R17R18i286R19i266gR20r86ghR15oR16R17R18i292R19i168gR20r47gR5jy17:hxsl.FunctionKind:1:0y3:refoR5jR6:6:0R7y8:fragmentR9jR10:13:1aoR1ahy3:retr47ghR12i-214gR27r47ghR7y22:h3d.shader.ColorMatrixy4:varsar95r35r15hg";
+h3d_shader_DirLight.SRC = "oy4:funsaoy4:argsahy4:exproy1:ejy13:hxsl.TExprDef:4:1aoR3jR4:5:3jy16:haxe.macro.Binop:20:1jR5:0:0oR3jR4:9:2oR3jR4:1:1oy4:kindjy12:hxsl.VarKind:4:0y4:namey10:lightColory4:typejy9:hxsl.Type:5:2i3jy12:hxsl.VecType:1:0y2:idi-132gy1:poy4:filey76:%2Fhome%2Fwilliam%2Fdev%2Fhaxelib%2Fheaps%2Fgit%2Fh3d%2Fshader%2FDirLight.hxy3:maxi274y3:mini264gy1:tr14gajy14:hxsl.Component:0:0jR20:1:0jR20:2:0hR14oR15R16R17i278R18i264gR19jR11:5:2i3r13goR3jR4:5:3jR5:1:0oR3jR4:1:1oR6jR7:2:0R8y5:colorR10jR11:5:2i3r13R13i-130gR14oR15R16R17i287R18i282gR19r29goR3jR4:8:2oR3jR4:2:1jy12:hxsl.TGlobal:22:0R14oR15R16R17i322R18i290gR19jR11:13:1aoR1aoR8y1:_R10jR11:3:0goR8y1:bR10r41ghy3:retr41ghgaoR3jR4:8:2oR3jR4:2:1jR22:29:0R14oR15R16R17i307R18i290gR19jR11:13:1aoR1aoR8R23R10jR11:5:2i3r13goR8R24R10jR11:5:2i3r13ghR25r41ghgaoR3jR4:1:1oR6r12R8y17:transformedNormalR10r54R13i-134gR14oR15R16R17i307R18i290gR19r54goR3jR4:1:1oR6r28R8y9:directionR10jR11:5:2i3r13R13i-131gR14oR15R16R17i321R18i312gR19r65ghR14oR15R16R17i322R18i290gR19r41goR3jR4:0:1jy10:hxsl.Const:3:1d0R14oR15R16R17i329R18i327gR19r41ghR14oR15R16R17i330R18i290gR19r41gR14oR15R16R17i330R18i282gR19r29gR14oR15R16R17i330R18i264gR19r23ghR14oR15R16R17i336R18i258gR19jR11:0:0gR6jy17:hxsl.FunctionKind:0:0y3:refoR6jR7:6:0R8y6:vertexR10jR11:13:1aoR1ahR25r82ghR13i-135gR25r82goR1ahR2oR3jR4:4:1aoR3jR4:5:3jR5:20:1r7oR3jR4:9:2oR3jR4:1:1oR6r12R8y15:lightPixelColorR10jR11:5:2i3r13R13i-133gR14oR15R16R17i383R18i368gR19r99gar18r19r20hR14oR15R16R17i387R18i368gR19jR11:5:2i3r13goR3jR4:5:3r25oR3jR4:1:1r27R14oR15R16R17i396R18i391gR19r29goR3jR4:8:2oR3jR4:2:1r34R14oR15R16R17i431R18i399gR19jR11:13:1aoR1aoR8R23R10r41gr42hR25r41ghgaoR3jR4:8:2oR3jR4:2:1r47R14oR15R16R17i416R18i399gR19jR11:13:1aoR1aoR8R23R10r54gr55hR25r41ghgaoR3jR4:1:1r60R14oR15R16R17i416R18i399gR19r54goR3jR4:1:1r64R14oR15R16R17i430R18i421gR19r65ghR14oR15R16R17i431R18i399gR19r41goR3jR4:0:1jR28:3:1d0R14oR15R16R17i438R18i436gR19r41ghR14oR15R16R17i439R18i399gR19r41gR14oR15R16R17i439R18i391gR19r29gR14oR15R16R17i439R18i368gR19r105ghR14oR15R16R17i445R18i362gR19r82gR6jR29:1:0R30oR6r85R8y8:fragmentR10jR11:13:1aoR1ahR25r82ghR13i-136gR25r82ghR8y19:h3d.shader.DirLighty4:varsar84r60r11r151r27r64r98hg";
+h3d_shader_Displacement.SRC = "oy4:funsaoy4:argsahy4:exproy1:ejy13:hxsl.TExprDef:4:1aoR3jR4:5:3jy16:haxe.macro.Binop:4:0oR3jR4:1:1oy4:kindjy12:hxsl.VarKind:5:0y4:namey8:positiony4:typejy9:hxsl.Type:5:2i4jy12:hxsl.VecType:1:0y6:parentoR6r10R8y6:outputR10jR11:12:1ar9oR6r10R8y5:colorR10jR11:5:2i4r11R13r13y2:idi-178ghR16i-176gR16i-177gy1:poy4:filey80:%2Fhome%2Fwilliam%2Fdev%2Fhaxelib%2Fheaps%2Fgit%2Fh3d%2Fshader%2FScreenShader.hxy3:maxi262y3:mini247gy1:tr12goR3jR4:8:2oR3jR4:2:1jy12:hxsl.TGlobal:40:0R17oR18R19R20i269R21i265gR22jR11:13:1ahgaoR3jR4:1:1oR6jR7:1:0R8R9R10jR11:5:2i2r11R13oR6r30R8y5:inputR10jR11:12:1ar29oR6r30R8y2:uvR10jR11:5:2i2r11R13r32R16i-175ghR16i-173gR16i-174gR17oR18R19R20i284R21i270gR22r31goR3jR4:0:1jy10:hxsl.Const:3:1zR17oR18R19R20i287R21i286gR22jR11:3:0goR3jR4:0:1jR26:3:1i1R17oR18R19R20i290R21i289gR22r43ghR17oR18R19R20i291R21i265gR22jR11:5:2i4r11gR17oR18R19R20i291R21i247gR22r12ghR17oR18R19R20i297R21i241gR22jR11:0:0gR6jy17:hxsl.FunctionKind:0:0y3:refoR6jR7:6:0R8y6:vertexR10jR11:13:1aoR1ahy3:retr55ghR16i-184gR30r55goR1ahR2oR3jR4:4:1aoR3jR4:7:2oR6jR7:4:0R8y1:nR10jR11:5:2i3r11R16i-186goR3jR4:8:2oR3jR4:2:1jR23:55:0R17oR18y80:%2Fhome%2Fwilliam%2Fdev%2Fhaxelib%2Fheaps%2Fgit%2Fh3d%2Fshader%2FDisplacement.hxR20i301R21i289gR22jR11:13:1aoR1aoR8y5:valueR10jR11:5:2i4r11ghR30r70ghgaoR3jR4:8:2oR3jR4:2:1jR23:33:0R17oR18R32R20i311R21i302gR22jR11:13:1aoR1aoR8y1:_R10jR11:10:0goR8y1:bR10jR11:5:2i2r11ghR30jR11:5:2i4r11ghgaoR3jR4:1:1oR6jR7:2:0R8y9:normalMapR10r92R16i-180gR17oR18R32R20i311R21i302gR22r92goR3jR4:5:3jR5:0:0oR3jR4:5:3jR5:1:0oR3jR4:1:1r34R17oR18R32R20i324R21i316gR22r35goR3jR4:1:1oR6r100R8y11:normalScaleR10jR11:5:2i2r11R16i-181gR17oR18R32R20i338R21i327gR22r112gR17oR18R32R20i338R21i316gR22jR11:5:2i2r11goR3jR4:1:1oR6r100R8y9:normalPosR10jR11:5:2i2r11R16i-182gR17oR18R32R20i350R21i341gR22r120gR17oR18R32R20i350R21i316gR22jR11:5:2i2r11ghR17oR18R32R20i351R21i302gR22r95ghR17oR18R32R20i352R21i289gR22r70gR17oR18R32R20i353R21i281gR22r55goR3jR4:5:3r7oR3jR4:1:1r15R17oR18R32R20i369R21i357gR22r16goR3jR4:8:2oR3jR4:2:1r85R17oR18R32R20i379R21i372gR22jR11:13:1aoR1aoR8R34R10r92gr93hR30r95ghgaoR3jR4:1:1oR6r100R8y7:textureR10r92R16i-179gR17oR18R32R20i379R21i372gR22r92goR3jR4:5:3r104oR3jR4:1:1r34R17oR18R32R20i392R21i384gR22r35goR3jR4:5:3r106oR3jR4:9:2oR3jR4:1:1r68R17oR18R32R20i396R21i395gR22r70gajy14:hxsl.Component:0:0jR40:1:0hR17oR18R32R20i399R21i395gR22jR11:5:2i2r11goR3jR4:1:1oR6r100R8y12:displacementR10jR11:5:2i2r11R16i-183gR17oR18R32R20i414R21i402gR22r167gR17oR18R32R20i414R21i395gR22jR11:5:2i2r11gR17oR18R32R20i414R21i384gR22jR11:5:2i2r11ghR17oR18R32R20i415R21i372gR22r95gR17oR18R32R20i415R21i357gR22r16ghR17oR18R32R20i420R21i276gR22r55gR6jR27:1:0R28oR6r58R8y8:fragmentR10jR11:13:1aoR1ahR30r55ghR16i-185gR30r55ghR8y23:h3d.shader.Displacementy4:varsar57r183r147r119r13r111r32r99r166hg";
+h3d_shader_Shadow.SRC = "oy4:funsaoy4:argsahy4:exproy1:ejy13:hxsl.TExprDef:4:1aoR3jR4:10:3oR3jR4:6:2jy15:haxe.macro.Unop:2:0oR3jR4:1:1oy4:kindjy12:hxsl.VarKind:2:0y4:namey8:perPixely4:typejy9:hxsl.Type:2:0y10:qualifiersajy17:hxsl.VarQualifier:0:1nhy2:idi-197gy1:poy4:filey74:%2Fhome%2Fwilliam%2Fdev%2Fhaxelib%2Fheaps%2Fgit%2Fh3d%2Fshader%2FShadow.hxy3:maxi416y3:mini408gy1:tr12gR15oR16R17R18i416R19i407gR20r12goR3jR4:5:3jy16:haxe.macro.Binop:4:0oR3jR4:1:1oR6jR7:3:0R8y9:shadowPosR10jR11:5:2i3jy12:hxsl.VecType:1:0R12ajR13:1:0hR14i-196gR15oR16R17R18i428R19i419gR20r25goR3jR4:5:3jR21:0:0oR3jR4:5:3jR21:1:0oR3jR4:5:3r33oR3jR4:1:1oR6jR7:4:0R8y19:transformedPositionR10jR11:5:2i3r24R14i-194gR15oR16R17R18i450R19i431gR20r38goR3jR4:1:1oR6jR7:0:0R8y4:projR10jR11:8:0y6:parentoR6r43R8y6:shadowR10jR11:12:1aoR6r43R8y3:mapR10jR11:10:0R26r45R14i-188gr42oR6r43R8y5:colorR10jR11:5:2i3r24R26r45R14i-190goR6r43R8y5:powerR10jR11:3:0R26r45R14i-191goR6r43R8y4:biasR10r52R26r45R14i-192ghR14i-187gR14i-189gR15oR16R17R18i464R19i453gR20r44gR15oR16R17R18i464R19i431gR20jR11:5:2i3r24goR3jR4:8:2oR3jR4:2:1jy12:hxsl.TGlobal:39:0R15oR16R17R18i471R19i467gR20jR11:13:1ahgaoR3jR4:0:1jy10:hxsl.Const:3:1d0.5R15oR16R17R18i475R19i472gR20r52goR3jR4:0:1jR33:3:1d-0.5R15oR16R17R18i481R19i477gR20r52goR3jR4:0:1jR33:3:1i1R15oR16R17R18i484R19i483gR20r52ghR15oR16R17R18i485R19i467gR20jR11:5:2i3r24gR15oR16R17R18i485R19i431gR20jR11:5:2i3r24goR3jR4:8:2oR3jR4:2:1r62R15oR16R17R18i492R19i488gR20r66gaoR3jR4:0:1jR33:3:1d0.5R15oR16R17R18i496R19i493gR20r52goR3jR4:0:1jR33:3:1d0.5R15oR16R17R18i501R19i498gR20r52goR3jR4:0:1jR33:3:1zR15oR16R17R18i504R19i503gR20r52ghR15oR16R17R18i505R19i488gR20jR11:5:2i3r24gR15oR16R17R18i505R19i431gR20jR11:5:2i3r24gR15oR16R17R18i505R19i419gR20r25gnR15oR16R17R18i505R19i403gR20jR11:0:0ghR15oR16R17R18i511R19i397gR20r113gR6jy17:hxsl.FunctionKind:0:0y3:refoR6jR7:6:0R8y6:vertexR10jR11:13:1aoR1ahy3:retr113ghR14i-198gR37r113goR1ahR2oR3jR4:4:1aoR3jR4:7:2oR6r37R8R22R10jR11:5:2i3r24R14i-200goR3jR4:10:3oR3jR4:1:1r10R15oR16R17R18i573R19i565gR20r12goR3jR4:5:3r31oR3jR4:5:3r33oR3jR4:5:3r33oR3jR4:1:1oR6r37R8y24:pixelTransformedPositionR10jR11:5:2i3r24R14i-195gR15oR16R17R18i600R19i576gR20r139goR3jR4:1:1r42R15oR16R17R18i614R19i603gR20r44gR15oR16R17R18i614R19i576gR20r59goR3jR4:8:2oR3jR4:2:1r62R15oR16R17R18i621R19i617gR20r66gaoR3jR4:0:1jR33:3:1d0.5R15oR16R17R18i625R19i622gR20r52goR3jR4:0:1jR33:3:1d-0.5R15oR16R17R18i631R19i627gR20r52goR3jR4:0:1jR33:3:1i1R15oR16R17R18i634R19i633gR20r52ghR15oR16R17R18i635R19i617gR20jR11:5:2i3r24gR15oR16R17R18i635R19i576gR20jR11:5:2i3r24goR3jR4:8:2oR3jR4:2:1r62R15oR16R17R18i642R19i638gR20r66gaoR3jR4:0:1jR33:3:1d0.5R15oR16R17R18i646R19i643gR20r52goR3jR4:0:1jR33:3:1d0.5R15oR16R17R18i651R19i648gR20r52goR3jR4:0:1jR33:3:1zR15oR16R17R18i654R19i653gR20r52ghR15oR16R17R18i655R19i638gR20jR11:5:2i3r24gR15oR16R17R18i655R19i576gR20r129goR3jR4:1:1r22R15oR16R17R18i670R19i661gR20r25gR15oR16R17R18i670R19i561gR20r129gR15oR16R17R18i671R19i545gR20r113goR3jR4:7:2oR6r37R8y5:depthR10r52R14i-201goR3jR4:8:2oR3jR4:2:1jR32:53:0R15oR16R17R18i696R19i690gR20jR11:13:1aoR1aoR8y5:valueR10jR11:5:2i4r24ghR37r52ghgaoR3jR4:8:2oR3jR4:2:1jR32:33:0R15oR16R17R18i707R19i697gR20jR11:13:1aoR1aoR8y1:_R10r48goR8y1:bR10jR11:5:2i2r24ghR37jR11:5:2i4r24ghgaoR3jR4:1:1r47R15oR16R17R18i707R19i697gR20r48goR3jR4:9:2oR3jR4:1:1r128R15oR16R17R18i721R19i712gR20r129gajy14:hxsl.Component:0:0jR43:1:0hR15oR16R17R18i724R19i712gR20jR11:5:2i2r24ghR15oR16R17R18i725R19i697gR20r224ghR15oR16R17R18i726R19i690gR20r52gR15oR16R17R18i727R19i678gR20r113goR3jR4:7:2oR6r37R8y4:zMaxR10r52R14i-202goR3jR4:8:2oR3jR4:2:1jR32:51:0R15oR16R17R18i919R19i908gR20jR11:13:1aoR1aoR8R41R10r52ghR37r52ghgaoR3jR4:9:2oR3jR4:1:1r128R15oR16R17R18i917R19i908gR20r129gajR43:2:0hR15oR16R17R18i919R19i908gR20r52ghR15oR16R17R18i930R19i908gR20r52gR15oR16R17R18i931R19i897gR20r113goR3jR4:7:2oR6r37R8y5:deltaR10r52R14i-203goR3jR4:5:3jR21:3:0oR3jR4:8:2oR3jR4:2:1jR32:21:0R15oR16R17R18i969R19i948gR20jR11:13:1aoR1aoR8R41R10r52goR8R42R10r52ghR37r52ghgaoR3jR4:3:1oR3jR4:5:3r31oR3jR4:1:1r200R15oR16R17R18i954R19i949gR20r52goR3jR4:1:1r53R15oR16R17R18i968R19i957gR20r52gR15oR16R17R18i968R19i949gR20r52gR15oR16R17R18i969R19i948gR20r52goR3jR4:1:1r247R15oR16R17R18i978R19i974gR20r52ghR15oR16R17R18i979R19i948gR20r52goR3jR4:1:1r247R15oR16R17R18i986R19i982gR20r52gR15oR16R17R18i986R19i948gR20r52gR15oR16R17R18i987R19i936gR20r113goR3jR4:7:2oR6r37R8y5:shadeR10r52R14i-204goR3jR4:8:2oR3jR4:2:1r250R15oR16R17R18i1032R19i1004gR20jR11:13:1aoR1aoR8R41R10r52ghR37r52ghgaoR3jR4:8:2oR3jR4:2:1jR32:9:0R15oR16R17R18i1007R19i1004gR20jR11:13:1aoR1aoR8R40R10r52ghR37r52ghgaoR3jR4:5:3r33oR3jR4:1:1r51R15oR16R17R18i1021R19i1009gR20r52goR3jR4:1:1r272R15oR16R17R18i1029R19i1024gR20r52gR15oR16R17R18i1029R19i1009gR20r52ghR15oR16R17R18i1032R19i1004gR20r52ghR15oR16R17R18i1043R19i1004gR20r52gR15oR16R17R18i1044R19i992gR20r113goR3jR4:5:3jR21:20:1r33oR3jR4:9:2oR3jR4:1:1oR6r37R8y10:pixelColorR10jR11:5:2i4r24R14i-193gR15oR16R17R18i1059R19i1049gR20r354gar235r236r264hR15oR16R17R18i1063R19i1049gR20jR11:5:2i3r24goR3jR4:5:3r31oR3jR4:5:3r33oR3jR4:3:1oR3jR4:5:3r274oR3jR4:0:1jR33:3:1i1R15oR16R17R18i1069R19i1068gR20r52goR3jR4:1:1r312R15oR16R17R18i1077R19i1072gR20r52gR15oR16R17R18i1077R19i1068gR20r52gR15oR16R17R18i1078R19i1067gR20r52goR3jR4:9:2oR3jR4:1:1r49R15oR16R17R18i1093R19i1081gR20r50gar235r236r264hR15oR16R17R18i1097R19i1081gR20jR11:5:2i3r24gR15oR16R17R18i1097R19i1067gR20r383goR3jR4:1:1r312R15oR16R17R18i1105R19i1100gR20r52gR15oR16R17R18i1105R19i1067gR20r383gR15oR16R17R18i1105R19i1049gR20r360ghR15oR16R17R18i1111R19i537gR20r113gR6jR34:1:0R35oR6r118R8y8:fragmentR10jR11:13:1aoR1ahR37r113ghR14i-199gR37r113ghR8y17:h3d.shader.Shadowy4:varsar117r396r45r22r36r353r138r10hg";
+h3d_shader_Skin.SRC = "oy4:funsaoy4:argsahy4:exproy1:ejy13:hxsl.TExprDef:4:1aoR3jR4:5:3jy16:haxe.macro.Binop:4:0oR3jR4:1:1oy4:kindjy12:hxsl.VarKind:4:0y4:namey19:transformedPositiony4:typejy9:hxsl.Type:5:2i3jy12:hxsl.VecType:1:0y2:idi-50gy1:poy4:filey72:%2Fhome%2Fwilliam%2Fdev%2Fhaxelib%2Fheaps%2Fgit%2Fh3d%2Fshader%2FSkin.hxy3:maxi506y3:mini487gy1:tr12goR3jR4:5:3jR5:0:0oR3jR4:5:3r16oR3jR4:5:3jR5:1:0oR3jR4:3:1oR3jR4:5:3r19oR3jR4:1:1oR6jR7:1:0R8y8:positionR10jR11:5:2i3r11y6:parentoR6r24R8y5:inputR10jR11:12:1ar23oR6r24R8y6:normalR10jR11:5:2i3r11R21r26R13i-47goR6r24R8y7:weightsR10jR11:5:2i3r11R21r26R13i-48goR6r24R8y7:indexesR10jR11:9:1i4R21r26R13i-49ghR13i-45gR13i-46gR14oR15R16R17i529R18i515gR19r25goR3jR4:16:2oR3jR4:1:1oR6jR7:2:0R8y13:bonesMatrixesR10jR11:14:2jR11:8:0jy13:hxsl.SizeDecl:1:1oR6r40R8y8:MaxBonesR10jR11:1:0y10:qualifiersajy17:hxsl.VarQualifier:0:1nhR13i-52gR13i-53gR14oR15R16R17i545R18i532gR19r47goR3jR4:9:2oR3jR4:1:1r32R14oR15R16R17i559R18i546gR19r33gajy14:hxsl.Component:0:0hR14oR15R16R17i561R18i546gR19r43gR14oR15R16R17i562R18i532gR19r41gR14oR15R16R17i562R18i515gR19jR11:5:2i3r11gR14oR15R16R17i563R18i514gR19r62goR3jR4:9:2oR3jR4:1:1r30R14oR15R16R17i579R18i566gR19r31gar55hR14oR15R16R17i581R18i566gR19jR11:3:0gR14oR15R16R17i581R18i514gR19r62goR3jR4:5:3r19oR3jR4:3:1oR3jR4:5:3r19oR3jR4:1:1r23R14oR15R16R17i604R18i590gR19r25goR3jR4:16:2oR3jR4:1:1r39R14oR15R16R17i620R18i607gR19r47goR3jR4:9:2oR3jR4:1:1r32R14oR15R16R17i634R18i621gR19r33gajR31:1:0hR14oR15R16R17i636R18i621gR19r43gR14oR15R16R17i637R18i607gR19r41gR14oR15R16R17i637R18i590gR19r62gR14oR15R16R17i638R18i589gR19r62goR3jR4:9:2oR3jR4:1:1r30R14oR15R16R17i654R18i641gR19r31gar90hR14oR15R16R17i656R18i641gR19r72gR14oR15R16R17i656R18i589gR19r62gR14oR15R16R17i656R18i514gR19jR11:5:2i3r11goR3jR4:5:3r19oR3jR4:3:1oR3jR4:5:3r19oR3jR4:1:1r23R14oR15R16R17i679R18i665gR19r25goR3jR4:16:2oR3jR4:1:1r39R14oR15R16R17i695R18i682gR19r47goR3jR4:9:2oR3jR4:1:1r32R14oR15R16R17i709R18i696gR19r33gajR31:2:0hR14oR15R16R17i711R18i696gR19r43gR14oR15R16R17i712R18i682gR19r41gR14oR15R16R17i712R18i665gR19r62gR14oR15R16R17i713R18i664gR19r62goR3jR4:9:2oR3jR4:1:1r30R14oR15R16R17i729R18i716gR19r31gar126hR14oR15R16R17i731R18i716gR19r72gR14oR15R16R17i731R18i664gR19r62gR14oR15R16R17i731R18i514gR19jR11:5:2i3r11gR14oR15R16R17i731R18i487gR19r12goR3jR4:5:3r7oR3jR4:1:1oR6r10R8y17:transformedNormalR10jR11:5:2i3r11R13i-51gR14oR15R16R17i754R18i737gR19r152goR3jR4:8:2oR3jR4:2:1jy12:hxsl.TGlobal:31:0R14oR15R16R17i766R18i757gR19jR11:13:1aoR1aoR8y5:valueR10r62ghy3:retr62ghgaoR3jR4:5:3r16oR3jR4:5:3r16oR3jR4:5:3r19oR3jR4:3:1oR3jR4:5:3r19oR3jR4:1:1r28R14oR15R16R17i786R18i774gR19r29goR3jR4:8:2oR3jR4:2:1jR33:48:0R14oR15R16R17i793R18i789gR19jR11:13:1ahgaoR3jR4:16:2oR3jR4:1:1r39R14oR15R16R17i807R18i794gR19r47goR3jR4:9:2oR3jR4:1:1r32R14oR15R16R17i821R18i808gR19r33gar55hR14oR15R16R17i823R18i808gR19r43gR14oR15R16R17i824R18i794gR19r41ghR14oR15R16R17i825R18i789gR19jR11:6:0gR14oR15R16R17i825R18i774gR19r62gR14oR15R16R17i826R18i773gR19r62goR3jR4:9:2oR3jR4:1:1r30R14oR15R16R17i842R18i829gR19r31gar55hR14oR15R16R17i844R18i829gR19r72gR14oR15R16R17i844R18i773gR19r62goR3jR4:5:3r19oR3jR4:3:1oR3jR4:5:3r19oR3jR4:1:1r28R14oR15R16R17i865R18i853gR19r29goR3jR4:8:2oR3jR4:2:1r176R14oR15R16R17i872R18i868gR19r180gaoR3jR4:16:2oR3jR4:1:1r39R14oR15R16R17i886R18i873gR19r47goR3jR4:9:2oR3jR4:1:1r32R14oR15R16R17i900R18i887gR19r33gar90hR14oR15R16R17i902R18i887gR19r43gR14oR15R16R17i903R18i873gR19r41ghR14oR15R16R17i904R18i868gR19r197gR14oR15R16R17i904R18i853gR19r62gR14oR15R16R17i905R18i852gR19r62goR3jR4:9:2oR3jR4:1:1r30R14oR15R16R17i921R18i908gR19r31gar90hR14oR15R16R17i923R18i908gR19r72gR14oR15R16R17i923R18i852gR19r62gR14oR15R16R17i923R18i773gR19jR11:5:2i3r11goR3jR4:5:3r19oR3jR4:3:1oR3jR4:5:3r19oR3jR4:1:1r28R14oR15R16R17i944R18i932gR19r29goR3jR4:8:2oR3jR4:2:1r176R14oR15R16R17i951R18i947gR19r180gaoR3jR4:16:2oR3jR4:1:1r39R14oR15R16R17i965R18i952gR19r47goR3jR4:9:2oR3jR4:1:1r32R14oR15R16R17i979R18i966gR19r33gar126hR14oR15R16R17i981R18i966gR19r43gR14oR15R16R17i982R18i952gR19r41ghR14oR15R16R17i983R18i947gR19r197gR14oR15R16R17i983R18i932gR19r62gR14oR15R16R17i984R18i931gR19r62goR3jR4:9:2oR3jR4:1:1r30R14oR15R16R17i1000R18i987gR19r31gar126hR14oR15R16R17i1002R18i987gR19r72gR14oR15R16R17i1002R18i931gR19r62gR14oR15R16R17i1002R18i773gR19jR11:5:2i3r11ghR14oR15R16R17i1003R18i757gR19r62gR14oR15R16R17i1003R18i737gR19r152ghR14oR15R16R17i1018R18i388gR19jR11:0:0gR6jy17:hxsl.FunctionKind:0:0y3:refoR6jR7:6:0R8y6:vertexR10jR11:13:1aoR1ahR35r301ghR13i-54gR35r301ghR8y15:h3d.shader.Skiny4:varsar303r151r39r26r9r42hg";
+h3d_shader_Texture.SRC = "oy4:funsaoy4:argsahy4:exproy1:ejy13:hxsl.TExprDef:4:1aoR3jR4:5:3jy16:haxe.macro.Binop:4:0oR3jR4:1:1oy4:kindjy12:hxsl.VarKind:4:0y4:namey12:calculatedUVy4:typejy9:hxsl.Type:5:2i2jy12:hxsl.VecType:1:0y2:idi-7gy1:poy4:filey75:%2Fhome%2Fwilliam%2Fdev%2Fhaxelib%2Fheaps%2Fgit%2Fh3d%2Fshader%2FTexture.hxy3:maxi370y3:mini358gy1:tr12goR3jR4:1:1oR6jR7:1:0R8y2:uvR10jR11:5:2i2r11y6:parentoR6r17R8y5:inputR10jR11:12:1ar16hR13i-1gR13i-2gR14oR15R16R17i381R18i373gR19r18gR14oR15R16R17i381R18i358gR19r12ghR14oR15R16R17i387R18i352gR19jR11:0:0gR6jy17:hxsl.FunctionKind:0:0y3:refoR6jR7:6:0R8y6:vertexR10jR11:13:1aoR1ahy3:retr28ghR13i-9gR26r28goR1ahR2oR3jR4:4:1aoR3jR4:7:2oR6r10R8y1:cR10jR11:5:2i4r11R13i-11goR3jR4:8:2oR3jR4:2:1jy12:hxsl.TGlobal:33:0R14oR15R16R17i434R18i427gR19jR11:13:1aoR1aoR8y1:_R10jR11:10:0goR8y1:bR10jR11:5:2i2r11ghR26r42ghgaoR3jR4:1:1oR6jR7:2:0R8y7:textureR10r52R13i-6gR14oR15R16R17i434R18i427gR19r52goR3jR4:1:1r9R14oR15R16R17i451R18i439gR19r12ghR14oR15R16R17i452R18i427gR19r42gR14oR15R16R17i453R18i419gR19r28goR3jR4:10:3oR3jR4:5:3jR5:14:0oR3jR4:1:1oR6r59R8y9:killAlphaR10jR11:2:0y10:qualifiersajy17:hxsl.VarQualifier:0:1nhR13i-4gR14oR15R16R17i471R18i462gR19r74goR3jR4:5:3jR5:9:0oR3jR4:5:3jR5:3:0oR3jR4:9:2oR3jR4:1:1r41R14oR15R16R17i476R18i475gR19r42gajy14:hxsl.Component:3:0hR14oR15R16R17i478R18i475gR19jR11:3:0goR3jR4:1:1oR6r59R8y18:killAlphaThresholdR10r91R13i-5gR14oR15R16R17i499R18i481gR19r91gR14oR15R16R17i499R18i475gR19r91goR3jR4:0:1jy10:hxsl.Const:3:1zR14oR15R16R17i503R18i502gR19r91gR14oR15R16R17i503R18i475gR19r74gR14oR15R16R17i503R18i462gR19r74goR3jR4:11:0R14oR15R16R17i513R18i506gR19r28gnR14oR15R16R17i513R18i458gR19r28goR3jR4:10:3oR3jR4:1:1oR6r59R8y8:additiveR10r74R33ajR34:0:1nhR13i-3gR14oR15R16R17i531R18i523gR19r74goR3jR4:5:3jR5:20:1jR5:0:0oR3jR4:1:1oR6r10R8y10:pixelColorR10jR11:5:2i4r11R13i-8gR14oR15R16R17i549R18i539gR19r123goR3jR4:1:1r41R14oR15R16R17i554R18i553gR19r42gR14oR15R16R17i554R18i539gR19r123goR3jR4:5:3jR5:20:1jR5:1:0oR3jR4:1:1r122R14oR15R16R17i580R18i570gR19r123goR3jR4:1:1r41R14oR15R16R17i585R18i584gR19r42gR14oR15R16R17i585R18i570gR19r123gR14oR15R16R17i585R18i519gR19r28ghR14oR15R16R17i591R18i413gR19r28gR6jR23:1:0R24oR6r31R8y8:fragmentR10jR11:13:1aoR1ahR26r28ghR13i-10gR26r28ghR8y18:h3d.shader.Texturey4:varsar9r30r147r113r58r93r19r73r122hg";
+h3d_shader_UVDelta.SRC = "oy4:funsaoy4:argsahy4:exproy1:ejy13:hxsl.TExprDef:4:1aoR3jR4:5:3jy16:haxe.macro.Binop:20:1jR5:0:0oR3jR4:1:1oy4:kindjy12:hxsl.VarKind:4:0y4:namey12:calculatedUVy4:typejy9:hxsl.Type:5:2i2jy12:hxsl.VecType:1:0y2:idi-161gy1:poy4:filey75:%2Fhome%2Fwilliam%2Fdev%2Fhaxelib%2Fheaps%2Fgit%2Fh3d%2Fshader%2FUVDelta.hxy3:maxi179y3:mini167gy1:tr13goR3jR4:1:1oR6jR7:2:0R8y7:uvDeltaR10jR11:5:2i2r12R13i-160gR14oR15R16R17i190R18i183gR19r19gR14oR15R16R17i190R18i167gR19r13ghR14oR15R16R17i196R18i161gR19jR11:0:0gR6jy17:hxsl.FunctionKind:0:0y3:refoR6jR7:6:0R8y6:vertexR10jR11:13:1aoR1ahy3:retr26ghR13i-162gR24r26ghR8y18:h3d.shader.UVDeltay4:varsar10r28r17hg";
+h3d_shader_VertexColor.SRC = "oy4:funsaoy4:argsahy4:exproy1:ejy13:hxsl.TExprDef:4:1aoR3jR4:10:3oR3jR4:1:1oy4:kindjy12:hxsl.VarKind:2:0y4:namey8:additivey4:typejy9:hxsl.Type:2:0y10:qualifiersajy17:hxsl.VarQualifier:0:1nhy2:idi-158gy1:poy4:filey79:%2Fhome%2Fwilliam%2Fdev%2Fhaxelib%2Fheaps%2Fgit%2Fh3d%2Fshader%2FVertexColor.hxy3:maxi240y3:mini232gy1:tr10goR3jR4:5:3jy16:haxe.macro.Binop:20:1jR20:0:0oR3jR4:9:2oR3jR4:1:1oR5jR6:4:0R7y10:pixelColorR9jR10:5:2i4jy12:hxsl.VecType:1:0R13i-157gR14oR15R16R17i258R18i248gR19r23gajy14:hxsl.Component:0:0jR23:1:0jR23:2:0hR14oR15R16R17i262R18i248gR19jR10:5:2i3r22goR3jR4:1:1oR5jR6:1:0R7y5:colorR9jR10:5:2i3r22y6:parentoR5r35R7y5:inputR9jR10:12:1ar34hR13i-155gR13i-156gR14oR15R16R17i277R18i266gR19r36gR14oR15R16R17i277R18i248gR19r32goR3jR4:5:3jR20:20:1jR20:1:0oR3jR4:9:2oR3jR4:1:1r20R14oR15R16R17i303R18i293gR19r23gar27r28r29hR14oR15R16R17i307R18i293gR19jR10:5:2i3r22goR3jR4:1:1r34R14oR15R16R17i322R18i311gR19r36gR14oR15R16R17i322R18i293gR19r54gR14oR15R16R17i322R18i228gR19jR10:0:0ghR14oR15R16R17i328R18i222gR19r62gR5jy17:hxsl.FunctionKind:1:0y3:refoR5jR6:6:0R7y8:fragmentR9jR10:13:1aoR1ahy3:retr62ghR13i-159gR30r62ghR7y22:h3d.shader.VertexColory4:varsar66r8r37r20hg";
 haxe_Unserializer.DEFAULT_RESOLVER = Type;
 haxe_Unserializer.BASE64 = "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789%:";
+haxe_crypto_Base64.CHARS = "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789+/";
+haxe_crypto_Base64.BYTES = haxe_io_Bytes.ofString(haxe_crypto_Base64.CHARS);
 haxe_ds_ObjectMap.count = 0;
 haxe_io_FPHelper.i64tmp = (function($this) {
 	var $r;
@@ -14767,6 +21362,9 @@ haxe_io_FPHelper.i64tmp = (function($this) {
 	$r = x;
 	return $r;
 }(this));
+hxd_Charset.ASCII = " !\"#$%&'()*+,-./0123456789:;<=>?@ABCDEFGHIJKLMNOPQRSTUVWXYZ[\\]^_`abcdefghijklmnopqrstuvwxyz{|}~";
+hxd_Charset.LATIN1 = "¡¢£¤¥¦§¨©ª«¬-®¯°±²³´µ¶·¸¹º»¼½¾¿ÀÁÂÃÄÅÆÇÈÉÊËÌÍÎÏÐÑÒÓÔÕÖ×ØÙÚÛÜÝÞßàáâãäåæçèéêëìíîïðñòóôõö÷øùúûüýþÿ";
+hxd_Charset.DEFAULT_CHARS = hxd_Charset.ASCII + hxd_Charset.LATIN1;
 hxd_Key.initDone = false;
 hxd_Key.keyPressed = [];
 hxd_System.setCursor = hxd_System.setNativeCursor;
@@ -14779,9 +21377,11 @@ hxd_Timer.calc_tmod = 1;
 hxd_Timer.tmod = 1;
 hxd_Timer.deltaT = 1;
 hxd_Timer.frameCount = 0;
+hxd_fs_EmbedFileSystem.invalidChars = new EReg("[^A-Za-z0-9_]","g");
 hxd_impl_Memory.stack = [];
 hxd_impl_Memory.inst = new hxd_impl_MemoryReader();
 hxd_impl_Tmp.bytes = [];
+hxd_res_FontBuilder.FONTS = new haxe_ds_StringMap();
 hxsl_Tools.UID = 0;
 hxsl_Tools.SWIZ = Type.allEnums(hxsl_Component);
 js_Boot.__toStr = {}.toString;

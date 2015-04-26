@@ -1,4 +1,9 @@
 -js main.js
+-cp src/
+-cp src/gamestates
 -main Main
 -lib heaps
 -dce full
+-D resourcesPath=../heaps_samples/res/
+-D source-map-content
+--macro include('h2d')
