@@ -166,6 +166,7 @@ hxd_App.prototype = {
 	,__class__: hxd_App
 };
 var Main = function(engine) {
+	this.time = 0.0;
 	hxd_App.call(this,engine);
 };
 $hxClasses["Main"] = Main;
@@ -185,19 +186,43 @@ Main.prototype = $extend(hxd_App.prototype,{
 			var _g1 = 0;
 			while(_g1 < 10) {
 				var y = _g1++;
-				var b = new h3d_scene_Mesh(prim,null,this.s3d);
-				b.set_x(x - 5);
-				b.set_y(y - 5);
-				b.scaleZ = 5;
-				b.flags |= 1;
-				true;
-				5;
-				b.set_z(hxd_Math.floor(Math.random() * 4));
-				console.log(b.z);
-				b.material.mshader.color__.setColor(16777215,null);
-				b.material.passes.enableLights = true;
+				if(Math.random() > 0.5) {
+					var tile = new h3d_scene_Mesh(prim,null,this.s3d);
+					tile.set_x(x - 5);
+					tile.set_y(y - 5);
+					tile.scaleZ = 5;
+					tile.flags |= 1;
+					true;
+					5;
+					tile.set_z(hxd_Math.floor(Math.random() * 4));
+					tile.material.mshader.color__.setColor(16777088,null);
+					tile.material.passes.enableLights = true;
+				}
 			}
 		}
+		var acid = new h3d_scene_Mesh(prim,null,this.s3d);
+		acid.set_x(acid.set_y((function($this) {
+			var $r;
+			acid.z = 0;
+			{
+				acid.flags |= 1;
+				true;
+			}
+			$r = 0;
+			return $r;
+		}(this))));
+		acid.set_scaleX((function($this) {
+			var $r;
+			acid.scaleY = 15;
+			{
+				acid.flags |= 1;
+				true;
+			}
+			$r = 15;
+			return $r;
+		}(this)));
+		acid.material.mshader.color__.setColor(65280,null);
+		acid.material.passes.enableLights = true;
 		this.s3d.camera.zNear = 2;
 		this.s3d.camera.pos.set(0,-6,27,null);
 		this.s3d.camera.target.set(0,0,0,null);
@@ -207,6 +232,17 @@ Main.prototype = $extend(hxd_App.prototype,{
 		this.engine.render(this.s3d);
 	}
 	,update: function(dt) {
+		this.time += dt;
+		var dir = new h3d_Vector(0.0,0.0,0.0);
+		if(hxd_Key.isDown(38)) dir.y++;
+		if(hxd_Key.isDown(40)) dir.y--;
+		if(hxd_Key.isDown(37)) dir.x--;
+		if(hxd_Key.isDown(39)) dir.x++;
+		dir.x *= dt;
+		dir.y *= dt;
+		dir.z *= dt;
+		dir = dir.add(this.s3d.camera.pos);
+		this.s3d.camera.pos.set(dir.x,dir.y,dir.z,null);
 	}
 	,__class__: Main
 });
@@ -2447,6 +2483,9 @@ h3d_Vector.__name__ = true;
 h3d_Vector.prototype = {
 	sub: function(v) {
 		return new h3d_Vector(this.x - v.x,this.y - v.y,this.z - v.z,this.w - v.w);
+	}
+	,add: function(v) {
+		return new h3d_Vector(this.x + v.x,this.y + v.y,this.z + v.z,this.w + v.w);
 	}
 	,cross: function(v) {
 		return new h3d_Vector(this.y * v.z - this.z * v.y,this.z * v.x - this.x * v.z,this.x * v.y - this.y * v.x,1);
@@ -5133,6 +5172,12 @@ h3d_scene_Object.prototype = {
 		true;
 		return v;
 	}
+	,set_scaleX: function(v) {
+		this.scaleX = v;
+		this.flags |= 1;
+		true;
+		return v;
+	}
 	,__class__: h3d_scene_Object
 };
 var h3d_scene_Light = function(shader,parent) {
@@ -7377,6 +7422,9 @@ hxd_Event.prototype = {
 var hxd_Key = function() { };
 $hxClasses["hxd.Key"] = hxd_Key;
 hxd_Key.__name__ = true;
+hxd_Key.isDown = function(code) {
+	return hxd_Key.keyPressed[code] > 0;
+};
 hxd_Key.initialize = function() {
 	if(hxd_Key.initDone) hxd_Key.dispose();
 	hxd_Key.initDone = true;

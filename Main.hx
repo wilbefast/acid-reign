@@ -1,4 +1,6 @@
 import hxd.Math;
+import hxd.Key in K;
+
 import h3d.scene.DirLight;
 import h3d.scene.Mesh;
 import h3d.prim.Cube;
@@ -6,26 +8,41 @@ import h3d.Vector;
 
 class Main extends hxd.App 
 {
+	private static inline var CAMERA_SPEED = 1.0;
+
 	override function init() 
 	{
+		// prepare the player primitive
+
+		// prepare the tile primitive
 		var prim = new Cube();
 		prim.translate( -0.5, -0.5, -0.5);
 		prim.addNormals();
 	
+		// ground tiles
 		for(x in 0...10)
 		{
 			for(y in 0...10)
 			{
-				var b = new Mesh(prim, s3d);
-				b.x = x - 5;
-				b.y = y - 5;
-				b.scaleZ = 5;
-				b.z = Math.floor(Math.random(4));
-				trace(b.z);
-				b.material.color.setColor(0xFFFFFF);
-				b.material.mainPass.enableLights = true;	
+				if(Math.random() > 0.5)
+				{
+					var tile = new Mesh(prim, s3d);
+					tile.x = x - 5;
+					tile.y = y - 5;
+					tile.scaleZ = 5;
+					tile.z = Math.floor(Math.random(4));
+					tile.material.color.setColor(0xFFFF80);
+					tile.material.mainPass.enableLights = true;	
+				}
 			}
 		}
+
+		// acid
+		var acid = new Mesh(prim, s3d);
+		acid.x = acid.y = acid.z = 0;
+		acid.scaleX = acid.scaleY = 15;
+		acid.material.color.setColor(0x00FF00);
+		acid.material.mainPass.enableLights = true;
 
 		// set up the camera
 		s3d.camera.zNear = 2;
@@ -41,8 +58,25 @@ class Main extends hxd.App
 		engine.render(s3d);
 	}
 
+	private var time : Float = 0.0;
+
 	override function update( dt : Float ) 
 	{
+		time += dt;
+
+		var dir = new Vector(0.0, 0.0, 0.0);
+		if(K.isDown(K.UP))
+			dir.y ++;
+		if(K.isDown(K.DOWN))
+			dir.y--;
+		if(K.isDown(K.LEFT))
+			dir.x--;
+		if(K.isDown(K.RIGHT))
+			dir.x++;
+
+		dir.scale3(dt * CAMERA_SPEED);
+		dir = dir.add(s3d.camera.pos);
+		s3d.camera.pos.set(dir.x, dir.y, dir.z);
 	}
 
 	static function main() 
