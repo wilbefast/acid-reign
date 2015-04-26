@@ -41,6 +41,8 @@ class Main extends hxd.App
 
 		_currentState = nextState;
 
+		s3d.camera = _stateScene3D.camera;
+		s3d.lightSystem = _stateScene3D.lightSystem;
 		engine.render(s3d);
 
 		onResize();

@@ -294,6 +294,8 @@ Main.prototype = $extend(hxd_App.prototype,{
 		this.s2d.addChild(Main._stateScene2D);
 		this.s3d.addChild(Main._stateScene3D);
 		Main._currentState = nextState;
+		this.s3d.camera = Main._stateScene3D.camera;
+		this.s3d.lightSystem = Main._stateScene3D.lightSystem;
 		this.engine.render(this.s3d);
 		this.onResize();
 	}
