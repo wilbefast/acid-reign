@@ -9,84 +9,67 @@ import h3d.Vector;
 
 class Main extends hxd.App 
 {
-	private static inline var CAMERA_SPEED = 1.0;
+	// --------------------------------------------------------------------------
+	// STATES
+	// --------------------------------------------------------------------------
+
+	static var _allStates = new Map<String, GameState>();
+	static var _currentState : GameState;
+
+	private function _gotoState(nextState : GameState)
+	{
+		if(_currentState != null)
+			_currentState.onExit(nextState);
+		nextState.onEnter(_currentState);
+		_currentState = nextState;
+	}
+
+	public function gotoState(stateName : String)
+	{
+		var scene = _allStates.get(stateName);
+		if(scene == null)
+			throw "No GameState called '" + stateName + "' exists";
+		_gotoState(scene);
+	}
+
+	public static function pushEvent(stateName : String, 
+		?args : Dynamic)
+	{
+		_currentState.onEvent(stateName, args);
+	}
+
+	// --------------------------------------------------------------------------
+	// STARTUP
+	// --------------------------------------------------------------------------
 
 	override function init() 
 	{
-		new TitleState();
+		Global.s2d = s2d;
+		Global.s3d = s3d;
+		Global.engine = engine;
 
-/*
-		// prepare the player primitive
+		var yerp = new h3d.scene.Scene();
 
-		// prepare the tile primitive
-		var prim = new Cube();
-		prim.translate( -0.5, -0.5, -0.5);
-		prim.addNormals();
-	
-		// ground tiles
-		for(x in 0...10)
-		{
-			for(y in 0...10)
-			{
-				if(Math.random() > 0.5)
-				{
-					var tile = new Mesh(prim, s3d);
-					tile.x = x - 5;
-					tile.y = y - 5;
-					tile.scaleZ = 5;
-					tile.z = Math.floor(Math.random(4));
-					tile.material.color.setColor(0xFFFF80);
-					tile.material.mainPass.enableLights = true;	
-				}
-			}
-		}
+		var derp = new h3d.scene.Object();
 
-		// acid
-		var acid = new Mesh(prim, s3d);
-		acid.x = acid.y = acid.z = 0;
-		acid.scaleX = acid.scaleY = 15;
-		acid.material.color.setColor(0x00FF00);
-		acid.material.mainPass.enableLights = true;
+		s3d.addChild(derp);
 
-		// set up the camera
-		s3d.camera.zNear = 2;
-		s3d.camera.pos.set(0, -6, 27);
-		s3d.camera.target.set(0, 0, 0);
 
-		// set up light
-		s3d.lightSystem.ambientLight.set(0.2, 0.2, 0.2);
-		var sun = new DirLight(new Vector(0, 1, -2), s3d);
-		sun.color.set(0.5, 0.5, 0.5);
 
-		// done
-		engine.render(s3d);
-*/
+		_allStates["Title"] = new TitleState();
+		_allStates["InGame"] = new InGameState();
+
+		gotoState("Title");
 	}
 
 	override function update( dt : Float ) 
 	{
-		GameState.pushUpdate(dt);
+		_currentState.onUpdate(dt);
+	}
 
-/*
-		var dir = new Vector(0.0, 0.0, 0.0);
-		if(K.isDown(K.UP))
-			dir.y ++;
-		if(K.isDown(K.DOWN))
-			dir.y--;
-		if(K.isDown(K.LEFT))
-			dir.x--;
-		if(K.isDown(K.RIGHT))
-			dir.x++;
-
-		if(K.isPressed(K.ENTER))
-		{
-			s3d.removeChild();
-		}
-		dir.scale3(dt * CAMERA_SPEED);
-		dir = dir.add(s3d.camera.pos);
-		s3d.camera.pos.set(dir.x, dir.y, dir.z);
-
-*/
+	override function onResize() 
+	{
+		_currentState.onResize();
 	}
 
 	static function main() 
